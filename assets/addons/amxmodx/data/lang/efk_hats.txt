@@ -1,0 +1,13 @@
+[en]
+HATS_MENUNAME = Hats
+HATS_REMOVE = You took off hat
+HATS_SET = You get a hat
+HATS_MENU_REMOVE = Remove hat
+HATS_NEED_LEVEL = You need %i level to access this hat
+
+[ru]
+HATS_MENUNAME = Шапки
+HATS_REMOVE = Вы сняли шапку
+HATS_SET = Вы надели шапку
+HATS_MENU_REMOVE = Снять шапку
+HATS_NEED_LEVEL = Вам нужен %i уровень для доступа к этой шапке

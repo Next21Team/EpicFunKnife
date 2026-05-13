@@ -1,0 +1,33 @@
+[en]
+PRESENT_GET = You get
+PRESENT_MONEY = $%i
+PRESENT_BUNNY = bunnyhop (5 rounds)
+PRESENT_REGENERATION = health regeneration
+PRESENT_VAMPIRISM = vampirism
+PRESENT_RESPAWN = You revived a random player from your team
+PRESENT_HPSCAN = health monitoring
+PRESENT_FLASH = flash-bang grenade
+PRESENT_IPAD = set of grenades ^3(%i iPad)
+PRESENT_FROSTFIRE = set of grenades ^3(%i frost/fire grenades)
+PRESENT_GAS = set of grenades ^3(%i gas grenades)
+PRESENT_HP = %i HP
+PRESENT_HS = head shots protection ^3(%i hits)
+PRESENT_CRITS = crits protection ^3(%i crits)
+PRESENT_CHARGEBOOSTER = charge booster ^3(%i charges)
+
+[ru]
+PRESENT_GET = Вы получили
+PRESENT_MONEY = $%i
+PRESENT_BUNNY = автораспрыжку
+PRESENT_REGENERATION = регенерацию HP
+PRESENT_VAMPIRISM = вампиризм
+PRESENT_RESPAWN = Вы возродили случайного игрока из своей команды
+PRESENT_HPSCAN = мониторинг здоровья
+PRESENT_FLASH = слеповую гранату
+PRESENT_IPAD = комплект гранат ^3(%i iPad)
+PRESENT_FROSTFIRE = комплект гранат ^3(%i термо гранаты)
+PRESENT_GAS = комплект гранат ^3(%i газовые гранаты)
+PRESENT_HP = %i HP
+PRESENT_HS = защиту от HS ^3(%i ударов)
+PRESENT_CRITS = защиту от критов ^3(%i критов)
+PRESENT_CHARGEBOOSTER = ускоритель перезарядки ^3(%i зарядов)

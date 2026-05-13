@@ -1,0 +1,13 @@
+[en]
+SM_NOT_AVAILABLE = This feature is only available to dead players
+SM_DEALT_DAMAGE = You dealt ^3%d ^1damage
+SM_NO_DEALT_DAMAGE = You didn't hurt anyone
+SM_DEATH = ^3%s^1 killed you. He had ^3%d ^1HP left
+SM_NO_DEATH = You were not killed by the enemy
+
+[ru]
+SM_NOT_AVAILABLE = Данная функция доступна только мертвым игрокам
+SM_DEALT_DAMAGE = Вы нанесли ^3%d ^1урона
+SM_NO_DEALT_DAMAGE = Вы никого не ранили
+SM_DEATH = Вас убил ^3%s^1. У него оставалось ^3%d ^1HP
+SM_NO_DEATH = Вас не убивал противник

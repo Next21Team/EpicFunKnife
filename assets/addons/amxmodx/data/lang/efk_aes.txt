@@ -1,0 +1,197 @@
+[ru]
+MENU_TAG = \r[\ySTATS\r]\w
+MENU_TITLE = Посмотреть статистику
+MENU_RANK = Общая статистика
+MENU_STATS = Личная статистика за карту
+
+AES_YOUR_RANK_IS = Вы занимаете ^4%d-е^1 место из ^4%d^1
+AES_YOUR_RANK_IS_UP = Вы поднялись на ^4%d^1
+AES_YOUR_RANK_IS_DOWN = Вы спустились на ^4%d^1
+STATS_RANK = Звание
+STATS_EXP = Опыт
+AES_META = <meta charset=UTF-8>
+AES_STYLE = <link href="http://cs.next21.ru/efk/stats/css/style.css" rel=stylesheet type=text/css>
+AES_HEADER_ROW = <tr>%s</tr>
+AES_HEADER_CELL = <th%s>%L
+AES_BODY_ROW = <tr%s>%s</tr>
+AES_BODY_CELL = <td>%s
+AES_CLOSE = </table>
+AES_TOP_BODY = <h2>%L</h2><table width=100%% border=0 align=center cellpadding=0 cellspacing=1>
+AES_TOP_HEADER_ROW = <tr>%s</tr>
+
+NO_DATA = Нет данных.
+
+RANKSTATS_TITLE = Общая статистика игрока
+AES_RANKSTATS_BODY = <p>Oбщaя cтaтистикa игpoкa</p>
+AES_RANKSTATS_TSTATS = %s на %d месте из %d
+AES_RANKSTATS_THITS = Cтaтиcтикa пoпaдaний
+
+STATS_TITLE = Личнaя cтaтиcтикa
+AES_STATS_BODY = <p>Личнaя cтaтиcтикa зa кapту</p>
+AES_STATS_HEADER1 = Статистика
+
+THE_STATS = Статистика
+THE_RANKS = Звания
+
+AES_BOT_TOP = Toп бoтoв
+AES_POS = #
+AES_PLAYER_TOP = Toп лучших
+AES_ONLINE_TOP = Toп по онлайну
+AES_ASSISTS_TOP = Toп по ассистам
+AES_LEVEL_TOP = Топ по уровню
+AES_HOT_PLAYERS = Toп игpaющих
+AES_RANK_IS = %s нa %d-oм мecтe из %d
+AES_KNIFE = Нож
+AES_YOU = Bы
+AES_PLAYER = Игpoк
+AES_NAME = Имя
+AES_KILLS = Убийства
+AES_DMG = Урон
+AES_DEATHS = Cмepти
+AES_HEAL = Вылечено
+AES_FAV_KNIFE = Лучший нож
+AES_DUELS = Побед в дуэли
+AES_ACC = Toчнocть
+AES_EFF = Эффeктивнocть
+AES_LEVEL = Уровень
+AES_ASSISTS = Ассисты
+AES_NOT_TRACKED = <div class="r">Н/Д</div>
+AES_SKILL_VALUE = <div class="%s"></div>
+AES_DAMAGE = Уpoн
+AES_SKILL = ELO скилл
+
+AES_KS = K:D
+AES_HSK = HS:K
+AES_HSP = HS
+AES_TIME = Время в игре
+AES_RANK = %s (%.0f)
+
+AES_SKILL_FMT = <div id="%s">%.0f</div>
+AES_STATS_INFO1 = Нет соединения с БД.
+AES_STATS_INFO2 = Статистика на данный момент недоступна.
+AES_LEVELFRAGS = Текущий уровень: ^3%d^1. До следующего уровня: ^3%d^1 очк.
+AES_NEWLEVEL = ^3%s ^1достиг ^3%d ^1уровня, поздравляем!
+
+AES_STATS_DESC1 = %dд %02d:%02dч
+AES_STATS_DESC2 = %02d:%02dч
+AES_STATS_DESC3 = %02dм
+AES_STATS_DESC4 = %02dс
+
+CSXSQL_JOINS = Подключения
+CSXSQL_ROUNDS = Раундов сыграно
+CSXSQL_WINS = Раундов выйграно
+CSXSQL_AS_T = %d за красную команду
+CSXSQL_AS_CT = %d за синюю команду
+CSXSQL_FIRSTJOIN = Играет с
+
+CSXSQL_DATE = Дата
+CSXSQL_SKILLCHANGE = Изменение скилла
+CSXSQL_MAP = Карта
+CSXSQL_SETITLE = История игр
+CSXSQL_SEHTML = <h2>%s</h2><table width=100%% border=0 align=center cellpadding=0 cellspacing=1>
+
+YOURS = Ваша
+LAST = посл
+AGO = назад
+
+CSXSQL_SESTATS_CFG = Say /history, /sestats
+AES_SAY_HOT = Say /hot,/topnow
+
+[en]
+MENU_TAG = \r[\ySTATS\r]\w
+MENU_TITLE = Server stats
+MENU_RANK = Rankstats
+MENU_STATS = Statsme
+
+AES_YOUR_RANK_IS = Your rank is ^4%d^1 of ^4%d^1
+STATS_RANK = Rank
+STATS_EXP = Exp.
+AES_META = <meta charset=UTF-8>
+AES_STYLE = <link href="http://cs.next21.ru/efk/stats/css/style.css" rel=stylesheet type=text/css>
+AES_HEADER_ROW = <tr>%s</tr>
+AES_HEADER_CELL = <th%s>%L
+AES_BODY_ROW = <tr%s>%s</tr>
+AES_BODY_CELL = <td>%s
+AES_CLOSE = </table>
+AES_TOP_BODY = <h2>%L</h2><table width=100%% border=0 align=center cellpadding=0 cellspacing=1>
+AES_TOP_HEADER_ROW = <tr>%s</tr>
+
+NO_DATA = No data.
+
+RANKSTATS_TITLE = Rankstats
+AES_RANKSTATS_BODY = <p>Rankstats</p>
+AES_RANKSTATS_TSTATS = %s rank is %d from %d
+AES_RANKSTATS_THITS = Hits
+
+STATS_TITLE = Statsme
+AES_STATS_BODY = <p>Statsme</p>
+AES_STATS_HEADER1 = Stats
+
+
+THE_STATS = Statistics
+THE_RANKS = Ranks
+
+AES_BOT_TOP = Top bots
+AES_POS = #
+AES_PLAYER_TOP = Top players
+AES_ONLINE_TOP = Top online players
+AES_ASSISTS_TOP = Top assistants
+AES_LEVEL_TOP = Top levels
+AES_HOT_PLAYERS = Top players
+AES_RANK_IS = %s's rank is %d of %d
+AES_KNIFE = Knife
+AES_YOU = Your
+AES_PLAYER = Player
+AES_NAME = Nick
+AES_KILLS = Kills
+AES_DMG = Damage
+AES_DEATHS = Deaths
+AES_HEAL = Heal
+AES_FAV_KNIFE = Best knife
+AES_DUELS = Duel wins
+AES_ACC = acc.
+AES_EFF = eff.
+AES_LEVEL = Level
+AES_ASSISTS = Assists
+AES_NOT_TRACKED = <div class="r">Not ranked yet</div>
+AES_SKILL_VALUE = <div class="%s"></div>
+AES_DAMAGE = Damage
+AES_SKILL = ELO skill
+
+AES_KS = K:D
+AES_HSK = HS:K
+AES_HSP = HS
+AES_TIME = Online time
+
+AES_RANK = %s (%.0f)
+AES_SKILL_FMT = <div id="%s">%.0f</div>
+AES_STATS_INFO1 = Database connection failed.
+AES_STATS_INFO2 = Stats are unavailable at this time.
+AES_LEVELFRAGS = Your level is ^3%d^1. Frags to the next level: ^3%d
+AES_NEWLEVEL = ^3%s ^1reached level ^3%d^1, congratulations!
+
+AES_STATS_DESC1 = %dd %02d:%02dh
+AES_STATS_DESC2 = %02d:%02dh
+AES_STATS_DESC3 = %02dm
+AES_STATS_DESC4 = %02ds
+
+CSXSQL_JOINS = Connects
+CSXSQL_ROUNDS = Rounds players
+CSXSQL_WINS = Rounds wined
+CSXSQL_AS_T = %d as t
+CSXSQL_AS_CT = %d as ct
+CSXSQL_FIRSTJOIN = Playing from
+
+CSXSQL_DATE = Date
+CSXSQL_SKILLCHANGE = Skill change
+CSXSQL_MAP = Map
+CSXSQL_SETITLE = Match history
+CSXSQL_SEHTML = <h2>%s</h2><table width=100%% border=0 align=center cellpadding=0 cellspacing=1>
+
+YOURS = Yours
+LAST = last
+AGO = ago
+
+AES_TOP_NOW = Top current players
+CSXSQL_SESTATS_CFG = Say /history, /sestats
+AES_SAY_HOT = Say /hot,/topnow

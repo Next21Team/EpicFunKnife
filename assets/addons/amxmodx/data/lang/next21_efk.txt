@@ -1,0 +1,447 @@
+[en]
+DHUD_BUY = To change the knife, press Z
+DHUD_GM_RANDOM_KNIFE = RANDOM KNIFE
+DHUD_GM_ONE_LIFE = ONE LIFE
+
+KNIFE_BLINK_DESC = \y[\rBlink Knife\y] - Warusawa Tech {\rH\y}
+KNIFE_SLAP_DESC = \y[\rSlap Knife\y] - Hagenmann {\rE\y}
+KNIFE_FLASH_DESC = \y[\rFlash Knife\y] - Spiritual Inc {\rE\y}
+KNIFE_NINJA_DESC = \y[\rNinja Knife\y] - Warusawa Tech {\rM\y}
+KNIFE_LEAP_DESC = \y[\rLeap Knife\y] - Deltashark Inc {\rM\y}
+KNIFE_FIRE_DESC = \y[\rFire Knife\y] - Archipelago {\rM\y}
+KNIFE_NUCLEAR_DESC = \y[\rNuclear Knife\y] - Deltashark Inc {\rE\y}
+KNIFE_FROST_DESC = \y[\rFrost Knife\y] - Archipelago {\rE\y}
+KNIFE_THUNDER_DESC = \y[\rThunder Knife\y] - Archipelago {\rM\y}
+KNIFE_RAZOR_DESC = \y[\rRazor Knife\y] - Hagenmann {\rM\y}
+KNIFE_TELEKINESIS_DESC = \y[\rTelekinesis Knife\y] - Tai Xin {\rH\y}
+KNIFE_SWAP_DESC = \y[\rSwap Knife\y] - Warusawa Tech {\rH\y}
+KNIFE_NECRO_DESC = \y[\rNecro Knife\y] - E.F.K. Biotech {\rH\y}
+KNIFE_SPIKES_DESC = \y[\rSpikes Knife\y] - Tai Xin {\rM\y}
+KNIFE_DARK_DESC = \y[\rDark Knife\y] - Spiritual Inc {\rE\y}
+KNIFE_ACIDTRAP_DESC = \y[\rAcidtrap Knife\y] - Deltashark Inc {\rH\y}
+KNIFE_TENTACLES_DESC = \y[\rTentacles Knife\y] - Tai Xin {\rM\y}
+KNIFE_CREEPY_DESC = \y[\rCreepy Knife\y] - Spiritual Inc {\rM\y}
+KNIFE_WIND_DESC = \y[\rWind Knife\y] - Archipelago {\rM\y}
+KNIFE_WATER_DESC = \y[\rWater Knife\y] - Tai Xin {\rM\y}
+
+KNIFE_BLINK_CHAT = ^4[Blink Knife] Properties: ^1portal behind enemy, sprint, double jump
+KNIFE_SLAP_CHAT = ^4[Slap Knife] Properties: ^1energy impulse, HP-, speed-
+KNIFE_FLASH_CHAT = ^4[Flash Knife] Properties: ^1see all invisible objects, blocks enemy's ability
+KNIFE_NINJA_CHAT = ^4[Ninja Knife] Properties: ^1illusions, HP+, gravity-
+KNIFE_LEAP_CHAT = ^4[Leap Knife] Properties: ^1long jump (ctrl+space), HP-, speed+, damage+
+KNIFE_FIRE_CHAT = ^4[Fire Knife] Properties: ^1Burning time, reactivity, HP+, speed+
+KNIFE_NUCLEAR_CHAT = ^4[Nuclear Knife] Properties: ^1reflects damage, ability invulnerability, self-destruction, HP+, speed-
+KNIFE_FROST_CHAT = ^4[Frost Knife] Properties: ^1throw ice, acceleration attack speed after each hit, HP-
+KNIFE_THUNDER_CHAT = ^4[Thunder knife] Properties: ^1Levitation, HP-
+KNIFE_RAZOR_CHAT = ^4[Razor Knife] Properties: ^1speed+
+KNIFE_TELEKINESIS_CHAT = ^4[Telekinesis Knife] Properties: ^1less damage when falling, remote damage, damage+
+KNIFE_SWAP_CHAT = ^4[Swap knife] Properties: ^1changing the position of enemy, confuses attack buttons
+KNIFE_NECRO_CHAT = ^4[Necro knife] Properties: ^1collects souls of the dead players to heal, HP-
+KNIFE_SPIKES_CHAT = ^4[Spikes knife] Properties: ^1high jump, down jump, spines on the back, speed+
+KNIFE_DARK_CHAT = ^4[Dark Knife] Properties: ^1disguise as enemy, global darkness, HP+
+KNIFE_ACIDTRAP_CHAT = ^4[Acidtrap Knife] Properties: ^1traps, wall run, HP-, damage+
+KNIFE_TENTACLES_CHAT = ^4[Tentacles Knife] Properties: ^1neutralization, tentacles attack, theft of money, HP-, damage-
+KNIFE_CREEPY_CHAT = ^4[Creepy Knife] Properties: ^1spider web, iron mayden, HP-
+KNIFE_WIND_CHAT = ^4[Wind Knife] Properties: ^1wind boost, tornado, airflow
+KNIFE_WATER_CHAT = ^4[Water Knife] Properties: ^1dragon guard, embodiment, aqua sphere, water transparency
+
+ITEM_RET_HAVE = Do you already have this item
+ITEM_RET_NOT = You can not buy an item
+ITEM_RET_DEAD = You're dead and you can not buy this item
+ITEM_RET_ALIVE = You're alive and you can not buy this item
+ITEM_NEED_LEVEL = You need ^4%i ^1level to access this item
+ITEM_NOT_MONEY = Not enough money
+ITEM_NEXT_SPAWN = This item will be issued in the next spawn
+ITEM_CASHBACK = Your money has been returned
+
+INVENTORY_EMPTY = Your inventory is empty
+
+KNIVES_MENUNAME = Knives
+SHOP_MENUNAME = Shop
+TEAM_MENUNAME = Change team
+
+MENU_EXIT = Exit
+MENU_NEXT = Next
+MENU_BACK = Back
+
+KNIFE_CHANGE_DELAY = You can change the knife in the spawn time or in ^3%i ^1sec.
+KNIFE_ALREADY_HAVE = You already have this knife
+KNIFE_LEVEL = You need ^4%i ^1level to access this knife
+KNIFE_CHANGE_GM = The selected knife will only be equipped in the next round
+
+ABILITY_CHARGED = Charged!
+ABILITY_CHARGING = Charging: %d sec.
+ABILITY_DISABLED = [Primary ability disabled]
+ABILITY_DISABLED_ON = Primary ability activation is disabled
+ABILITY_DISABLED_OFF = Primary ability activation is enabled
+
+RAZOR_POWER_DAMAGE = Increased damage: %d
+
+CRIT_CHANCE = Critical chance:
+CRIT_ATTACKER = Critical hit!
+CRIT_VICTIM = Critical hit!
+CRIT_BLIND = %n is blinded: %..1f sec.^nNow you can use critical hit on him!
+
+INVISION_TIMER = You are invisible!^n(%..1f sec. left)
+KAMUI_TIMER = Kamui time^n(%..1f sec. left)
+
+DAMAGE_REFLECTED = Damage reflected:
+DAMAGE_REFLECTED_COEFF = Coefficient of reflected damage:
+
+GHOST_TIMER = Ghost time: %..1f sec.^nSwitch camera (F)
+
+ITEM_BUNNY = Bunnyhop
+ITEM_REGENERATION = Regeneration
+ITEM_VAMPIRISM = Vampirism (25%%)
+ITEM_RESPAWN = Respawn
+ITEM_HPSCAN = Health monitoring
+ITEM_FLASH = Flash-bang grenade
+ITEM_IPAD = iPad (HE)
+ITEM_FROSTFIRE = Frost/Fire grenade
+ITEM_GAS = Gas grenade
+ITEM_HP = 60 HP
+ITEM_HS = Head shots protection
+ITEM_CRITS = Crits protection
+ITEM_CHARGEBOOSTER = Charge booster
+
+BUY_BUNNY = You bought a bunnyhop. Hold the jump button.
+BUY_REGENERATION = You bought a health regeneration
+BUY_VAMPIRISM = You will receive 25% of the health from damage caused by you
+BUY_RESPAWN = You bought respawn
+BUY_HPSCAN = You bought a health monitoring
+BUY_FLASH = You bought a flash-bang grenade
+BUY_IPAD = You bought a iPad
+BUY_FROSTFIRE = You bought frost/fire grenade (right mouse click for change mode)
+BUY_GAS = You bought gas grenade
+BUY_HP = You bought 60 HP
+BUY_HS = You bought head shots protection
+BUY_CRITS = You bought crits protection
+BUY_CHARGEBOOSTER = You bought a charge booster
+
+REGENERATION = Regeneration
+REGENERATION_CHARGE = You have extended the regeneration to %d percent
+REGENERATION_EXHAUSTED = Regeneration exhausted
+REGENERATION_ON = Regeneration On
+REGENERATION_OFF = Regeneration Off
+
+VAMPIRISM_CHARGE = Vampirism charged up to %d HP
+VAMPIRISM_EXHAUSTED = Vampirism has been exhausted
+
+CHARGEBOOSTER_EXHAUSTED = Charge booster has been exhausted
+
+BUNNY_LAST_ROUND = The latest round with bunnyhop
+BUNNY_KNIFE_CANNOT = Bunnyhop banned for some knives!
+
+PHS_OVER = Head shots protection has been exhausted
+PCRIT_OVER = Crits protection has been exhausted
+
+HPSCAN_LAST_ROUND = The latest round with health monitoring
+
+RESPAWN_COMPENSATION = Part of your money for the respawn has been returned
+
+FAKE_MODE_LASTMOVE = Mode: last movement (E)
+FAKE_MODE_FOLLOW = Mode: follow (E)
+FAKE_SWAP = Swap (R)
+
+TELEKINESIS_MODE_CONTRACTION = Mode: Contraction (E, R)
+TELEKINESIS_MODE_SPREADINGOF = Mode: Spreading of (E, R)
+TELEKINESIS_MODE_PUSH_TO = Mode: Push to the crosshair [To self] (E, R)
+TELEKINESIS_MODE_PUSH_AWAY = Mode: Push away [To self] (E, R)
+TELEKINESIS_MODE_PUSH_ENEMY = Mode: Push enemy away (E, R)
+
+NPC_ACTION_HUNTER = Hunting (R + ...)
+NPC_ACTION_MOVE = Moving to a point (R + MOUSE1)
+NPC_ACTION_FOLLOW = Follow you (R + MOUSE2)
+NPC_ACTION_TARGET = Chasing a victim (R + MOUSE1)
+NPC_ACTION_CIRCLE = Around a point (R + E)
+NPC_ACTION_CANNIBAL = Cannibalism (E + T)
+
+DEATH_REASON_FALL = CRASHED
+DEATH_REASON_DROWN = DROWNED
+DEATH_REASON_WASTED = WASTED
+DEATH_REASON_EXPLODE = EXPLODED
+DEATH_REASON_SHOOT = SHOOT DOWN
+DEATH_REASON_STAB = STABBED
+DEATH_REASON_STAB_HEAD = STABBED ON THE HEAD
+DEATH_REASON_STAB_BACK = STABBED IN THE BACK
+DEATH_REASON_RIPPED_INSIDE = RIPPED INSIDE
+DEATH_REASON_RIPPED_LEAP = RIPPED BY MONOMOLECULAR WIRE
+DEATH_REASON_ENERGY_WAVE = RIPPED BY ENERGY WAVE
+DEATH_REASON_SHADOW_WAVE = RIPPED BY SHADOW WAVE
+DEATH_REASON_BURNED = BURNED
+DEATH_REASON_ICICLE = DEATH BY ICICLE
+DEATH_REASON_KUNAI = DEATH BY KUNAI
+DEATH_REASON_PAIR = BROKEN BY REDIRECTED FORCE
+DEATH_REASON_THUNDER = RIPPED BY LIGHTNING
+DEATH_REASON_TELEKINESIS = RIPPED BY TELEKINETIC IMPACT
+DEATH_REASON_SPIKES = PIERCED BY SPIKES
+DEATH_REASON_ACID = CORRODED BY ACID
+DEATH_REASON_GAS = GASSED
+DEATH_REASON_ZOMBIE = RIPPED BY ZOMBIE
+DEATH_REASON_BUG = KILLED BY BUG
+DEATH_REASON_FROZEN = FROZEN
+DEATH_REASON_GHOST = RIPED BY GHOST
+DEATH_REASON_DRAGON_GUARD = DEATH BY GUARD
+
+CAM_MENU_EFK = Camera type
+CAM_MENU = Camera type:
+CAM_3RD = 3rd person
+CAM_BACK = Back
+CAM_1ST = 1st percon
+
+SILENCE_T = Silence fell on the ^3red ^1team
+SILENCE_CT = Silence fell on the ^3blue ^1team
+SILENCE_OUT_T = Silence is removed from the ^3red ^1team
+SILENCE_OUT_CT = Silence is removed from the ^3blue ^1team
+
+KNIFE_INFO = ^4For complete information about the knife, enter ^1knf ^4in chat
+HELP_MENU = \rHow to play!?
+SETTINGS_MENU = Settings
+
+SETTINGS_HIDEHATS = Rendering of hats
+SETTINGS_LOWPOLY_PLAYER = Low poly player model
+SETTINGS_DISABLE_PARTICLES = Particles
+SETTINGS_VIEW_MODEL_FX = View model fx [NCL]
+SETTINGS_FORBID_TEAMMATES_HELP = Help from teammates
+SETTINGS_DAMAGER = Damager
+SETTINGS_LIMITED_VAMP = Vampirism limitation
+SETTINGS_ONE_DIRECTION_LJ = Long Jump in one direction
+
+DEATHMATCH_SPAWNTIME = You will be spawned after %d sec.
+DEATHMATCH_WIN = Your team won the %d pt.
+DEATHMATCH_LOSE = Your team loses the %d pt.
+DEATHMATCH_TIMEOUT = TIME OUT
+
+DM_CHAT_COMMON_TE_SCORE = Red team leads by %d points
+DM_CHAT_COMMON_CT_SCORE = Blue team leads by %d points
+DM_CHAT_COMMON_DEF_SCORE = Команды равны по очкам
+
+AUTO_BALANCE_TEAM_T = You moved to the ^3red ^1team
+AUTO_BALANCE_TEAM_CT = You moved to the ^3blue ^1team
+AUTO_BALANCE_TEAM_CHANGED = You moved to the opposite team
+
+ZONE_START = The area is narrowing!
+
+[ru]
+DHUD_BUY = Чтобы сменить нож нажмите Z
+DHUD_GM_RANDOM_KNIFE = СЛУЧАЙНЫЙ НОЖ
+DHUD_GM_ONE_LIFE = ОДНА ЖИЗНЬ
+
+KNIFE_BLINK_DESC = \y[\rBlink Knife\y] - Warusawa Tech {\rH\y}
+KNIFE_SLAP_DESC = \y[\rSlap Knife\y] - Hagenmann {\rE\y}
+KNIFE_FLASH_DESC = \y[\rFlash Knife\y] - Spiritual Inc {\rE\y}
+KNIFE_NINJA_DESC = \y[\rNinja Knife\y] - Warusawa Tech {\rM\y}
+KNIFE_LEAP_DESC = \y[\rLeap Knife\y] - Deltashark Inc {\rM\y}
+KNIFE_FIRE_DESC = \y[\rFire Knife\y] - Archipelago {\rM\y}
+KNIFE_NUCLEAR_DESC = \y[\rNuclear Knife\y] - Deltashark Inc {\rE\y}
+KNIFE_FROST_DESC = \y[\rFrost Knife\y] - Archipelago {\rE\y}
+KNIFE_THUNDER_DESC = \y[\rThunder Knife\y] - Archipelago {\rM\y}
+KNIFE_RAZOR_DESC = \y[\rRazor Knife\y] - Hagenmann {\rM\y}
+KNIFE_TELEKINESIS_DESC = \y[\rTelekinesis Knife\y] - Tai Xin {\rH\y}
+KNIFE_SWAP_DESC = \y[\rSwap Knife\y] - Warusawa Tech {\rH\y}
+KNIFE_NECRO_DESC = \y[\rNecro Knife\y] - E.F.K. Biotech {\rH\y}
+KNIFE_SPIKES_DESC = \y[\rSpikes Knife\y] - Tai Xin {\rM\y}
+KNIFE_DARK_DESC = \y[\rDark Knife\y] - Spiritual Inc {\rE\y}
+KNIFE_ACIDTRAP_DESC = \y[\rAcidtrap Knife\y] - Deltashark Inc {\rH\y}
+KNIFE_TENTACLES_DESC = \y[\rTentacles Knife\y] - Tai Xin {\rM\y}
+KNIFE_CREEPY_DESC = \y[\rCreepy Knife\y] - Spiritual Inc {\rM\y}
+KNIFE_WIND_DESC = \y[\rWind Knife\y] - Archipelago {\rM\y}
+KNIFE_WATER_DESC = \y[\rWater Knife\y] - Tai Xin {\rM\y}
+
+KNIFE_BLINK_CHAT = ^4[Blink Knife] Свойства: ^1портал за спину противника, спринт, двойной прыжок
+KNIFE_SLAP_CHAT = ^4[Slap Knife] Свойства: ^1энергетический импульс, HP-, скорость-
+KNIFE_FLASH_CHAT = ^4[Flash Knife] Свойства: ^1видит все невидимые объекты, блокирует способности противника
+KNIFE_NINJA_CHAT = ^4[Ninja Knife] Свойства: ^1иллюзии, HP+, гравитация-
+KNIFE_LEAP_CHAT = ^4[Leap Knife] Свойства: ^1long jump (ctrl+space), HP-, скорость+, урон+
+KNIFE_FIRE_CHAT = ^4[Fire Knife] Свойства: ^1сжигание времени, реактивность, HP+, скорость+
+KNIFE_NUCLEAR_CHAT = ^4[Nuclear Knife] Свойства: ^1отражает урон, неуязвимость к способностям, самоуничтожение, HP+, скорость-
+KNIFE_FROST_CHAT = ^4[Frost Knife] Свойства: ^1бросок льдом, ускорение атаки после каждого удара, HP-
+KNIFE_THUNDER_CHAT = ^4[Thunder knife] Свойства: ^1Левитация, HP-
+KNIFE_RAZOR_CHAT = ^4[Razor Knife] Свойства: ^1скорость+
+KNIFE_TELEKINESIS_CHAT = ^4[Telekinesis Knife] Свойства: ^1меньше урона при падении, дистанционный урон, урон+
+KNIFE_SWAP_CHAT = ^4[Swap knife] Свойства: ^1запутывает кнопки атаки
+KNIFE_NECRO_CHAT = ^4[Necro knife] Свойства: ^1собирает души мертвых игроков для исцеления, HP-
+KNIFE_SPIKES_CHAT = ^4[Spikes knife] Свойства: ^1high jump, down jump, шипы на спине, скорость+
+KNIFE_DARK_CHAT = ^4[Dark Knife] Свойства: ^1маскировка под противника, глобальный мрак, HP+
+KNIFE_ACIDTRAP_CHAT = ^4[Acidtrap Knife] Свойства: ^1ловушки, бег по стенам, HP-, урон+
+KNIFE_TENTACLES_CHAT = ^4[Tentacles Knife] Свойства: ^1нейтрализация, удары щупальцами, кража денег, HP-, урон-
+KNIFE_CREEPY_CHAT = ^4[Creepy Knife] Свойства: ^1паутина, железная дева, HP-
+KNIFE_WIND_CHAT = ^4[Wind Knife] Свойства: ^1wind boost, tornado, airflow
+KNIFE_WATER_CHAT = ^4[Water Knife] Свойства: ^1dragon guard, embodiment, aqua sphere, прозрачность в воде
+
+ITEM_RET_HAVE = У вас уже есть этот предмет
+ITEM_RET_NOT = Невозможно купить предмет
+ITEM_RET_DEAD = Вы мертвы и не можете купить этот предмет
+ITEM_RET_ALIVE = Вы живы и не можете купить этот предмет
+ITEM_NEED_LEVEL = Вам нужен ^4%i ^1уровень для доступа к предмету
+ITEM_NOT_MONEY = Недостаточно денег
+ITEM_NEXT_SPAWN = Этот предмет будет выдан после возрождения
+ITEM_CASHBACK = Ваши деньги были возвращены
+
+INVENTORY_EMPTY = Ваш инвентарь пуст
+
+KNIVES_MENUNAME = Ножи
+SHOP_MENUNAME = Магазин
+TEAM_MENUNAME = Сменить команду
+
+MENU_EXIT = Выход
+MENU_NEXT = Вперёд
+MENU_BACK = Назад
+
+KNIFE_CHANGE_DELAY = Вы сможете сменить нож во время возрождения или через ^3%i ^1сек.
+KNIFE_ALREADY_HAVE = У вас уже есть этот нож
+KNIFE_LEVEL = Вам нужен ^4%i ^1уровень для доступа к ножу
+KNIFE_CHANGE_GM = Выбранный нож будет выдан только в следующем раунде
+
+ABILITY_CHARGED = Перезарядка завершена!
+ABILITY_CHARGING = Перезарядка %d сек.
+ABILITY_DISABLED = [Основная способность забл.]
+ABILITY_DISABLED_ON = Активация основной способности выключена
+ABILITY_DISABLED_OFF = Активация основной способности включена
+
+RAZOR_POWER_DAMAGE = Увеличенный урон: %d
+
+CRIT_CHANCE = Шанс крита:
+CRIT_ATTACKER = Вы нанесли крит!
+CRIT_VICTIM = По вам нанесли крит!
+CRIT_BLIND = %n ослеплён: %..1f сек.^nСейчас вы можете нанести крит по нему!
+
+INVISION_TIMER = Вы невидимы!^n(осталось %..1f сек.)
+KAMUI_TIMER = Время Камуи^n(осталось %..1f сек.)
+
+DAMAGE_REFLECTED = Урона отражено:
+DAMAGE_REFLECTED_COEFF = Коэффициент отражаемого урона:
+
+GHOST_TIMER = Время призрака: %..1f сек.^nПереключить камеру (F)
+
+ITEM_BUNNY = Автораспрыг
+ITEM_REGENERATION = Регенерация
+ITEM_VAMPIRISM = Вампиризм (25%%)
+ITEM_RESPAWN = Возрождение
+ITEM_HPSCAN = Мониторинг здоровья
+ITEM_FLASH = Слеповая граната
+ITEM_IPAD = iPad (HE)
+ITEM_FROSTFIRE = Термо граната
+ITEM_GAS = Газовая граната
+ITEM_HP = 60 HP
+ITEM_HS = Защита от HS
+ITEM_CRITS = Защита от критов
+ITEM_CHARGEBOOSTER = Ускоритель перезарядки
+
+BUY_BUNNY = Вы купили автораспрыг. Зажмите кнопку прыжка.
+BUY_REGENERATION = Вы купили регенерацию здоровья
+BUY_VAMPIRISM = Вы будете получать 25% здоровья от наносимого вами урона
+BUY_RESPAWN = Вы купили возрождение
+BUY_HPSCAN = Вы купили мониторинг здоровья
+BUY_FLASH = Вы купили слеповую гранату
+BUY_IPAD = Вы купили iPad
+BUY_FROSTFIRE = Вы купили термо гранату (ПКМ для смены режима)
+BUY_GAS = Вы купили газовую гранату
+BUY_HP = Вы купили 60 HP
+BUY_HS = Вы купили защиту от хэд шотов
+BUY_CRITS = Вы купили защиту от критов
+BUY_CHARGEBOOSTER = Вы купили ускоритель перезарядки
+
+REGENERATION = Регенерация
+REGENERATION_CHARGE = Вы продлили регенерацию до %d процентов
+REGENERATION_EXHAUSTED = Регенерация исчерпана
+REGENERATION_ON = Регенерация включена
+REGENERATION_OFF = Регенерация выключена
+
+VAMPIRISM_CHARGE = Вампиризм заряжен до %d HP
+VAMPIRISM_EXHAUSTED = Вампиризм исчерпан
+
+CHARGEBOOSTER_EXHAUSTED = Ускоритель перезарядки израсходован
+
+BUNNY_LAST_ROUND = Последний раунд с автораспрыжкой
+BUNNY_KNIFE_CANNOT = Автораспрыг запрещен для некоторых ножей!
+
+PHS_OVER = Защита от хэд шотов исчерпана
+PCRIT_OVER = Защита от критов исчерпана
+
+HPSCAN_LAST_ROUND = Это последний раунд с мониторингом здоровья
+
+RESPAWN_COMPENSATION = Часть ваших денег за возрождение было возвращено
+
+FAKE_MODE_LASTMOVE = Режим: последнего движения (E)
+FAKE_MODE_FOLLOW = Режим: повторения (E)
+FAKE_SWAP = Поменяться (R)
+
+TELEKINESIS_MODE_CONTRACTION = Режим: Стягивание (E, R)
+TELEKINESIS_MODE_SPREADINGOF = Режим: Раскидывание (E, R)
+TELEKINESIS_MODE_PUSH_TO = Режим: Толчок к прицелу [На себя] (E, R)
+TELEKINESIS_MODE_PUSH_AWAY = Режим: Толчок от прицела [На себя] (E, R)
+TELEKINESIS_MODE_PUSH_ENEMY = Режим: Толчок противника от себя (E, R)
+
+NPC_ACTION_HUNTER = Охотятся (R + ...)
+NPC_ACTION_MOVE = Двигаются к точке (R + MOUSE1)
+NPC_ACTION_FOLLOW = Следует за вами (R + MOUSE2)
+NPC_ACTION_TARGET = Преследуют жертву (R + MOUSE1)
+NPC_ACTION_CIRCLE = Вокруг точки (R + E)
+NPC_ACTION_CANNIBAL = Каннибализм (E + T)
+
+DEATH_REASON_FALL = РАЗБИТ
+DEATH_REASON_DROWN = УТОНУЛ
+DEATH_REASON_WASTED = ПОТРАЧЕНО
+DEATH_REASON_EXPLODE = ВЗОРВАН
+DEATH_REASON_SHOOT = ЗАСТРЕЛЕН
+DEATH_REASON_STAB = ЗАРЕЗАН
+DEATH_REASON_STAB_HEAD = НОЖОМ ПО ГОЛОВЕ
+DEATH_REASON_STAB_BACK = НОЖОМ В СПИНУ
+DEATH_REASON_RIPPED_INSIDE = РАЗОРВАН ИЗНУТРИ
+DEATH_REASON_RIPPED_LEAP = РАЗРЕЗАН МОНОМОЛЕКУЛЯРНОЙ ПРОВОЛОКОЙ
+DEATH_REASON_ENERGY_WAVE = РАЗОРВАН ЭНЕРГЕТИЧЕСКОЙ ВОЛНОЙ
+DEATH_REASON_SHADOW_WAVE = РАЗОРВАН ТЕНЕВОЙ ВОЛНОЙ
+DEATH_REASON_BURNED = СОЖЖЕН
+DEATH_REASON_ICICLE = ПРОТКНУТ СОСУЛЬКОЙ
+DEATH_REASON_KUNAI = ПРОТКНУТ КУНАЕМ
+DEATH_REASON_PAIR = РАЗОРВАН ПЕРЕНАПРАВЛЕННОЙ СИЛОЙ
+DEATH_REASON_THUNDER = РАЗОРВАН МОЛНИЕЙ
+DEATH_REASON_TELEKINESIS = РАЗОРВАН ТЕЛЕКИНЕТИЧЕСКИМ ВОЗДЕЙСТВИЕМ
+DEATH_REASON_SPIKES = ПРОТКНУТ ШИПАМИ
+DEATH_REASON_ACID = РАЗЪЕДЕН КИСЛОТОЙ
+DEATH_REASON_GAS = ОТРАВЛЕН ГАЗОМ
+DEATH_REASON_ZOMBIE = РАСТЕРЗАН ЗОМБИ
+DEATH_REASON_BUG = УБИТ ЖУКОМ
+DEATH_REASON_FROZEN = ЗАМОРОЖЕН
+DEATH_REASON_GHOST = ПОРВАН ДУХОМ
+DEATH_REASON_DRAGON_GUARD = УБИЙСТВО СТРАЖЕМ
+
+CAM_MENU_EFK = Вид камеры
+CAM_MENU = Вид камеры:
+CAM_3RD = От третьего лица
+CAM_BACK = В обратную сторону
+CAM_1ST = Нормальный вид
+
+SILENCE_T = Безмолвие пало на ^3красную ^1команду
+SILENCE_CT = Безмолвие пало на ^3синюю ^1команду
+SILENCE_OUT_T = Безмолвие снято с ^3красной ^1команды
+SILENCE_OUT_CT = Безмолвие снято с ^3синей ^1команды
+
+KNIFE_INFO = ^4Для получения полной информации о ноже, введите в чате ^1knf
+HELP_MENU = \rКак тут играть!?
+SETTINGS_MENU = Настройки
+
+SETTINGS_HIDEHATS = Отображение шапок
+SETTINGS_LOWPOLY_PLAYER = Облегченная модель игрока
+SETTINGS_DISABLE_PARTICLES = Частицы
+SETTINGS_VIEW_MODEL_FX = Эффекты свечения от 1-го лица [NCL]
+SETTINGS_FORBID_TEAMMATES_HELP = Помощь от тиммейтов
+SETTINGS_DAMAGER = Отображение урона
+SETTINGS_LIMITED_VAMP = Ограничение вампиризма
+SETTINGS_ONE_DIRECTION_LJ = Long Jump в одну сторону
+
+DEATHMATCH_SPAWNTIME = Вы возродитесь через %d сек.
+DEATHMATCH_WIN = Ваша команда побеждает на %d очк.
+DEATHMATCH_LOSE = Ваша команда проигрывает на %d очк.
+DEATHMATCH_TIMEOUT = ВРЕМЯ ВЫШЛО
+
+DM_CHAT_COMMON_TE_SCORE = Красная команда лидирует на %d очк.
+DM_CHAT_COMMON_CT_SCORE = Синяя команда лидирует на %d очк.
+DM_CHAT_COMMON_DEF_SCORE = Команды равны по очкам
+
+AUTO_BALANCE_TEAM_T = Вы перемещены в ^3красную ^1команду
+AUTO_BALANCE_TEAM_CT = Вы перемещены в ^3синюю ^1команду
+AUTO_BALANCE_TEAM_CHANGED = Вы перемещены в другую команду
+
+ZONE_START = Зона сужается!

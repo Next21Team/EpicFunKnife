@@ -1,0 +1,7 @@
+[submodule "dep/NextClientServerApi"]
+	path = dep/NextClientServerApi
+	url = https://github.com/CS-NextClient/NextClientServerApi.git
+[submodule "dep/EFK-Floating-Damage"]
+	path = dep/EFK-Floating-Damage
+	url = https://github.com/Next21Team/EFK-Floating-Damage.git
+	branch = efk
