@@ -509,7 +509,7 @@ public Ham_Player_PreThink_Pre(iPlayer)
 			? IN_ATTACK2
 			: 0
 
-		if(g_ePlayerData[iPlayer][GHOST_STATE] != GHOST_ST_SPAWN || (
+		if (g_ePlayerData[iPlayer][GHOST_STATE] != GHOST_ST_SPAWN || (
 			g_ePlayerData[iPlayer][CURRENT_COMBO_BUTTON]
 			&& g_ePlayerData[iPlayer][CURRENT_COMBO_BUTTON] == currentSingleButton
 		)) {
@@ -545,7 +545,8 @@ public Ham_Player_PreThink_Pre(iPlayer)
 			}
 		}
 
-		if(currentSingleButton && g_ePlayerData[iPlayer][CURRENT_COMBO_BUTTON]) {
+		if (currentSingleButton && g_ePlayerData[iPlayer][CURRENT_COMBO_BUTTON])
+		{
 			set_hudmessage(
 				.red = 255,
 				.green = 255,
@@ -679,12 +680,12 @@ coffin_release(const iPlayer, const iWeapon)
 	}
 }
 
-public fw_Player_TakeDamage_Pre(iVictim, inflictor, iAttacker, Float:fDamage, iBits)
+public fw_Player_TakeDamage_Pre(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 {
-	if ((iBits & DMG_FALL) && rebound(iVictim))
+	if ((iFlags & DMG_FALL) && rebound(iVictim))
 		return HAM_SUPERCEDE
 
-	if (is_entity_player(iAttacker) && is_user_has_knife(iAttacker) && (iBits & DMG_BULLET))
+	if (is_entity_player(iAttacker) && is_user_has_knife(iAttacker) && (iFlags & DMG_BULLET))
 		add_damage_charge(iAttacker, fDamage)
 
 	return HAM_IGNORED

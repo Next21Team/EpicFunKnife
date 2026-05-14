@@ -206,8 +206,8 @@ public plugin_precache()
 
 	/*
 	// Display /top15 and /rank
-	// important! The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
-	// If something is displayed incompletely, then you need to reduce the number of points (the top does not show more than 10 players).
+	// Important! The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
+	// If something is displayed incompletely, then you need to reduce the number of characters (the top does not show more than 10 players).
 	//   * - Rank
 	//   a - Name (Only /top15)
 	//   b - Kills
