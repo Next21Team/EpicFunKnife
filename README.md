@@ -4,9 +4,12 @@ TODO: description
 
 ## Configuration
 
-<details>
-<summary>Stats</summary>
+### Stats
+
 The mod for managing player statistics uses a special modified version of CSStatsX SQL, implemented in `efk_statsx_sql.amxx` and `efk_statsx_aes.amxx`. To configure stats, use the following cvars:
+
+<details>
+<summary>Click to expand</summary>
 
 | CVar                               | Default   | Description                                    |
 | :--------------------------------- | :-------: | :--------------------------------------------- |
@@ -29,28 +32,26 @@ The mod for managing player statistics uses a special modified version of CSStat
 | efk_aes_assistans                  | *asdl     | /assist columns |
 | efk_aes_level                      | *al       | /level columns |
 | efk_aes_rank                       | bcs       | /rankstats columns |
-
-Important! The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
-If something is displayed incompletely, then you need to reduce the number of points (the top does not show more than 10 players).
-Columns tags:
-`*` - Rank
-`a` - Name (Only /top15)
-`b` - Kills
-`c` - Deaths
-`d` - Heal
-`e` - Skill
-`f` - Favorite Knife
-`h` - Effectiveness
-`l` - Level
-`k` - K:D
-`n` - Online Time
-`s` - Assists
-
 </details>
 
-<details>
-<summary>Hats</summary>
-The list of hats is stored in `addons/amxmodx/configs/efk_hats.json` (create the file if it does not exist). The syntax of `efk_hats.json` is similar to the [Hats plugin](https://github.com/Next21Team/Hats), except for the possibility to set player access level using the `level` field. Config example:
+**Important!** The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
+If something is displayed incompletely, then you need to reduce the number of points (the top does not show more than 10 players).
+Columns tags:<br/>
+`*` - Rank<br/>
+`a` - Name (Only /top15)<br/>
+`b` - Kills<br/>
+`c` - Deaths<br/>
+`d` - Heal<br/>
+`e` - Skill<br/>
+`f` - Favorite Knife<br/>
+`h` - Effectiveness<br/>
+`l` - Level<br/>
+`k` - K:D<br/>
+`n` - Online Time<br/>
+`s` - Assists<br/>
+
+### Hats
+The list of hats is stored in `addons/amxmodx/configs/efk_hats.json` (create the file if it does not exist). The syntax of `efk_hats.json` is similar to [Hats plugin](https://github.com/Next21Team/Hats), except for the possibility to set player access level using the `level` field. Config example:
 ```json
 {
 	"EFK March 2025": {
@@ -78,8 +79,6 @@ The list of hats is stored in `addons/amxmodx/configs/efk_hats.json` (create the
 	}
 }
 ```
-
-</details>
 
 ## Requirements
 - [Metamod-R](https://github.com/theAsmodai/metamod-r) + [ReHLDS](https://github.com/dreamstalker/rehlds) or [Metamod-P](https://github.com/Bots-United/metamod-p)
