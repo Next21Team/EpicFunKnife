@@ -275,7 +275,7 @@ public plugin_precache()
 	/*
 	* table name in DB
 	*/
-	cvar[CVAR_SQL_TABLE] = register_cvar("efk_statsx_table","csstats",FCVAR_UNLOGGED|FCVAR_PROTECTED)
+	cvar[CVAR_SQL_TABLE] = register_cvar("efk_statsx_table","efkstats",FCVAR_UNLOGGED|FCVAR_PROTECTED)
 
 	/*
 	* DB type
@@ -293,13 +293,10 @@ public plugin_precache()
 
 	/*
 	* record stats for bots
-	*	0			- не записывать
-	*	1			- записывать
+	*	0			- do not record
+	*	1			- record
 	*/
-	cvar[CVAR_RANKBOTS] = get_cvar_pointer("efk_statsx_rankbots")
-
-	if(!cvar[CVAR_RANKBOTS])
-		cvar[CVAR_RANKBOTS] = register_cvar("efk_statsx_rankbots","0")
+	cvar[CVAR_RANKBOTS] = register_cvar("efk_statsx_rankbots","0")
 
 	/*
 	* how to update player stats in the DB
@@ -332,7 +329,7 @@ public plugin_precache()
 	cvar[CVAR_AUTOCLEAR] = register_cvar("efk_statsx_autoclear","0")
 
 	/*
-	* using the cache for get_stats
+	* use the cache for get_stats
 	*	-1 - update at the end of the round or at the time of csstats_sql_update
 	*	0 - disable cache
 	*/
