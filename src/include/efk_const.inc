@@ -3,7 +3,7 @@
 #endif
 #define _efk_const_included
 
-#define EFK_VERSION "1.0"
+#define EFK_VERSION "1.0.0"
 
 enum _:PlayerGameFlags(<<=1)
 {

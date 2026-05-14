@@ -1,0 +1,14 @@
+{
+  "name": "efk",
+  "version": "1.0.0",
+  "author": "Next21 Team",
+  "description": "CS Knife Arena Mod",
+  "scripts": {
+    "build": "amxxpack build",
+    "watch": "amxxpack build --watch",
+    "postinstall": "amxxpack install"
+  },
+  "devDependencies": {
+    "amxxpack": "^1.5.3"
+  }
+}
