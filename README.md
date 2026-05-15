@@ -8,6 +8,7 @@ The mod uses a modular architecture, so you can disable unnecessary plugins exce
 
 <details>
 <summary>Click to expand</summary>
+
 | Plugin                             | Description                                    |
 | :--------------------------------- | :--------------------------------------------- |
 | efk_core.amxx                      | Mod core with the main game logic |
@@ -60,14 +61,10 @@ The mod for managing player statistics uses a special modified version of CSStat
 | efk_aes_assistans                  | *asdl     | /assist columns |
 | efk_aes_level                      | *al       | /level columns |
 | efk_aes_rank                       | bcs       | /rankstats columns |
-</details>
-
-**Important!** The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
-If something is displayed incompletely, then you need to reduce the number of characters (the top does not show more than 10 players).
 
 Columns tags:<br/>
 `*` - Rank<br/>
-`a` - Name (Only /top15)<br/>
+`a` - Name (only /top15)<br/>
 `b` - Kills<br/>
 `c` - Deaths<br/>
 `d` - Heal<br/>
@@ -78,6 +75,10 @@ Columns tags:<br/>
 `k` - K:D<br/>
 `n` - Online Time<br/>
 `s` - Assists<br/>
+
+**Important!** The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
+If something is displayed incompletely, then you need to reduce the number of characters (the top does not show more than 10 players).
+</details>
 
 ### Hats
 The list of hats is stored in `addons/amxmodx/configs/efk_hats.json` (create the file if it does not exist). The syntax of `efk_hats.json` is similar to [Hats plugin](https://github.com/Next21Team/Hats), except for the possibility to set player access level using the `level` field. Config example:
