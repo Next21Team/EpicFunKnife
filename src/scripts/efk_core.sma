@@ -1115,8 +1115,10 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	new iKnifeId = Player[iPlayer][PlrKnife]
 	if (!is_valid_knife(iKnifeId))
 	{
-		iKnifeId = Player[iPlayer][PlrLevel] > 1 ? Player[iPlayer][PlrFavKnife] : -1
-		if (iKnifeId == -1)
+		if (Player[iPlayer][PlrLevel] > 1)
+			iKnifeId = Player[iPlayer][PlrFavKnife]
+
+		if (iKnifeId == -1 || !check_knife_access(iPlayer, iKnifeId))
 			iKnifeId = choose_random_knife(iPlayer)
 
 		set_knife_params(iPlayer, iKnifeId)
