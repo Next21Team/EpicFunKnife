@@ -2,6 +2,34 @@
 
 TODO: description
 
+## Plugins list
+
+The mod uses a modular architecture, so you can disable unnecessary plugins except `efk_core.amxx` in `addons/amxmodx/configs/plugins-efk.ini`. Below is a brief description of each plugin.
+
+<details>
+<summary>Click to expand</summary>
+| Plugin                             | Description                                    |
+| :--------------------------------- | :--------------------------------------------- |
+| efk_core.amxx                      | Mod core with the main game logic |
+| efk_unprecacher.amxx               | Unprecacher is required to reduce the use of unnecessary vanilla resources to avoid the precache limit |
+| efk_knife_*.amxx                   | Knife plugin |
+| efk_item_*.amxx                    | Item plugin |
+| efk_statsx_sql.amxx                | Managing and storing player stats in a database |
+| efk_statsx_aes.amxx                | Commands /top15, /rankstats, etc. |
+| efk_balancer.amxx                  | Automatic balancing of players by number and skill |
+| efk_deathmatch.amxx                | Dynamic game mode with respawns and damage zone. The team of players with the most kills at the round end becomes immune to the zone, and the other team loses the ability to respawn |
+| efk_hats.amxx                      | Hats menu |
+| efk_presents.amxx                  | Chance of dropping a gift with a random item after killing a player |
+| efk_dominations.amxx               | Dominations system like TF2 |
+| efk_duels.amxx                     | Duels system like TF2 |
+| efk_sayme.amxx                     | Commands /me and /hp |
+| efk_damage_table.amxx              | Shows the top players by damage dealt at the round end |
+| efk_radioblock.amxx                | Blocks fire-in-the-hole radio commands |
+| efk_nextclient_features.amxx       | Special visual features for NextClient |
+| addon_floating_damage.amxx         | Damager |
+| next21_save_spec_money.amxx        | Saves the player's money before transfer to the spectator team |
+</details>
+
 ## Configuration
 
 ### Stats
@@ -36,6 +64,7 @@ The mod for managing player statistics uses a special modified version of CSStat
 
 **Important!** The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
 If something is displayed incompletely, then you need to reduce the number of characters (the top does not show more than 10 players).
+
 Columns tags:<br/>
 `*` - Rank<br/>
 `a` - Name (Only /top15)<br/>
