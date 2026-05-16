@@ -1,6 +1,8 @@
 # Epic Fun Knife
 
-TODO: description
+**Epic Fun Knife** is a Knife Arena mod for Counter-Strike 1.6 where every knife comes with unique abilities and a distinct playstyle, now featuring team deathmatch mode. Enhanced by supportive items, the mod turns knife fights into fast, unpredictable team-based battles that reward creativity, coordination, and quick thinking.
+
+TODO: demo video
 
 ## Plugins list
 
