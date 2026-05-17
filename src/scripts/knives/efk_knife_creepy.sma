@@ -1292,7 +1292,7 @@ bool:rebound(iPlayer)
 
 bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 {
-	new Float:vOrigin[3], Float:vTargetOrigin[3], iTarget = -1, bool:bWasHit, iTeam, iOwner,
+	new Float:vOrigin[3], Float:vTargetOrigin[3], iTarget = NULLENT, bool:bWasHit, iTeam, iOwner,
 		Float:vAngles[3], Float:vVectors[2][3], Float:vMins[3], Float:vMaxs[3]
 
 	get_entvar(iGhost, var_origin, vOrigin)
@@ -1445,7 +1445,7 @@ bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 						set_entvar(iFieldBaseEnt, var_body, get_entvar(iFieldBaseEnt, var_body) & ~(1<<iFieldSide))
 						set_entvar(iTarget, var_flags, FL_KILLME)
 
-						engfunc(EngFunc_EmitSound, iTarget, CHAN_STATIC, SOUNDS_FIELD_BREAK[random(sizeof SOUNDS_FIELD_BREAK)], 1.0, ATTN_STATIC, 0, PITCH_NORM)
+						engfunc(EngFunc_EmitSound, iTarget, CHAN_STATIC, SOUNDS_FIELD_BREAK[random(sizeof SOUNDS_FIELD_BREAK)], VOL_NORM, ATTN_STATIC, 0, PITCH_NORM)
 
 						new Float:vMins[3], Float:vMaxs[3], Float:vOrigin[3]
 						get_entvar(iTarget, var_absmin, vMins)

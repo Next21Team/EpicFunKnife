@@ -42,6 +42,11 @@ new CLASSNAME_STRIKE_BEAM[]			= "next21_thunder_strike_beam"
 #define STRIKE_CHARGE_DAMAGE		20.0
 #define STRIKE_CHARGE_SPEED_ADD		10.0
 #define STRIKE_RADIUS				150.0
+#define STRIKE_MIN_DAMAGE			30.0
+#define STRIKE_MAX_DAMAGE			40.0
+#define STRIKE_MONSTER_DAMAGE		50.0
+#define STRIKE_REBORN_DAMAGE		25.0
+#define STRIKE_SELF_MUL				0.5
 
 #define DAMAGE_RESTORE_HEAL			4
 #define DAMAGE_RESTORE_DELAY		1.0
@@ -82,7 +87,7 @@ enum _:Player_Properties_F
 
 new
 g_iKnifeId, g_player_data[32][Player_Properties], Float:g_player_data_f[32][Player_Properties_F],
-sprLightning, sprCircle, sprBeam, sprParticle, g_pKnifePMdl
+g_pLightningSpr, g_pCircleSpr, g_pBeamSpr, g_pParticleSpr, g_pKnifePMdl
 
 public plugin_precache()
 {
@@ -94,10 +99,10 @@ public plugin_precache()
 
 	precache_generic(fmt("sprites/%s.txt", KNIFE_CLASSNAME))
 
-	sprLightning = precache_model("sprites/lgtning.spr")
-	sprCircle = precache_model("sprites/shadow_circle.spr")
-	sprBeam = precache_model("sprites/laserbeam.spr")
-	sprParticle = precache_model("sprites/mommaspit.spr")
+	g_pLightningSpr = precache_model("sprites/lgtning.spr")
+	g_pCircleSpr = precache_model("sprites/shadow_circle.spr")
+	g_pBeamSpr = precache_model("sprites/laserbeam.spr")
+	g_pParticleSpr = precache_model("sprites/mommaspit.spr")
 }
 
 public plugin_init()
@@ -294,7 +299,7 @@ spawn_thunder_strike_beam(iPlayer, Float:vOrigin[3])
 	set_entvar(iBeamEnt, var_rendermode, kRenderNormal)
 	set_entvar(iBeamEnt, var_rendercolor, Float:{20.0, 20.0, 20.0})
 	set_entvar(iBeamEnt, var_renderamt, 255.0)
-	set_entvar(iBeamEnt, var_modelindex, sprBeam)
+	set_entvar(iBeamEnt, var_modelindex, g_pBeamSpr)
 	set_entvar(iBeamEnt, var_scale, 6.0)
 	set_entvar(iBeamEnt, var_owner, iPlayer)
 	set_entvar(iBeamEnt, var_crosshair, iCrossEnt)
@@ -335,49 +340,47 @@ public fw_StrikeBeamThink(iBeamEnt)
 	}
 	else
 	{
-		new owner = get_entvar(iBeamEnt, var_owner)
-		new team = get_user_team(owner)
-		new crosshair = get_entvar(iBeamEnt, var_crosshair)
+		new iOwner = get_entvar(iBeamEnt, var_owner)
+		new iTeam = get_user_team(iOwner)
+		new iCrosshairEnt = get_entvar(iBeamEnt, var_crosshair)
 
-		const Float:MIN_DAMAGE = 30.0
-		const Float:MAX_DAMAGE = 40.0
-
-		if (!is_nullent(crosshair))
+		if (!is_nullent(iCrosshairEnt))
 		{
-			new Float:strikeOrigin[3]
-			get_entvar(crosshair, var_origin, strikeOrigin)
+			new Float:vStrikeOrigin[3]
+			get_entvar(iCrosshairEnt, var_origin, vStrikeOrigin)
 
-			new bool:striked = false
+			new bool:bStriked = false
 
 			new i = FM_NULLENT
-			while ((i = engfunc(EngFunc_FindEntityInSphere, i, strikeOrigin, STRIKE_RADIUS)))
+			while ((i = engfunc(EngFunc_FindEntityInSphere, i, vStrikeOrigin, STRIKE_RADIUS)))
 			{
 				if (i >= MaxClients)
 					break
 
-				if (Player[i][IsAlive] && get_user_team(i) != team && kc_player_in_reflection(i))
+				if (Player[i][IsAlive] && get_user_team(i) != iTeam && kc_player_in_reflection(i))
 				{
 					new Float:vAttackerOrigin[3]
-					get_entvar(owner, var_origin, vAttackerOrigin)
-					thunder_attack(i, vAttackerOrigin, MIN_DAMAGE, MAX_DAMAGE)
-					kc_player_reflection_done(i, owner)
+					get_entvar(iOwner, var_origin, vAttackerOrigin)
+					thunder_attack(i, vAttackerOrigin, STRIKE_MIN_DAMAGE, STRIKE_MAX_DAMAGE)
+					kc_player_reflection_done(i, iOwner)
 
-					striked = true
+					bStriked = true
 					break
 				}
 			}
 
-			if (!striked) {
-				thunder_attack(owner, strikeOrigin, MIN_DAMAGE, MAX_DAMAGE)
-				xs_vec_copy(strikeOrigin, PlayerF[owner][LastOrigin])
-				PlayerF[owner][LastOrigin][2] += 50.0
+			if (!bStriked)
+			{
+				thunder_attack(iOwner, vStrikeOrigin, STRIKE_MIN_DAMAGE, STRIKE_MAX_DAMAGE)
+				xs_vec_copy(vStrikeOrigin, PlayerF[iOwner][LastOrigin])
+				PlayerF[iOwner][LastOrigin][2] += 50.0
 			}
 
-			rg_remove_entity(crosshair)
+			rg_remove_entity(iCrosshairEnt)
 		}
 
-		if (Player[owner][StrikeBeam] == iBeamEnt)
-			Player[owner][StrikeBeam] = 0
+		if (Player[iOwner][StrikeBeam] == iBeamEnt)
+			Player[iOwner][StrikeBeam] = 0
 
 		rg_remove_entity(iBeamEnt)
 	}
@@ -396,7 +399,7 @@ public efk_ability2(iPlayer)
 
 	send_msg_TE_IMPLOSION(vOrigin, 100, 45, 3)
 
-	thunder_attack(iPlayer, vOrigin, 20.0, 26.0)
+	thunder_attack(iPlayer, vOrigin, STRIKE_REBORN_DAMAGE, STRIKE_REBORN_DAMAGE)
 }
 
 public efk_ability3(iPlayer)
@@ -419,7 +422,7 @@ public efk_ability3(iPlayer)
 	}
 
 	vOrigin[2] -= 50.0
-	thunder_attack(iPlayer, vOrigin, 20.0, 26.0)
+	thunder_attack(iPlayer, vOrigin, STRIKE_MIN_DAMAGE, STRIKE_MAX_DAMAGE)
 	vOrigin[2] += 50.0
 
 	set_entvar(iPlayer, var_velocity, NULL_VECTOR)
@@ -451,10 +454,10 @@ public efk_ability3(iPlayer)
 
 thunder_attack(iPlayer, Float:vOrigin[3], Float:fMinDamage, Float:fMaxDamage)
 {
-	engfunc(EngFunc_EmitAmbientSound, 0, vOrigin, SOUND_THUNDER, 0.000000, 0.000000, 32, 0)
-	engfunc(EngFunc_EmitAmbientSound, 0, vOrigin, SOUND_THUNDER, 1.000000, 0.000000, 0, 100)
+	engfunc(EngFunc_EmitAmbientSound, 0, vOrigin, SOUND_THUNDER, VOL_NORM, ATTN_NONE, SND_STOP, PITCH_NORM)
+	engfunc(EngFunc_EmitAmbientSound, 0, vOrigin, SOUND_THUNDER, VOL_NORM, ATTN_NONE, 0, PITCH_NORM)
 
-	send_msg_TE_WORLDDECAL(vOrigin, GUNSHOT_DECALS[random_num(0, sizeof GUNSHOT_DECALS - 1)])
+	send_msg_TE_WORLDDECAL(vOrigin, GUNSHOT_DECALS[random(sizeof GUNSHOT_DECALS)])
 
 	new Float:vStartBeamOrigin[3], Float:vEndBeamOrigin[3]
 	vStartBeamOrigin[0] = vOrigin[0]
@@ -463,38 +466,42 @@ thunder_attack(iPlayer, Float:vOrigin[3], Float:fMinDamage, Float:fMaxDamage)
 	vEndBeamOrigin[0] = vOrigin[0]
 	vEndBeamOrigin[1] = vOrigin[1]
 	vEndBeamOrigin[2] = vOrigin[2] + 1500.0
-	send_msg_TE_BEAMPOINTS(vStartBeamOrigin, vEndBeamOrigin, sprLightning, 0, 1, 2, 120, 10, {255, 255, 255}, 255, 0)
+	send_msg_TE_BEAMPOINTS(vStartBeamOrigin, vEndBeamOrigin, g_pLightningSpr, 0, 1, 2, 120, 10, {255, 255, 255}, 255, 0)
 
 	new Float:vAxis[3]
 	vAxis[0] = vOrigin[0]
 	vAxis[1] = vOrigin[1]
 	vAxis[2] = vOrigin[2] + 220.0
-	send_msg_TE_BEAMCYLINDER(vOrigin, vAxis, sprCircle, 0, 0, 4, 49, 0, {255, 255, 255}, 255, 0)
+	send_msg_TE_BEAMCYLINDER(vOrigin, vAxis, g_pCircleSpr, 0, 0, 4, 49, 0, {255, 255, 255}, 255, 0)
 
-	new Float:vVelocity[3], Float:fVicOrigin[3],
-	Float:fDistance, Float:fDamage,
-	Float:fRadius = STRIKE_RADIUS,
-	Float:fDmgMultiplier,
-	Float:fHealth,
-	team = get_user_team(iPlayer),
-	ent = engfunc(EngFunc_FindEntityInSphere, -1, vOrigin, fRadius)
+	new Float:vVelocity[3], Float:vTargetOrigin[3],
+		Float:fDistance, Float:fDamage,
+		Float:fRadius = STRIKE_RADIUS,
+		Float:fDmgMultiplier,
+		Float:fHealth,
+		iTeam = get_user_team(iPlayer),
+		iTarget = NULLENT
 
-	while (ent)
+	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, fRadius)))
 	{
-		if (is_user_alive(ent) && !kc_player_check_game_flag(ent, PLGF_IN_UNABILITY))
+		if (is_user_alive(iTarget) && !kc_player_check_game_flag(iTarget, PLGF_IN_UNABILITY))
 		{
-			if (ent == iPlayer || team != get_user_team(ent))
+			if (iTeam == get_user_team(iTarget))
+				thunder_charge(iTarget)
+
+			if (iTarget == iPlayer || iTeam != get_user_team(iTarget))
 			{
-				fDmgMultiplier = ent == iPlayer ? 0.5 : 1.0
+				fDmgMultiplier = iTarget == iPlayer ? STRIKE_SELF_MUL : 1.0
 				fDamage = random_float(fMinDamage, fMaxDamage) * fDmgMultiplier
-				fHealth = Float:get_entvar(ent, var_health)
+				fHealth = Float:get_entvar(iTarget, var_health)
 
-				kc_player_set_override_attacker(ent, iPlayer, 4.0)
-				kc_player_set_death_reason(ent, "DEATH_REASON_THUNDER")
-				set_member(ent, m_LastHitGroup, HIT_GENERIC)
-				ExecuteHamB(Ham_TakeDamage, ent, iPlayer, ent == iPlayer ? 0 : iPlayer, fDamage, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
+				kc_player_set_override_attacker(iTarget, iPlayer, 4.0)
+				kc_player_set_death_reason(iTarget, "DEATH_REASON_THUNDER")
+				set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
+				ExecuteHamB(Ham_TakeDamage, iTarget, iPlayer,
+					iTarget == iPlayer ? 0 : iPlayer, fDamage, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
 
-				if (ent == iPlayer && is_user_alive(iPlayer))
+				if (iTarget == iPlayer && is_user_alive(iPlayer))
 				{
 					fDamage = fHealth - Float:get_entvar(iPlayer, var_health)
 					if (fDamage >= 1.0)
@@ -506,46 +513,45 @@ thunder_attack(iPlayer, Float:vOrigin[3], Float:fMinDamage, Float:fMaxDamage)
 					}
 				}
 
-				get_entvar(ent, var_origin, fVicOrigin)
-				fDistance = 1.0 - get_distance_f(vOrigin, fVicOrigin) / fRadius
+				get_entvar(iTarget, var_origin, vTargetOrigin)
+				fDistance = 1.0 - get_distance_f(vOrigin, vTargetOrigin) / fRadius
 
-				xs_vec_sub(fVicOrigin, vOrigin, vVelocity)
+				xs_vec_sub(vTargetOrigin, vOrigin, vVelocity)
 				xs_vec_normalize(vVelocity, vVelocity)
 				xs_vec_mul_scalar(vVelocity, fDistance * VELOCITY_BACK, vVelocity)
 				vVelocity[2] = 400.0
-				set_entvar(ent, var_velocity, vVelocity)
+				set_entvar(iTarget, var_velocity, vVelocity)
 			}
-			if(team == get_user_team(ent))
-				thunder_charge(ent);
 		}
-		else if (get_entvar(ent, var_impulse) == IMPULSE_GHOST && team != get_entvar(ent, var_team))
+		else if (get_entvar(iTarget, var_impulse) == IMPULSE_GHOST)
 		{
-			new iOwner = get_entvar(ent, var_owner)
-			fDamage = 20.0
-
-			kc_player_set_override_attacker(iOwner, iPlayer, 4.0)
-			kc_player_set_death_reason(iOwner, "DEATH_REASON_THUNDER")
-			set_member(iOwner, m_LastHitGroup, HIT_GENERIC)
-			ExecuteHamB(Ham_TakeDamage, iOwner, iPlayer, iPlayer, fDamage, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
-		}
-		else if (get_entvar(ent, var_flags) & FL_MONSTER)
-		{
-			if (get_user_team(iPlayer) != get_entvar(ent, var_skin) + 1)
+			if (iTeam != get_entvar(iTarget, var_team))
 			{
-				get_entvar(ent, var_origin, fVicOrigin)
-				fDistance = 1.0 - get_distance_f(vOrigin, fVicOrigin) / fRadius
+				new iOwner = get_entvar(iTarget, var_owner)
+				fDamage = 20.0
 
-				xs_vec_sub(fVicOrigin, vOrigin, vVelocity)
+				kc_player_set_override_attacker(iOwner, iPlayer, 4.0)
+				kc_player_set_death_reason(iOwner, "DEATH_REASON_THUNDER")
+				set_member(iOwner, m_LastHitGroup, HIT_GENERIC)
+				ExecuteHamB(Ham_TakeDamage, iOwner, iPlayer, iPlayer, fDamage, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
+			}
+		}
+		else if (get_entvar(iTarget, var_flags) & FL_MONSTER)
+		{
+			if (iTeam != get_entvar(iTarget, var_skin) + 1)
+			{
+				get_entvar(iTarget, var_origin, vTargetOrigin)
+				fDistance = 1.0 - get_distance_f(vOrigin, vTargetOrigin) / fRadius
+
+				xs_vec_sub(vTargetOrigin, vOrigin, vVelocity)
 				xs_vec_normalize(vVelocity, vVelocity)
 				xs_vec_mul_scalar(vVelocity, fDistance * VELOCITY_BACK, vVelocity)
 				vVelocity[2] = 400.0
-				set_entvar(ent, var_velocity, vVelocity)
+				set_entvar(iTarget, var_velocity, vVelocity)
 
-				ExecuteHamB(Ham_TakeDamage, ent, 0, ent, 50.0, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
+				ExecuteHamB(Ham_TakeDamage, iTarget, 0, iTarget, STRIKE_MONSTER_DAMAGE, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
 			}
 		}
-
-		ent = engfunc(EngFunc_FindEntityInSphere, ent, vOrigin, fRadius)
 	}
 }
 
@@ -566,7 +572,7 @@ thunder_charge(iPlayer, Float:fTime=STRIKE_CHARGE_TIME)
 		kc_player_rush(iPlayer, kc_player_get_maxspeed(iPlayer) + STRIKE_CHARGE_SPEED_ADD, STRIKE_CHARGE_TIME)
 }
 
-spawn_thunder_particles(Float:vOrigin[3], Float:fRange, Float:fHeight = 128.0, iNum = 12, Float:fSpeed = 6.0)
+spawn_thunder_particles(Float:vOrigin[3], Float:fRange, Float:fHeight=128.0, iNum=12, Float:fSpeed=6.0)
 {
 	new Float:vMins[3] = {-1.0, -1.0, 0.0}
 	new Float:vMaxs[3] = {1.0, 1.0, 1.0}
@@ -576,7 +582,7 @@ spawn_thunder_particles(Float:vOrigin[3], Float:fRange, Float:fHeight = 128.0, i
 	xs_vec_add(vOrigin, vMins, vMins)
 	xs_vec_add(vOrigin, vMaxs, vMaxs)
 
-	send_msg_TE_BUBBLES(vMins, vMaxs, fHeight, sprParticle, iNum, fSpeed)
+	send_msg_TE_BUBBLES(vMins, vMaxs, fHeight, g_pParticleSpr, iNum, fSpeed)
 }
 
 crosshair_ent_remove(iEnt)
