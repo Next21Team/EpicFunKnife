@@ -33,35 +33,35 @@ new const PLUGIN[] = "EFK: Wind Knife"
 #define ABIL3_CHARGE	11.12
 
 #define ABIL4_NAME		"Wind Boost"
-#define ABIL4_CHARGE	10.0
+#define ABIL4_CHARGE	7.693
 
-new const MODEL_V_KNIFE[] = "models/next21_efk/v_wind_knife_b02.mdl"
-new const MODEL_P_KNIFE[] = "models/next21_efk/p_wind_knife.mdl"
+new const MODEL_V_KNIFE[]			= "models/next21_efk/v_wind_knife_b02.mdl"
+new const MODEL_P_KNIFE[]			= "models/next21_efk/p_wind_knife.mdl"
 
-new const MODEL_WIND_BOOSTER[] = "models/next21_efk/wind_boost.mdl"
-new const MODEL_TORNADO[] = "models/next21_efk/tornado_b02.mdl"
-new const MODEL_WIND_WAVE[] = "models/next21_efk/wind_wave.mdl"
+new const MODEL_WIND_BOOSTER[]		= "models/next21_efk/wind_boost.mdl"
+new const MODEL_TORNADO[]			= "models/next21_efk/tornado_b02.mdl"
+new const MODEL_WIND_WAVE[]			= "models/next21_efk/wind_wave.mdl"
 
-new const SPRITE_SPRINT_TRAIL[] = "sprites/next21_efk/sprint_trail.spr"
+new const SPRITE_SPRINT_TRAIL[]		= "sprites/next21_efk/sprint_trail.spr"
 
-new const SOUND_KNIFE_DEPLOY[] = "next21_efk/wind_knife_draw.wav"
-new const SOUND_KNIFE_HIT1[] = "next21_efk/wind_knife_hit1.wav"
-new const SOUND_KNIFE_HIT2[] = "next21_efk/wind_knife_hit2.wav"
-new const SOUND_KNIFE_HITWALL[] = "next21_efk/wind_knife_hitwall.wav"
-new const SOUND_KNIFE_STAB[] = "next21_efk/wind_knife_stab.wav"
-new const SOUND_KNIFE_SLASH1[] = "next21_efk/wind_knife_slash1.wav"
-new const SOUND_KNIFE_SLASH2[] = "next21_efk/wind_knife_slash2.wav"
+new const SOUND_KNIFE_DEPLOY[]		= "next21_efk/wind_knife_draw.wav"
+new const SOUND_KNIFE_HIT1[]		= "next21_efk/wind_knife_hit1.wav"
+new const SOUND_KNIFE_HIT2[]		= "next21_efk/wind_knife_hit2.wav"
+new const SOUND_KNIFE_HITWALL[]		= "next21_efk/wind_knife_hitwall.wav"
+new const SOUND_KNIFE_STAB[]		= "next21_efk/wind_knife_stab.wav"
+new const SOUND_KNIFE_SLASH1[]		= "next21_efk/wind_knife_slash1.wav"
+new const SOUND_KNIFE_SLASH2[]		= "next21_efk/wind_knife_slash2.wav"
 
-new const SOUND_WIND_BOOST_UP[] = "next21_efk/wind_boost_up.wav"
-new const SOUND_WIND_BOOST_DOWN[] = "next21_efk/wind_boost_down.wav"
+new const SOUND_WIND_BOOST_UP[]		= "next21_efk/wind_boost_up.wav"
+new const SOUND_WIND_BOOST_DOWN[]	= "next21_efk/wind_boost_down.wav"
 
-new const SOUND_TORNADO[] = "next21_efk/tornado.wav"
-new const SOUND_TORNADO_JUMP[] = "next21_efk/tornado_jump.wav"
-new const SOUND_WIND_WAVE[] = "next21_efk/wind_wave.wav"
+new const SOUND_TORNADO[]			= "next21_efk/tornado.wav"
+new const SOUND_TORNADO_JUMP[]		= "next21_efk/tornado_jump.wav"
+new const SOUND_WIND_WAVE[]			= "next21_efk/wind_wave.wav"
 
-#define BACKJUMP_FORCE		260.0
+#define BACKJUMP_FORCE				260.0
 
-#define WIND_BOOST_SELF_TIME		7.0
+#define WIND_BOOST_SELF_TIME		10.0
 #define WIND_BOOST_TARGET_TIME		16.0
 
 #define TORNADO_LIFETIME			7.0
@@ -167,8 +167,7 @@ public plugin_init()
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_stab.wav", SOUND_KNIFE_STAB)
 
 	RegisterHookChain(RG_CSGameRules_CleanUpMap, "RG_CSGameRules_CleanUpMap_Post", true)
-
-	// register_forward(FM_Touch, "fw_Touch")
+	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)
 }
 
 public efk_ability(iPlayer, iTarget)
@@ -291,6 +290,17 @@ public RG_CSGameRules_CleanUpMap_Post()
 		remove_windwave(iEnt)
 }
 
+public RG_CBasePlayer_Spawn_Post(iPlayer)
+{
+	if (!is_user_alive(iPlayer))
+		return HC_CONTINUE
+
+	if (kc_player_get_knife(iPlayer) == g_iKnifeId)
+		kc_player_set_abil4_charge(iPlayer, 100.0 - ABIL4_CHARGE * RESET_ABIL_AFTER_SPAWN)
+
+	return HC_CONTINUE
+}
+
 set_windboost(iPlayer, WindBoostType:iType)
 {
 	send_msg_StatusIcon(true, "dmg_rad", (iType == WINDBOOST_POSITIVE ? COLOR_GREEN : COLOR_RED), MSG_ONE, _, iPlayer)
@@ -354,20 +364,20 @@ public windboost_task(iPlayer)
 	kc_player_set_windboost(iPlayer, WINDBOOST_NONE)
 }
 
-check_wind_impact(iEnt, iOther)
+bool:check_wind_impact(iEnt, iOther)
 {
 	if (iOther <= MaxClients)
 	{
 		if (get_member(iOther, m_iTeam) == get_entvar(iEnt, var_team))
-			return 1
+			return false
 
 		if (!get_entvar(iOther, var_solid))
-			return 0
+			return false
 
 		if (kc_player_check_game_flag(iOther, PLGF_IN_UNABILITY))
-			return 0
+			return false
 
-		return 2
+		return true
 	}
 
 	static iOwner
@@ -377,21 +387,21 @@ check_wind_impact(iEnt, iOther)
 		{
 			iOwner = get_entvar(iOther, var_owner)
 			if (is_entity_player(iOwner) && get_member(iOwner, m_iTeam) != get_entvar(iEnt, var_team))
-				return 2
+				return true
 		}
 		case IMPULSE_FAKEPLAYER:
 		{
 			if (get_entvar(iOther, var_team) != get_entvar(iEnt, var_team))
-				return 2
+				return true
 		}
 		case IMPULSE_ZOMBIE, IMPULSE_BUG:
 		{
 			if (get_entvar(iOther, var_skin) != get_entvar(iEnt, var_skin) % 3)
-				return 2
+				return true
 		}
 		case IMPULSE_PRESENT:
 		{
-			return 2
+			return true
 		}
 		default:
 		{
@@ -400,12 +410,12 @@ check_wind_impact(iEnt, iOther)
 			if (equal(szClassName, "gren"))
 			{
 				if (get_entvar(iEnt, var_team) != get_member(iOther, m_Grenade_iTeam))
-					return 2
+					return true
 			}
 		}
 	}
 
-	return 0
+	return false
 }
 
 create_tornado(iOwner, Float:vOrigin[])
@@ -505,13 +515,7 @@ tornado_touch(iTornado, iOther)
 		}
 	}
 
-	static iImpactType
-	iImpactType = check_wind_impact(iTornado, iOther)
-
-	if (!iImpactType)
-		return
-
-	if (iImpactType == 1)
+	if (!check_wind_impact(iTornado, iOther))
 		return
 
 	if (iOther <= MaxClients)
@@ -698,14 +702,10 @@ public windwave_touch(iWaveEnt, iOther)
 		return
 	}*/
 
-	new iImpactType = check_wind_impact(iWaveEnt, iOther)
+	if (!check_wind_impact(iWaveEnt, iOther))
+		return
+
 	new iWaveOwner = get_entvar(iWaveEnt, var_iuser1)
-
-	if (!iImpactType)
-		return
-
-	if (iImpactType == 1)
-		return
 
 	get_entvar(iWaveEnt, var_origin, vWaveOrigin)
 
@@ -724,10 +724,10 @@ public windwave_touch(iWaveEnt, iOther)
 
 		set_entvar(iWaveEnt, var_velocity, vReflectedVelocity)
 
-		new Float:reflectedAngles[3]
-		vector_to_angle(vReflectedVelocity, reflectedAngles)
+		new Float:vReflectedAngles[3]
+		vector_to_angle(vReflectedVelocity, vReflectedAngles)
 
-		set_entvar(iWaveEnt, var_angles, reflectedAngles)
+		set_entvar(iWaveEnt, var_angles, vReflectedAngles)
 
 		kc_player_reflection_done(iOther, iWaveOwner)
 		return
