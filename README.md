@@ -1,72 +1,85 @@
 # Epic Fun Knife
 
-**Epic Fun Knife** is a Knife Arena mod for Counter-Strike 1.6 where every knife comes with unique abilities and a distinct playstyle, now featuring team deathmatch mode. Enhanced by supportive items, the mod turns knife fights into fast, unpredictable team-based battles that reward creativity, coordination, and quick thinking.
+**Epic Fun Knife** is a Knife Arena mod for Counter-Strike 1.6 where every knife has unique abilities and a distinct playstyle, now featuring a team deathmatch mode. Enhanced by supportive items, the mod transforms knife fights into fast-paced, unpredictable battles that reward creativity, teamwork, and quick thinking.
 
 TODO: demo video
 
+## Controls
+
+- **MOUSE2 (attack2)** – Activate primary ability
+- **E (use)** – Activate secondary ability
+- **R (reload)** – Activate third ability
+- **F (impulse 100)** – Activate fourth ability
+- **T (impulse 201)** – Toggle activation of the knife's primary ability on MOUSE2
+- **M (chooseteam)** – Open main menu
+- **Z (radio1)** – Open knife selection menu
+- **X (radio2)** or **N (nightvision)** – Open item shop menu
+- **G (drop)** – Open inventory menu
+- **C (radio3)** – Quick camera change
+
 ## Plugins list
 
-The mod uses a modular architecture, so you can disable unnecessary plugins except `efk_core.amxx` in `addons/amxmodx/configs/plugins-efk.ini`. Below is a brief description of each plugin.
+The mod uses a modular architecture. You can disable unnecessary plugins in `addons/amxmodx/configs/plugins-efk.ini`, except for `efk_core.amxx`, which is required. Below is a brief description of each plugin.
 
 <details>
 <summary>Click to expand</summary>
 
 | Plugin                             | Description                                    |
 | :--------------------------------- | :--------------------------------------------- |
-| efk_core.amxx                      | Mod core with the main game logic |
-| efk_unprecacher.amxx               | Unprecacher is required to reduce the use of unnecessary vanilla resources to avoid the precache limit |
+| efk_core.amxx                      | Core module containing the main game logic |
+| efk_unprecacher.amxx               | Removes unused vanilla resources to avoid hitting precache limits |
 | efk_knife_*.amxx                   | Knife plugin |
 | efk_item_*.amxx                    | Item plugin |
-| efk_statsx_sql.amxx                | Managing and storing player stats in a database |
-| efk_statsx_aes.amxx                | Commands /top15, /rankstats, etc. |
-| efk_balancer.amxx                  | Automatic balancing of players by number and skill |
-| efk_deathmatch.amxx                | Dynamic game mode with respawns and damage zone. The team of players with the most kills at the round end becomes immune to the zone, and the other team loses the ability to respawn |
-| efk_hats.amxx                      | Hats menu |
-| efk_presents.amxx                  | Chance of dropping a gift with a random item after killing a player |
-| efk_dominations.amxx               | Dominations system like TF2 |
-| efk_duels.amxx                     | Duels system like TF2 |
-| efk_sayme.amxx                     | Commands /me and /hp |
-| efk_damage_table.amxx              | Shows the top players by damage dealt at the round end |
-| efk_radioblock.amxx                | Blocks fire-in-the-hole radio commands |
-| efk_nextclient_features.amxx       | Special visual features for NextClient |
+| efk_statsx_sql.amxx                | Manages and stores player stats in a database |
+| efk_statsx_aes.amxx                | Implements stats commands like `/top15`, `/rankstats`, etc. |
+| efk_balancer.amxx                  | Automatically balances teams by number and skill level |
+| efk_deathmatch.amxx                | Dynamic game mode with respawns and a damage zone. The team with the most kills at round end becomes immune to the zone; the losing team loses respawn ability |
+| efk_hats.amxx                      | Enables hat customization |
+| efk_presents.amxx                  | Random chance to drop a gift with a random item after killing an enemy |
+| efk_dominations.amxx               | Domination system inspired by Team Fortress 2 |
+| efk_duels.amxx                     | Duel system inspired by Team Fortress 2 |
+| efk_sayme.amxx                     | Adds chat commands `/me` and `/hp` |
+| efk_damage_table.amxx              | Displays top players by damage dealt at the end of the round |
+| efk_radioblock.amxx                | Blocks "fire in the hole" radio commands |
+| efk_nextclient_features.amxx       | Adds special visual effects for NextClient users |
 | addon_floating_damage.amxx         | Damager |
-| next21_save_spec_money.amxx        | Saves the player's money before transfer to the spectator team |
+| next21_save_spec_money.amxx        | Preserves player money when switching to spectator team |
 </details>
 
 ## Configuration
 
 ### Stats
 
-The mod for managing player statistics uses a special modified version of CSStatsX SQL, implemented in `efk_statsx_sql.amxx` and `efk_statsx_aes.amxx`. To configure stats, use the following cvars:
+The mod uses a modified version of CSStatsX SQL for managing player statistics, implemented in `efk_statsx_sql.amxx` and `efk_statsx_aes.amxx`. Use the following cvars to configure it:
 
 <details>
 <summary>Click to expand</summary>
 
 | CVar                               | Default   | Description                                    |
 | :--------------------------------- | :-------: | :--------------------------------------------- |
-| efk_statsx_host                    | localhost | MySQL host |
-| efk_statsx_user                    | root      | MySQL user |
+| efk_statsx_host                    | localhost | MySQL host address |
+| efk_statsx_user                    | root      | MySQL username  |
 | efk_statsx_pass                    |           | MySQL password |
-| efk_statsx_db                      | amxx      | MySQL or SQLite DB name |
-| efk_statsx_table                   | efkstats  | Table name in DB |
-| efk_statsx_type                    | mysql     | DB type (`mysql` or `sqlite`) |
-| efk_statsx_create_db               | 1         | Send a request to create a table |
+| efk_statsx_db                      | amxx      | Database name (MySQL or SQLite) |
+| efk_statsx_table                   | efkstats  | Table name in the database |
+| efk_statsx_type                    | mysql     | Database type (`mysql` or `sqlite`) |
+| efk_statsx_create_db               | 1         | Create table if it doesn't exist |
 | efk_statsx_rankbots                | 0         | Record stats for bots |
-| efk_statsx_update                  | -1        | How to update player stats in the DB<br/>`-2` at death and disconnect<br/>`-1` at the round end and disconnect<br/>`0` at disconnect<br/>`> 0` at the specified number of seconds and disconnect|
-| efk_statsx_rankformula             | 4         | Formula for calculating the rank<br/>`0`  kills - deaths<br/>`1` kills<br/>`2` skill<br/>`3` online time<br/>`4` kills + assists / 3<br/>`5` assists|
+| efk_statsx_update                  | -1        | How to update player stats in the database<br/>`-2` at death and disconnect<br/>`-1` at the round end and disconnect<br/>`0` at disconnect<br/>`> 0` at the specified number of seconds and disconnect|
+| efk_statsx_rankformula             | 4         | Formula for rank calculation<br/>`0`  kills - deaths<br/>`1` kills<br/>`2` skill<br/>`3` online time<br/>`4` kills + assists / 3<br/>`5` assists|
 | efk_statsx_knives                  | 1         | Enable knives stats |
-| efk_statsx_autoclear               | 0         | Automatic cleaning of inactive players in the DB |
+| efk_statsx_autoclear               | 0         | Automatically remove inactive players from database |
 | efk_statsx_cachetime               | -1        | Use the cache for get_stats<br/>`-1` update at the end of the round or at the time of csstats_sql_update<br/>`0` disable cache |
-| efk_statsx_autoclear_day           | 0         | Automatic cleaning of all game stats in the DB on a specific day |
-| efk_aes_top                        | *abcsfiel | /top columns |
-| efk_aes_online                     | *anl      | /online columns |
-| efk_aes_assistans                  | *asdl     | /assist columns |
-| efk_aes_level                      | *al       | /level columns |
-| efk_aes_rank                       | bcs       | /rankstats columns |
+| efk_statsx_autoclear_day           | 0         | Automatically clear all stats on a specific day |
+| efk_aes_top                        | *abcsfiel | Columns shown in `/top` columns |
+| efk_aes_online                     | *anl      | Columns shown in `/online` columns |
+| efk_aes_assistans                  | *asdl     | Columns shown in `/assist` columns |
+| efk_aes_level                      | *al       | Columns shown in `/level` columns |
+| efk_aes_rank                       | bcs       | Columns shown in `/rankstats` columns |
 
 Columns tags:<br/>
 `*` - Rank<br/>
-`a` - Name (only /top15)<br/>
+`a` - Name (only in `/top15`)<br/>
 `b` - Kills<br/>
 `c` - Deaths<br/>
 `d` - Heal<br/>
@@ -74,16 +87,17 @@ Columns tags:<br/>
 `f` - Favorite Knife<br/>
 `h` - Effectiveness<br/>
 `l` - Level<br/>
-`k` - K:D<br/>
+`k` - K:D ratio<br/>
 `n` - Online Time<br/>
 `s` - Assists<br/>
 
-**Important!** The MOTD cannot show more than 1534 characters, and the chat message cannot show more than 192 characters.
-If something is displayed incompletely, then you need to reduce the number of characters (the top does not show more than 10 players).
+> **Note:** The MOTD supports up to 1534 characters, and chat messages are limited to 192 characters. If output is cut off, reduce the number of displayed columns or players (e.g., limit `/top` to 10 entries).
 </details>
 
 ### Hats
-The list of hats is stored in `addons/amxmodx/configs/efk_hats.json` (create the file if it does not exist). The syntax of `efk_hats.json` is similar to [Hats plugin](https://github.com/Next21Team/Hats), except for the possibility to set player access level using the `level` field. Config example:
+Hat configurations are stored in `addons/amxmodx/configs/efk_hats.json` (create the file if it does not exist). The syntax is similar to the [Hats plugin](https://github.com/Next21Team/Hats), but includes a `level` field to restrict access by player level.
+
+Config example:
 ```json
 {
 	"EFK March 2025": {
@@ -120,7 +134,10 @@ The list of hats is stored in `addons/amxmodx/configs/efk_hats.json` (create the
 - [NextClientServerApi](https://github.com/CS-NextClient/NextClientServerApi)
 
 ## Deployment
-- Clone repository with submodules: `git clone --recurse-submodules https://github.com/Next21Team/EpicFunKnife.git`
+- Clone repository with submodules:
+```bash
+git clone --recurse-submodules https://github.com/Next21Team/EpicFunKnife.git
+```
 - Install dependencies and download latest assets: `npm i`
 
 ### Customize builder
