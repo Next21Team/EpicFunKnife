@@ -1,6 +1,5 @@
 #include <amxmodx>
 #include <fakemeta_util>
-#include <engine>
 #include <hamsandwich>
 #include <reapi>
 #include <xs>
@@ -56,9 +55,6 @@ new CLASSNAME_STRIKE_BEAM[]			= "next21_thunder_strike_beam"
 
 #define var_strikebeam_time			var_fuser1
 
-#define Player[%1][%2]		g_player_data[%1 - 1][%2]
-#define PlayerF[%1][%2]		g_player_data_f[%1 - 1][%2]
-
 new const MODEL_V_KNIFE[] = "models/next21_efk/v_thunder_knife_b02.mdl"
 new const MODEL_P_KNIFE[] = "models/next21_efk/p_thunder_knife.mdl"
 new const MODEL_CROSSHAIR[] = "models/next21_efk/thunder_crosshair.mdl"
@@ -69,24 +65,24 @@ new const SOUND_THUNDER[] = "next21_efk/thunder.wav"
 
 new const GUNSHOT_DECALS[] = { 46, 47, 48 }
 
-enum _:Player_Properties
+enum _:PlayerData
 {
-	IsAlive,
-	DoJump,
-	Knife,
-	StrikeBeam,
-	ThunderDamageRestore
+	bool:PlrIsAlive,
+	bool:PlrWasJump,
+	PlrKnife,
+	PlrStrikeBeamEnt,
+	PlrStrikeDamageRestore,
+	Float:PlrStrikeDamageRestoreTime,
+	bool:PlrLastStrikeAvailable,
+	Float:PlrLastStrikeDelay,
+	Float:PlrLastStrikeOrigin[3],
+	Float:PlrLastStrikeNormal[3]
 }
 
-enum _:Player_Properties_F
-{
-	Float:LastOrigin[3],
-	Float:LastDelay,
-	Float:ThunderDamageRestoreTime
-}
+#define Player[%1][%2]	g_ePlayerData[%1 - 1][%2]
 
 new
-g_iKnifeId, g_player_data[32][Player_Properties], Float:g_player_data_f[32][Player_Properties_F],
+g_iKnifeId, g_ePlayerData[MAX_PLAYERS][PlayerData],
 g_pLightningSpr, g_pCircleSpr, g_pBeamSpr, g_pParticleSpr, g_pKnifePMdl
 
 public plugin_precache()
@@ -124,23 +120,21 @@ public plugin_init()
 	kc_knife_set_flags(g_iKnifeId, KNFF_ZOOM | KNFF_ABIL1_TOGGLABLE)
 	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 
-	RegisterHam(Ham_Spawn, "player", "fw_PlayerSpawn", 1)
-	RegisterHam(Ham_Player_PreThink, "player", "fw_PreThink")
-	RegisterHam(Ham_Killed, "player", "fw_PlayerKilled")
-
-	register_think(CLASSNAME_STRIKE_BEAM, "fw_StrikeBeamThink")
+	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)
+	RegisterHookChain(RG_CBasePlayer_PreThink, "RG_CBasePlayer_PreThink_Pre")
+	RegisterHookChain(RG_CBasePlayer_Killed, "RG_CBasePlayer_Killed_Pre")
 
 	RegisterHookChain(RG_CSGameRules_CleanUpMap, "RG_CSGameRules_CleanUpMap_Post", true)
 }
 
 public client_putinserver(iPlayer)
 {
-	Player[iPlayer][IsAlive] = 0
+	Player[iPlayer][PlrIsAlive] = false
 }
 
 public client_disconnected(iPlayer)
 {
-	Player[iPlayer][IsAlive] = 0
+	Player[iPlayer][PlrIsAlive] = false
 
 	new iEnt = NULLENT
 	while ((iEnt = rg_find_ent_by_class(iEnt, CLASSNAME_STRIKE_BEAM)))
@@ -161,111 +155,95 @@ public RG_CSGameRules_CleanUpMap_Post()
 	}
 }
 
-public fw_PlayerSpawn(iPlayer)
+public RG_CBasePlayer_Spawn_Post(iPlayer)
 {
-	PlayerF[iPlayer][LastOrigin][0] = 0.0
-	PlayerF[iPlayer][LastOrigin][1] = 0.0
-	PlayerF[iPlayer][LastOrigin][2] = 0.0
-
 	if (is_user_alive(iPlayer))
 	{
-		Player[iPlayer][IsAlive] = 1
-		Player[iPlayer][DoJump] = 1
-		Player[iPlayer][ThunderDamageRestore] = 0
+		Player[iPlayer][PlrIsAlive] = true
+		Player[iPlayer][PlrWasJump] = true
+		Player[iPlayer][PlrStrikeDamageRestore] = 0
+		Player[iPlayer][PlrLastStrikeAvailable] = false
 	}
 }
 
-public fw_PreThink(iPlayer)
+public RG_CBasePlayer_PreThink_Pre(iPlayer)
 {
-	if (!Player[iPlayer][IsAlive] || Player[iPlayer][Knife] != g_iKnifeId)
+	if (!Player[iPlayer][PlrIsAlive] || Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
 	new Float:fGameTime = get_gametime()
 
-	if (Player[iPlayer][ThunderDamageRestore]
-		&& PlayerF[iPlayer][ThunderDamageRestoreTime] <= fGameTime
+	if (Player[iPlayer][PlrStrikeDamageRestore]
+		&& Float:Player[iPlayer][PlrStrikeDamageRestoreTime] <= fGameTime
 		&& !kc_player_in_burn(iPlayer))
 	{
 		new Float:fMaxHealth = kc_player_get_maxhealth(iPlayer)
 		new Float:fHealth = Float:get_entvar(iPlayer, var_health)
-		new iRest = min(Player[iPlayer][ThunderDamageRestore], DAMAGE_RESTORE_HEAL)
+		new iRest = min(Player[iPlayer][PlrStrikeDamageRestore], DAMAGE_RESTORE_HEAL)
 
 		if (fHealth + float(iRest) >= fMaxHealth)
 		{
 			if (fHealth < fMaxHealth)
 				set_entvar(iPlayer, var_health, fMaxHealth)
-			Player[iPlayer][ThunderDamageRestore] = 0
+			Player[iPlayer][PlrStrikeDamageRestore] = 0
 		}
 		else
 		{
 			set_entvar(iPlayer, var_health, fHealth + float(iRest))
-			Player[iPlayer][ThunderDamageRestore] -= iRest
-			PlayerF[iPlayer][ThunderDamageRestoreTime] = fGameTime + DAMAGE_RESTORE_DELAY
+			Player[iPlayer][PlrStrikeDamageRestore] -= iRest
+			Player[iPlayer][PlrStrikeDamageRestoreTime] = fGameTime + DAMAGE_RESTORE_DELAY
 		}
 	}
 
-	static nbut, obut, flags
-	nbut = get_entvar(iPlayer, var_button)
-	obut = get_entvar(iPlayer, var_oldbuttons)
-	flags = get_entvar(iPlayer, var_flags)
+	static iButton, iOldButtons, iFlags
+	iButton = get_entvar(iPlayer, var_button)
+	iOldButtons = get_entvar(iPlayer, var_oldbuttons)
+	iFlags = get_entvar(iPlayer, var_flags)
 
-	if (nbut & IN_JUMP)
+	if (iButton & IN_JUMP)
 	{
-		if (!(flags & FL_ONGROUND) && !(obut & IN_JUMP))
+		if (!(iFlags & FL_ONGROUND) && !(iOldButtons & IN_JUMP))
 		{
-			if (!Player[iPlayer][DoJump])
+			if (!Player[iPlayer][PlrWasJump])
 			{
-				Player[iPlayer][DoJump] = 1
+				Player[iPlayer][PlrWasJump] = true
 				kc_player_levitation(iPlayer)
 			}
-			else kc_player_unlevitation(iPlayer)
+			else
+				kc_player_unlevitation(iPlayer)
 		}
-		else if (flags & FL_ONGROUND)
-			Player[iPlayer][DoJump] = 0
+		else if (iFlags & FL_ONGROUND)
+			Player[iPlayer][PlrWasJump] = false
 	}
 
 	return PLUGIN_CONTINUE
 }
 
-public fw_PlayerKilled(iVictim)
+public RG_CBasePlayer_Killed_Pre(iVictim)
 {
-	Player[iVictim][IsAlive] = 0
-	Player[iVictim][ThunderDamageRestore] = 0
+	Player[iVictim][PlrIsAlive] = false
+	Player[iVictim][PlrStrikeDamageRestore] = 0
 }
 
 public efk_change_knife_core_post(iPlayer, iKnifeId)
 {
-	Player[iPlayer][Knife] = iKnifeId
+	Player[iPlayer][PlrKnife] = iKnifeId
 
 	if (iKnifeId == g_iKnifeId)
 		kc_player_set_abil2_charge(iPlayer, 0.0)
 
-	Player[iPlayer][ThunderDamageRestore] = 0
+	Player[iPlayer][PlrStrikeDamageRestore] = 0
 }
 
 public efk_ability(iPlayer)
 {
 	new Float:vAimOrigin[3]
 	fm_get_aim_origin(iPlayer, vAimOrigin)
-	PlayerF[iPlayer][LastDelay] = get_gametime() + 1.0
+	Player[iPlayer][PlrLastStrikeDelay] = get_gametime() + 1.0
 
 	spawn_thunder_strike_beam(iPlayer, vAimOrigin)
 
-	if (get_member(iPlayer, m_iFOV) != 90)
-	{
-		set_member(iPlayer, m_iFOV, 90)
-		set_member(iPlayer, m_iClientFOV, 90)
-		set_entvar(iPlayer, var_fov, 90)
-
-		if (ncl_is_client_api_ready(iPlayer))
-		{
-			ncl_setfov(iPlayer, 90, 0.2)
-		}
-		else
-		{
-			send_msg_SetFOV(90, MSG_ONE, _, iPlayer)
-		}
-	}
+	player_reset_fov(iPlayer)
 }
 
 spawn_thunder_strike_beam(iPlayer, Float:vOrigin[3])
@@ -314,26 +292,28 @@ spawn_thunder_strike_beam(iPlayer, Float:vOrigin[3])
 	set_entvar(iBeamEnt, var_nextthink, fGameTime + STRIKE_BEAM_UPDATE_FREQ)
 	set_entvar(iBeamEnt, var_strikebeam_time, fGameTime + STRIKE_BEAM_LIFE)
 
-	set_entvar(iBeamEnt, var_mins, Float:{0.0, 0.0, 0.0})
+	set_entvar(iBeamEnt, var_mins, NULL_VECTOR)
 	set_entvar(iBeamEnt, var_maxs, Float:{0.0, 0.0, 1500.0})
-	engfunc(EngFunc_SetSize, iBeamEnt, Float:{0.0, 0.0, 0.0}, Float:{0.0, 0.0, 1500.0})
+	engfunc(EngFunc_SetSize, iBeamEnt, NULL_VECTOR, Float:{0.0, 0.0, 1500.0})
 
-	Player[iPlayer][StrikeBeam] = iBeamEnt
+	SetThink(iBeamEnt, "thunder_strike_beam_think")
+
+	Player[iPlayer][PlrStrikeBeamEnt] = iBeamEnt
 
 	return true
 }
 
-public fw_StrikeBeamThink(iBeamEnt)
+public thunder_strike_beam_think(iBeamEnt)
 {
-	static Float:strikeTime
-	strikeTime = Float:get_entvar(iBeamEnt, var_strikebeam_time)
+	static Float:fStrikeTime
+	fStrikeTime = Float:get_entvar(iBeamEnt, var_strikebeam_time)
 	new Float:fGameTime = get_gametime()
 
-	if (fGameTime < strikeTime)
+	if (fGameTime < fStrikeTime)
 	{
 		static Float:vColor[3]
-		for(new i; i < 3; i++)
-			vColor[i] = 20.0 + (255.0 - 20.0) * (1.0 - ((strikeTime - fGameTime) / STRIKE_BEAM_LIFE))
+		for (new i; i < 3; i++)
+			vColor[i] = 20.0 + (255.0 - 20.0) * (1.0 - ((fStrikeTime - fGameTime) / STRIKE_BEAM_LIFE))
 
 		set_entvar(iBeamEnt, var_rendercolor, vColor)
 		set_entvar(iBeamEnt, var_nextthink, fGameTime + STRIKE_BEAM_UPDATE_FREQ)
@@ -357,7 +337,7 @@ public fw_StrikeBeamThink(iBeamEnt)
 				if (i >= MaxClients)
 					break
 
-				if (Player[i][IsAlive] && get_user_team(i) != iTeam && kc_player_in_reflection(i))
+				if (Player[i][PlrIsAlive] && get_user_team(i) != iTeam && kc_player_in_reflection(i))
 				{
 					new Float:vAttackerOrigin[3]
 					get_entvar(iOwner, var_origin, vAttackerOrigin)
@@ -371,16 +351,23 @@ public fw_StrikeBeamThink(iBeamEnt)
 
 			if (!bStriked)
 			{
+				Player[iOwner][PlrLastStrikeAvailable] = false
 				thunder_attack(iOwner, vStrikeOrigin, STRIKE_MIN_DAMAGE, STRIKE_MAX_DAMAGE)
-				xs_vec_copy(vStrikeOrigin, PlayerF[iOwner][LastOrigin])
-				PlayerF[iOwner][LastOrigin][2] += 50.0
+
+				new Float:vStrikeNormal[3]
+				if (get_surface_normal_at_origin(vStrikeOrigin, vStrikeNormal, iOwner))
+				{
+					xs_vec_copy(vStrikeOrigin, Player[iOwner][PlrLastStrikeOrigin])
+					xs_vec_copy(vStrikeNormal, Player[iOwner][PlrLastStrikeNormal])
+					Player[iOwner][PlrLastStrikeAvailable] = true
+				}
 			}
 
 			rg_remove_entity(iCrosshairEnt)
 		}
 
-		if (Player[iOwner][StrikeBeam] == iBeamEnt)
-			Player[iOwner][StrikeBeam] = 0
+		if (Player[iOwner][PlrStrikeBeamEnt] == iBeamEnt)
+			Player[iOwner][PlrStrikeBeamEnt] = 0
 
 		rg_remove_entity(iBeamEnt)
 	}
@@ -404,50 +391,52 @@ public efk_ability2(iPlayer)
 
 public efk_ability3(iPlayer)
 {
-	if (!PlayerF[iPlayer][LastOrigin][0] && !PlayerF[iPlayer][LastOrigin][1] && !PlayerF[iPlayer][LastOrigin][2])
+	if (!Player[iPlayer][PlrLastStrikeAvailable])
 		return PLUGIN_HANDLED
 
 	new Float:fGameTime = get_gametime()
 
-	if (PlayerF[iPlayer][LastDelay] > fGameTime)
+	if (Float:Player[iPlayer][PlrLastStrikeDelay] > fGameTime)
 		return PLUGIN_HANDLED
 
-	static Float:vOrigin[3]
-	xs_vec_copy(PlayerF[iPlayer][LastOrigin], vOrigin)
+	new Float:vOrigin[3], Float:vNormal[3]
+	xs_vec_copy(Player[iPlayer][PlrLastStrikeOrigin], vOrigin)
+	xs_vec_copy(Player[iPlayer][PlrLastStrikeNormal], vNormal)
 
-	if (!is_hull_vacant(vOrigin, get_entvar(iPlayer, var_flags) & FL_DUCKING ? HULL_HEAD : HULL_HUMAN, iPlayer))
+	new iHull = get_entvar(iPlayer, var_flags) & FL_DUCKING ? HULL_HEAD : HULL_HUMAN
+	new Float:vTargetOrigin[3], bool:bEmptySpace
+
+	// find empty space by surface normal offset
+	for (new i; i < 4; i++)
 	{
-		PlayerF[iPlayer][LastDelay] = fGameTime + 1.0
+		xs_vec_add_scaled(vOrigin, vNormal, 24.0 * i, vTargetOrigin)
+
+		if (is_hull_vacant(vTargetOrigin, iHull, iPlayer))
+		{
+			bEmptySpace = true
+			break
+		}
+	}
+
+	if (!bEmptySpace)
+	{
+		Player[iPlayer][PlrLastStrikeDelay] = fGameTime + 1.0
 		return PLUGIN_HANDLED
 	}
 
-	vOrigin[2] -= 50.0
 	thunder_attack(iPlayer, vOrigin, STRIKE_MIN_DAMAGE, STRIKE_MAX_DAMAGE)
-	vOrigin[2] += 50.0
 
 	set_entvar(iPlayer, var_velocity, NULL_VECTOR)
-	engfunc(EngFunc_SetOrigin, iPlayer, vOrigin)
-	set_entvar(iPlayer, var_origin, vOrigin)
+	engfunc(EngFunc_SetOrigin, iPlayer, vTargetOrigin)
+	set_entvar(iPlayer, var_origin, vTargetOrigin)
 
 	kc_player_unfreeze(iPlayer)
 	kc_player_unlevitation(iPlayer)
 	kc_player_check_stuck_delayed(iPlayer, 0.3)
 
-	if (get_member(iPlayer, m_iFOV) != 90)
-	{
-		set_member(iPlayer, m_iFOV, 90)
-		set_member(iPlayer, m_iClientFOV, 90)
-		set_entvar(iPlayer, var_fov, 90)
+	player_reset_fov(iPlayer)
 
-		if (ncl_is_client_api_ready(iPlayer))
-		{
-			ncl_setfov(iPlayer, 90, 0.2)
-		}
-		else
-		{
-			send_msg_SetFOV(90, MSG_ONE, _, iPlayer)
-		}
-	}
+	Player[iPlayer][PlrWasJump] = false
 
 	return PLUGIN_CONTINUE
 }
@@ -506,10 +495,10 @@ thunder_attack(iPlayer, Float:vOrigin[3], Float:fMinDamage, Float:fMaxDamage)
 					fDamage = fHealth - Float:get_entvar(iPlayer, var_health)
 					if (fDamage >= 1.0)
 					{
-						if (!Player[iPlayer][ThunderDamageRestore])
-							PlayerF[iPlayer][ThunderDamageRestoreTime] = get_gametime() + DAMAGE_RESTORE_START_TIME
+						if (!Player[iPlayer][PlrStrikeDamageRestore])
+							Player[iPlayer][PlrStrikeDamageRestoreTime] = get_gametime() + DAMAGE_RESTORE_START_TIME
 
-						Player[iPlayer][ThunderDamageRestore] += floatround(fDamage, floatround_floor)
+						Player[iPlayer][PlrStrikeDamageRestore] += floatround(fDamage, floatround_floor)
 					}
 				}
 
@@ -555,10 +544,23 @@ thunder_attack(iPlayer, Float:vOrigin[3], Float:fMinDamage, Float:fMaxDamage)
 	}
 }
 
-bool:is_hull_vacant(Float:vOrigin[3], iHullType, iEnt)
+player_reset_fov(iPlayer)
 {
-	engfunc(EngFunc_TraceHull, vOrigin, vOrigin, DONT_IGNORE_MONSTERS, iHullType, iEnt, 0)
-	return !get_tr2(0, TR_StartSolid) || !get_tr2(0, TR_AllSolid)
+	if (get_member(iPlayer, m_iFOV) != 90)
+	{
+		set_member(iPlayer, m_iFOV, 90)
+		set_member(iPlayer, m_iClientFOV, 90)
+		set_entvar(iPlayer, var_fov, 90)
+
+		if (ncl_is_client_api_ready(iPlayer))
+		{
+			ncl_setfov(iPlayer, 90, 0.2)
+		}
+		else
+		{
+			send_msg_SetFOV(90, MSG_ONE, _, iPlayer)
+		}
+	}
 }
 
 thunder_charge(iPlayer, Float:fTime=STRIKE_CHARGE_TIME)
@@ -592,4 +594,47 @@ crosshair_ent_remove(iEnt)
 		rg_remove_entity(iCrosshairEnt)
 
 	rg_remove_entity(iEnt)
+}
+
+bool:is_hull_vacant(Float:vOrigin[3], iHullType, iEnt)
+{
+	engfunc(EngFunc_TraceHull, vOrigin, vOrigin, DONT_IGNORE_MONSTERS, iHullType, iEnt, 0)
+	return !get_tr2(0, TR_StartSolid) || !get_tr2(0, TR_AllSolid)
+}
+
+bool:get_surface_normal_at_origin(Float:vOrigin[3], Float:vNormal[3], iEnt)
+{
+	static Float:TRACE_DIRS[][3] = {
+		{-8.0, 0.0, -8.0},
+		{8.0, 0.0, -8.0},
+		{0.0, -8.0, 8.0},
+		{0.0, 8.0, 8.0}
+	}
+
+	if (engfunc(EngFunc_PointContents, vOrigin) == CONTENTS_SKY)
+		return false
+
+	new Float:vEnd[3]
+	new Float:fFraction
+	new bool:bRes
+
+	new iTrace = create_tr2()
+
+	for (new i; i < sizeof TRACE_DIRS; i++)
+	{
+		xs_vec_add(vOrigin, TRACE_DIRS[i], vEnd)
+		engfunc(EngFunc_TraceLine, vOrigin, vEnd, IGNORE_MONSTERS, iEnt, iTrace)
+		get_tr2(iTrace, TR_flFraction, fFraction)
+
+		if (fFraction < 1.0)
+		{
+			get_tr2(iTrace, TR_vecPlaneNormal, vNormal)
+			bRes = true
+			break
+		}
+	}
+
+	free_tr2(iTrace)
+
+	return bRes
 }
