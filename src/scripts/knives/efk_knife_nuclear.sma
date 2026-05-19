@@ -68,7 +68,7 @@ enum _:PlayerData
 
 new
 	g_iKnifeId, g_ePlayerData[MAX_PLAYERS][PlayerData],
-	g_pExplosionSpr, g_pSteamSpr, g_pShockwaveSpr,
+	g_pExplosionSpr, g_pSteamSpr, g_pBallSmokeSpr, g_pShockWaveSpr,
 	g_pKnifePMdl
 
 public plugin_precache()
@@ -92,7 +92,8 @@ public plugin_precache()
 
 	g_pExplosionSpr = precache_model("sprites/next21_efk/nuclear_explosion.spr")
 	g_pSteamSpr = precache_model("sprites/steam1.spr")
-	g_pShockwaveSpr = precache_model("sprites/shockwave.spr")
+	g_pBallSmokeSpr = precache_model("sprites/ballsmoke.spr")
+	g_pShockWaveSpr = precache_model("sprites/shockwave.spr")
 }
 
 public plugin_init()
@@ -218,6 +219,7 @@ public fw_Player_Damage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 			fRadius = floatmin(fDamage * 5.0, 150.0)
 
 			engfunc(EngFunc_EmitSound, iVictim, CHAN_AUTO, SOUND_HEAVYFALL, 1.0, ATTN_NORM, 0, PITCH_NORM)
+			draw_landing_effect(iVictim)
 
 			new iTeam = get_user_team(iVictim)
 
@@ -395,7 +397,7 @@ public efk_ability2(iPlayer)
 
 	vVecA[2] = vOrigin[2] - 10.0
 	vVecB[2] = vOrigin[2] + fRadius
-	send_msg_TE_BEAMCYLINDER(vVecA, vVecB, g_pShockwaveSpr, 0, 0, 2, 5, 0, {255, 130, 0}, 100, 0)
+	send_msg_TE_BEAMCYLINDER(vVecA, vVecB, g_pShockWaveSpr, 0, 0, 2, 5, 0, {255, 130, 0}, 100, 0)
 
 	engfunc(EngFunc_EmitSound, iPlayer, CHAN_AUTO, SOUND_EXPLOSION, 1.0, ATTN_NORM, 0, PITCH_NORM)
 
@@ -477,4 +479,38 @@ public task_remove_unability(iTaskId)
 {
 	new iPlayer = iTaskId - TASK_UNABILITY
 	kc_player_unset_game_flag(iPlayer, PLGF_IN_UNABILITY)
+}
+
+draw_landing_effect(iEnt)
+{
+	new Float:vOrigin[3]
+	get_entvar(iEnt, var_origin, vOrigin)
+
+	new Float:vFloorOrigin[3]
+	xs_vec_copy(vOrigin, vFloorOrigin)
+	vFloorOrigin[2] -= 64.0
+
+	new iTrace, Float:fFraction, iHit
+	engfunc(EngFunc_TraceLine, vOrigin, vFloorOrigin, IGNORE_MONSTERS, iEnt, iTrace)
+	get_tr2(iTrace, TR_vecEndPos, vFloorOrigin)
+	get_tr2(iTrace, TR_flFraction, fFraction)
+	get_tr2(iTrace, TR_pHit)
+	free_tr2(iTrace)
+
+	if (fFraction == 1.0)
+		return
+
+	new iDecal = random_num(138, 141)
+
+	if (iHit)
+	{
+		if (!is_nullent(iHit) && (~get_entvar(iHit, var_flags) & FL_KILLME) && (get_entvar(iHit, var_solid) == SOLID_BSP))
+			send_msg_TE_DECAL(vFloorOrigin, iDecal, iHit, MSG_PAS, vFloorOrigin)
+	}
+	else
+	{
+		send_msg_TE_WORLDDECAL(vFloorOrigin, iDecal, MSG_PAS, vFloorOrigin)
+	}
+
+	send_msg_TE_SPRITE(vFloorOrigin, g_pBallSmokeSpr, 8, 80, MSG_PAS, vFloorOrigin)
 }
