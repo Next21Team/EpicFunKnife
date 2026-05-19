@@ -354,9 +354,13 @@ public thunder_strike_beam_think(iBeamEnt)
 				Player[iOwner][PlrLastStrikeAvailable] = false
 				thunder_attack(iOwner, vStrikeOrigin, STRIKE_MIN_DAMAGE, STRIKE_MAX_DAMAGE)
 
-				new Float:vStrikeNormal[3]
-				if (get_surface_normal_at_origin(vStrikeOrigin, vStrikeNormal, iOwner))
+				if (engfunc(EngFunc_PointContents, vStrikeOrigin) != CONTENTS_SKY)
 				{
+					new Float:vStrikeNormal[3]
+					if (!get_surface_normal_at_origin(vStrikeOrigin, vStrikeNormal, iOwner))
+						// not surface, so use default normal
+						vStrikeNormal[2] = 1.0
+
 					xs_vec_copy(vStrikeOrigin, Player[iOwner][PlrLastStrikeOrigin])
 					xs_vec_copy(vStrikeNormal, Player[iOwner][PlrLastStrikeNormal])
 					Player[iOwner][PlrLastStrikeAvailable] = true
@@ -610,9 +614,6 @@ bool:get_surface_normal_at_origin(Float:vOrigin[3], Float:vNormal[3], iEnt)
 		{0.0, -8.0, 8.0},
 		{0.0, 8.0, 8.0}
 	}
-
-	if (engfunc(EngFunc_PointContents, vOrigin) == CONTENTS_SKY)
-		return false
 
 	new Float:vEnd[3]
 	new Float:fFraction
