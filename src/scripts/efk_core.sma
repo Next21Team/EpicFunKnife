@@ -159,6 +159,8 @@ new const _CLASSNAME_CORPSE[]		= CLASSNAME_CORPSE
 
 #define DUEL_SPRITE_DISTANCE		10.0
 
+#define LIFEBAR_FRAMES_NUM			100
+
 #define TASK_DARKNESS				100
 #define TASK_SILENCE				200
 
@@ -1231,7 +1233,7 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	if (iLifeBarEnt)
 	{
 		set_entvar(iLifeBarEnt, var_effects, 0)
-		set_entvar(iLifeBarEnt, var_frame, 99.0)
+		set_entvar(iLifeBarEnt, var_frame, float(LIFEBAR_FRAMES_NUM - 1))
 	}
 
 	player_set_camera(iPlayer, Player[iPlayer][PlrCameraMode])
@@ -2666,11 +2668,6 @@ public fw_AddToFullPack(es_state, e, ent, host, hostflags, player)
 
 	if (player)
 	{
-		/*static Float:vAngles[3]
-		get_es(es_state, ES_Angles, vAngles)
-		vAngles[2] += 180.0
-		set_es(es_state, ES_Angles, vAngles)*/
-
 		iFlags = get_entvar(ent, var_flags)
 
 		if (PlayerF[ent][PlrModelAnimTime] > 0.0)
@@ -3590,9 +3587,13 @@ public event_Health(iPlayer)
 	if (Player[iPlayer][PlrHpBar])
 	{
 		new iHealth = floatround(get_entvar(iPlayer, var_health), floatround_floor)
-		new iMaxHealth = floatround(PlayerF[iPlayer][PlrMaxHP])
+		new Float:fMaxHealth = PlayerF[iPlayer][PlrMaxHP]
 
-		set_entvar(Player[iPlayer][PlrHpBar], var_frame, iHealth >= iMaxHealth ? 99.0 : floatmax(iHealth * 100.0 / iMaxHealth  - 1.0, 0.0))
+		new Float:fMinFrame = 0.0
+		new Float:fMaxFrame = float(LIFEBAR_FRAMES_NUM - 1)
+
+		set_entvar(Player[iPlayer][PlrHpBar], var_frame,
+			floatclamp(float(iHealth * LIFEBAR_FRAMES_NUM) / fMaxHealth - 1.0, fMinFrame, fMaxFrame))
 	}
 }
 
