@@ -12,6 +12,7 @@ public plugin_init()
 {
     register_plugin(PLUGIN, VERSION, AUTHOR)
     RegisterHookChain(RG_CBasePlayer_AddAccount, "RG_CBasePlayer_AddAccount_Pre", false)
+    RegisterHookChain(RG_CSGameRules_RestartRound, "RG_CSGameRules_RestartRound_Pre")
 }
 
 public client_putinserver(iPlayer)
@@ -37,5 +38,13 @@ public RG_CBasePlayer_AddAccount_Pre(const iPlayer, iAmount, RewardType:iType, b
             SetHookChainArg(2, ATYPE_INTEGER, g_iSaveAccount[iPlayer])
             g_iSaveAccount[iPlayer] = 0
         }
+    }
+}
+
+public RG_CSGameRules_RestartRound_Pre()
+{
+	if (get_member_game(m_bCompleteReset))
+	{
+		arrayset(g_iSaveAccount, 0, sizeof g_iSaveAccount)
     }
 }

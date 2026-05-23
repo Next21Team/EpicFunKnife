@@ -207,6 +207,7 @@ public plugin_init()
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_slash1.wav", SOUND_KNIFE_SLASH)
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_slash2.wav", SOUND_KNIFE_SLASH)
 
+	RegisterHookChain(RG_CSGameRules_RestartRound, "RG_CSGameRules_RestartRound_Pre")
 	RegisterHookChain(RG_CSGameRules_CleanUpMap, "RG_CSGameRules_CleanUpMap_Post", true)
 	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)
 	RegisterHookChain(RG_CBasePlayer_ImpulseCommands, "RG_CBasePlayer_ImpulseCommands_Pre", false)
@@ -218,8 +219,6 @@ public plugin_init()
 
 	RegisterHam(Ham_TakeDamage, SZ_EXPLOSION, "npc_TakeDamage")
 	RegisterHam(Ham_Classify, SZ_EXPLOSION, "npc_Classify")
-
-	register_event("HLTV", "event_RoundStart", "a", "1=0", "2=0")
 }
 
 public client_putinserver(iPlayer)
@@ -245,6 +244,14 @@ public client_disconnected(iPlayer)
 			Player[i][PlrParasite] = 0
 }
 
+public RG_CSGameRules_RestartRound_Pre()
+{
+	arrayset(g_iZombieTeamCount, 0, sizeof g_iZombieTeamCount)
+
+	for (new iPlayer = 1; iPlayer <= MaxClients; iPlayer++)
+		Player[iPlayer][PlrNpcAction] = NPC_ACTION_NONE
+}
+
 public RG_CSGameRules_CleanUpMap_Post()
 {
 	new iEnt = NULLENT
@@ -254,14 +261,6 @@ public RG_CSGameRules_CleanUpMap_Post()
 	iEnt = NULLENT
 	while ((iEnt = rg_find_ent_by_class(iEnt, _CLASSNAME_ZOMBIE_SPIT)))
 		rg_remove_entity(iEnt)
-}
-
-public event_RoundStart()
-{
-	arrayset(g_iZombieTeamCount, 0, sizeof g_iZombieTeamCount)
-
-	for (new iPlayer = 1; iPlayer <= MaxClients; iPlayer++)
-		Player[iPlayer][PlrNpcAction] = NPC_ACTION_NONE
 }
 
 public RG_CBasePlayer_Spawn_Post(iPlayer)

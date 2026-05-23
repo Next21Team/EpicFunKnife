@@ -858,6 +858,7 @@ public plugin_init()
 	register_clcmd("toggle_knf_change_delay", "clcmd_toggle_knf_change_delay")
 	AddMenuItem("Toggle knife change delay", "toggle_knf_change_delay", ADMIN_FLAG, PLUGIN)
 
+	RegisterHookChain(RG_CSGameRules_RestartRound, "RG_CSGameRules_RestartRound_Pre")
 	RegisterHookChain(RG_CSGameRules_CleanUpMap, "RG_CSGameRules_CleanUpMap_Post", true)
 	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)
 	RegisterHookChain(RG_CBasePlayer_PreThink, "RG_CBasePlayer_PreThink_Pre")
@@ -899,8 +900,6 @@ public plugin_init()
 
 	register_clcmd("drop", "clcmd_show_items_menu")
 
-	register_event("HLTV", "event_NewRound", "a", "1=0", "2=0")
-	register_event("TextMsg", "event_NewGame", "a", "2=#Game_Commencing", "2=#Game_will_restart_in")
 	register_logevent("logevent_StartRound", 2, "1=Round_Start")
 	register_logevent("logevent_RoundEnd", 2, "1=Round_End")
 	register_event("CurWeapon", "event_CurWeapon", "be", "1=1")
@@ -1091,6 +1090,34 @@ public client_disconnected(iPlayer)
 			set_entvar(iBeamEnt, var_flags, FL_KILLME)
 
 	player_set_camera(iPlayer, CAMERA_MODE_1ST, false)
+}
+
+public RG_CSGameRules_RestartRound_Pre()
+{
+	if (task_exists(TASK_DARKNESS))
+	{
+		remove_task(TASK_DARKNESS)
+		task_darkness(TASK_DARKNESS)
+	}
+
+	if (task_exists(TASK_SILENCE))
+	{
+		remove_task(TASK_SILENCE)
+		task_silence(TASK_SILENCE)
+	}
+
+	if (get_member_game(m_bCompleteReset))
+	{
+		for (new i = 1; i <= MaxClients; i++)
+		{
+			arrayset(Player[i][PlrItemValue], -1, MAX_ITEMS)
+			Player[i][PlrIsBhopEnabled] = false
+		}
+
+		TrieClear(g_tInventoryCache)
+	}
+
+	g_bIsRoundEnded = false
 }
 
 public RG_CSGameRules_CleanUpMap_Post()
@@ -3908,35 +3935,6 @@ public fw_GiveAmmo(iPlayer, iAmount, const szAmmo[])
 		return HAM_SUPERCEDE
 
 	return HAM_IGNORED
-}
-
-public event_NewGame()
-{
-	for (new i = 1; i <= MaxClients; i++)
-	{
-		if (CheckPlayerGameFlag(i, PLGF_IS_ONLINE))
-			rg_add_account(i, 0, AS_SET)
-
-		arrayset(Player[i][PlrItemValue], -1, MAX_ITEMS)
-		Player[i][PlrIsBhopEnabled] = false
-	}
-}
-
-public event_NewRound()
-{
-	if (task_exists(TASK_DARKNESS))
-	{
-		remove_task(TASK_DARKNESS)
-		task_darkness(TASK_DARKNESS)
-	}
-
-	if (task_exists(TASK_SILENCE))
-	{
-		remove_task(TASK_SILENCE)
-		task_silence(TASK_SILENCE)
-	}
-
-	g_bIsRoundEnded = false
 }
 
 public logevent_StartRound()
@@ -7044,15 +7042,9 @@ load_inventory_from_cache(iPlayer)
 	new szAuthID[24]
 	get_user_authid(iPlayer, szAuthID, charsmax(szAuthID))
 
-	new szKey[48]
-	formatex(szKey, charsmax(szKey), "%s_item", szAuthID)
-
-	if (TrieKeyExists(g_tInventoryCache, szKey))
-	{
-		TrieGetArray(g_tInventoryCache, fmt("%s_item_value", szAuthID), Player[iPlayer][PlrItemValue], MAX_ITEMS)
-		TrieGetCell(g_tInventoryCache, fmt("%s_item_mode", szAuthID), Player[iPlayer][PlrItemMode])
-		TrieGetCell(g_tInventoryCache, fmt("%s_bhop", szAuthID), Player[iPlayer][PlrIsBhopEnabled])
-	}
+	TrieGetArray(g_tInventoryCache, fmt("%s_item_value", szAuthID), Player[iPlayer][PlrItemValue], MAX_ITEMS)
+	TrieGetCell(g_tInventoryCache, fmt("%s_item_mode", szAuthID), Player[iPlayer][PlrItemMode])
+	TrieGetCell(g_tInventoryCache, fmt("%s_bhop", szAuthID), Player[iPlayer][PlrIsBhopEnabled])
 }
 
 // NATIVES
