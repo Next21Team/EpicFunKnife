@@ -20,6 +20,8 @@ new const SOUND_GAME_MODE1[] = "sound/next21_efk/game_mode_1b01.wav"
 #define RESPAWN_TIME 				8.0
 #define RESPAWN_COST 				10000
 
+#define RESPAWN_MESSAGE_START_TIME	4.5
+
 #define TASK_ROUND_GAME 		1210
 #define TASK_CHECK_ZONE 		1310
 #define TASK_ZONE_SCREENFADE 	1410
@@ -49,7 +51,7 @@ new bool:g_bAuthorized[MAX_PLAYERS + 1]
 new Float:g_fRespawnTime[MAX_PLAYERS + 1]
 new bool:g_bDoRevive[MAX_PLAYERS + 1]
 new g_iRoundStart, g_iWinTeam
-new Float:g_fSyncShow[MAX_PLAYERS + 1]
+new Float:g_fRespawnMessageTime[MAX_PLAYERS + 1]
 new g_bWasRespawned[MAX_PLAYERS + 1]
 new bool:g_bRespawnCompensation[MAX_PLAYERS + 1]
 
@@ -349,21 +351,21 @@ public RG_CBasePlayer_PostThink_Post(iPlayer)
 	else
 	{
 		static szMessage[256]
-		if (g_fSyncShow[iPlayer] - fGameTime < 0.5)
+		if (g_fRespawnMessageTime[iPlayer] < fGameTime)
 		{
-			g_fSyncShow[iPlayer] = fGameTime + 0.5
+			g_fRespawnMessageTime[iPlayer] = fGameTime + 0.5
 
-			format(szMessage, 255, "%L", iPlayer, "DEATHMATCH_SPAWNTIME", floatround(g_fRespawnTime[iPlayer] - fGameTime))
+			format(szMessage, charsmax(szMessage), "%L", iPlayer, "DEATHMATCH_SPAWNTIME", floatround(g_fRespawnTime[iPlayer] - fGameTime))
 
 			if (g_iBalance && g_iWinTeam == -1)
 			{
 				if ((g_iBalance > 0 && iTeam == 2) || (g_iBalance < 0 && iTeam == 1))
-					format(szMessage, 255, "%s^n%L", szMessage, iPlayer, "DEATHMATCH_WIN", abs(g_iBalance))
+					format(szMessage, charsmax(szMessage), "%s^n%L", szMessage, iPlayer, "DEATHMATCH_WIN", abs(g_iBalance))
 				else
-					format(szMessage, 255, "%s^n%L", szMessage, iPlayer, "DEATHMATCH_LOSE", abs(g_iBalance))
+					format(szMessage, charsmax(szMessage), "%s^n%L", szMessage, iPlayer, "DEATHMATCH_LOSE", abs(g_iBalance))
 			}
 
-			set_dhudmessage(0, 100, 215, -1.0, 0.2, 0, 0.6, 0.6, 0.6, 0.6)
+			set_dhudmessage(0, 100, 215, -1.0, 0.2, .holdtime=0.6)
 			show_dhudmessage(iPlayer, szMessage)
 		}
 	}
@@ -419,19 +421,16 @@ public efk_player_death(iVictim, iAttacker, iAssistant)
 	if (g_iGameMode != GAME_MODE_ONE_LIFE)
 	{
 		new iTeam = get_member(iVictim, m_iTeam)
+		new Float:fGameTime = get_gametime()
 
 		if (g_iWinTeam == -1)
 		{
 			g_bDoRevive[iVictim] = true
-
-			new Float:fGameTime = get_gametime()
-			new Float:fNextSuicideTime = get_member(iVictim, m_fNextSuicideTime)
-
 			g_fRespawnTime[iVictim] = fGameTime + RESPAWN_TIME
+
+			new Float:fNextSuicideTime = get_member(iVictim, m_fNextSuicideTime)
 			if (fGameTime - fNextSuicideTime <= 1.0)
 				g_fRespawnTime[iVictim] += RESPAWN_TIME
-
-			g_fSyncShow[iVictim] = fGameTime + 3.0
 
 			if (iAttacker && iAttacker != iVictim && g_bConnected[iVictim] && g_bConnected[iAttacker])
 			{
@@ -444,11 +443,10 @@ public efk_player_death(iVictim, iAttacker, iAssistant)
 		else if (g_iWinTeam == iTeam)
 		{
 			g_bDoRevive[iVictim] = true
-
-			new Float:fGameTime = get_gametime()
 			g_fRespawnTime[iVictim] = fGameTime + ENDROUND_RESPAWN_TIME
-			g_fSyncShow[iVictim] = fGameTime + 2.5
 		}
+
+		g_fRespawnMessageTime[iVictim] = fGameTime + RESPAWN_MESSAGE_START_TIME
 	}
 
 	remove_task(TASK_CHECK_ZONE + iVictim)

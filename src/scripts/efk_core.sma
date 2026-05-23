@@ -270,6 +270,7 @@ enum _:PlayerProperties
 	PlrCorpseType,
 	PlrAttacker,
 	PlrDeathReasonText[LEN_DEATH_REASON],
+	bool:PlrDeathReasonApplied,
 	PlrCameraEnt,
 	PlrCameraMode,
 	PlrCustomCameraEnt,
@@ -1199,7 +1200,8 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 
 	ClearPlayerGameFlag(iPlayer, PLGF_IN_LOCK_POWER_DAMAGE);
 	PlayerF[iPlayer][PlrPowerDamage] = 0.0
-	Player[iPlayer][PlrDeathReasonText][0] = 0
+	Player[iPlayer][PlrDeathReasonText][0] = EOS
+	Player[iPlayer][PlrDeathReasonApplied] = false
 
 	PlayerF[iPlayer][PlrSlowTime][0] = 0.0
 	PlayerF[iPlayer][PlrSlowTime][1] = 0.0
@@ -2319,16 +2321,13 @@ public fw_Player_PostDamage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlag
 	if (fHealth < 1.0)
 	{
 		if (is_entity_player(iInflictor) && (iFlags & DMG_BULLET) && get_user_weapon(iAttacker) == CSW_KNIFE)
-		{
-			new abilReturn = PLUGIN_CONTINUE
-			ExecuteForward(forward_player_knife_killed, abilReturn, iVictim, iAttacker, Player[iAttacker][PlrKnife])
-		}
+			ExecuteForward(forward_player_knife_killed, _, iVictim, iAttacker, Player[iAttacker][PlrKnife])
 
 		if (fHealth > 0.0)
 			ExecuteHamB(Ham_Killed, iVictim, iAttacker, GIB_NORMAL)
 
 		gen_death_reason(iVictim, iAttacker, iFlags)
-		show_death_reason(iVictim, Player[iVictim][PlrDeathReasonText])
+		show_death_reason(iVictim)
 
 		if (Player[iVictim][PlrCorpseType] != CORP_CUSTOM)
 		{
@@ -2394,9 +2393,12 @@ public fw_Player_PostDamage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlag
 			}
 		}
 	}
+	else
+	{
+		Player[iVictim][PlrDeathReasonText][0] = EOS
+	}
 
 	Player[iVictim][PlrHitGroupAttacked] = KHITGROUP_GENERIC
-	Player[iVictim][PlrDeathReasonText][0] = 0
 
 	return HAM_IGNORED
 }
@@ -4953,19 +4955,20 @@ gen_death_reason(iVictim, iAttacker, iFlags)
 	player_set_death_reason(iVictim, "DEATH_REASON_WASTED")
 }
 
-show_death_reason(iPlayer, szDeathReason[])
+show_death_reason(iPlayer)
 {
-	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE) || Player[iPlayer][PlrDeathReasonText][0] == '!')
+	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE) || Player[iPlayer][PlrDeathReasonApplied])
 		return
 
 	set_dhudmessage(255, 0, 0, -1.0, 0.3, 0, 0.0, 5.0, 1.0, 1.0)
-	show_dhudmessage(iPlayer, "%L", iPlayer, szDeathReason)
-	Player[iPlayer][PlrDeathReasonText][0] = '!'
+	show_dhudmessage(iPlayer, "%L", iPlayer, Player[iPlayer][PlrDeathReasonText])
+	Player[iPlayer][PlrDeathReasonApplied] = true
 }
 
 player_set_death_reason(iPlayer, szDeathReason[])
 {
-	copy(Player[iPlayer][PlrDeathReasonText], LEN_DEATH_REASON - 1, szDeathReason)
+	if (!Player[iPlayer][PlrDeathReasonApplied])
+		copy(Player[iPlayer][PlrDeathReasonText], LEN_DEATH_REASON - 1, szDeathReason)
 }
 
 accept_dealt_damage(iVictim, iAttacker)
@@ -5942,7 +5945,7 @@ bool:player_remove_shadow(iPlayer, bool:bSetClone=false, bDirectJump=false)
 
 	if (PlayerF[iPlayer][PlrCloneTimeValue] > 0.0)
 	{
-		new Float:fHealth, Float:fDamage, ent = -1
+		new Float:fHealth, Float:fDamage, iEnt = NULLENT
 
 		fHealth = get_entvar(iPlayer, var_health)
 		fDamage = get_gametime() - PlayerF[iPlayer][PlrCloneTimeValue]
@@ -5952,17 +5955,18 @@ bool:player_remove_shadow(iPlayer, bool:bSetClone=false, bDirectJump=false)
 		else
 			set_entvar(iPlayer, var_health, 1.0)
 
-		while ((ent = engfunc(EngFunc_FindEntityInSphere, ent, vNewOrigin, SHADOW_JUMP_RADIUS)))
+		while ((iEnt = engfunc(EngFunc_FindEntityInSphere, iEnt, vNewOrigin, SHADOW_JUMP_RADIUS)))
 		{
-			if (ent <= MaxClients && CheckPlayerGameFlag(ent, PLGF_IS_ALIVE) && Player[iPlayer][PlrTeam] != Player[ent][PlrTeam] && !CheckPlayerGameFlag(ent, PLGF_IN_UNABILITY))
+			if (iEnt <= MaxClients && CheckPlayerGameFlag(iEnt, PLGF_IS_ALIVE)
+				&& Player[iPlayer][PlrTeam] != Player[iEnt][PlrTeam] && !CheckPlayerGameFlag(iEnt, PLGF_IN_UNABILITY))
 			{
-				player_set_death_reason(ent, "DEATH_REASON_SHADOW_WAVE")
-				set_member(ent, m_LastHitGroup, HIT_GENERIC)
-				ExecuteHamB(Ham_TakeDamage, ent, iPlayer, iPlayer, fDamage * SHADOW_JUMP_DAMAGE, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
+				player_set_death_reason(iEnt, "DEATH_REASON_SHADOW_WAVE")
+				set_member(iEnt, m_LastHitGroup, HIT_GENERIC)
+				ExecuteHamB(Ham_TakeDamage, iEnt, iPlayer, iPlayer, fDamage * SHADOW_JUMP_DAMAGE, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
 			}
-			else if ((get_entvar(ent, var_flags) & FL_MONSTER) && get_entvar(ent, var_skin) + 1 != Player[iPlayer][PlrTeam])
+			else if ((get_entvar(iEnt, var_flags) & FL_MONSTER) && get_entvar(iEnt, var_skin) + 1 != Player[iPlayer][PlrTeam])
 			{
-				ExecuteHamB(Ham_TakeDamage, ent, iPlayer, iPlayer, fDamage * SHADOW_JUMP_DAMAGE, DMG_ENERGYBEAM)
+				ExecuteHamB(Ham_TakeDamage, iEnt, iPlayer, iPlayer, fDamage * SHADOW_JUMP_DAMAGE, DMG_ENERGYBEAM)
 			}
 		}
 	}
@@ -5989,13 +5993,13 @@ bool:player_remove_shadow(iPlayer, bool:bSetClone=false, bDirectJump=false)
 
 	if (bSetClone)
 	{
-		new enemy[32], enemyCount = 0
+		new iTargets[32], iTargetsNum = 0
 		for (new i = 1; i <= MaxClients; i++)
 			if (CheckPlayerGameFlag(i, PLGF_IS_ALIVE) && Player[iPlayer][PlrTeam] != Player[i][PlrTeam])
-				enemy[enemyCount++] = i
+				iTargets[iTargetsNum++] = i
 
-		if (enemyCount)
-			player_clone(iPlayer, enemy[random(enemyCount)])
+		if (iTargetsNum)
+			player_clone(iPlayer, iTargets[random(iTargetsNum)])
 	}
 
 	if (g_iSilenceTeam > -1 && g_iSilenceTeam != Player[iPlayer][PlrTeam])
@@ -8528,7 +8532,8 @@ public bool:_21kc_player_try_crit(plugin, num_params)
 public _21kc_player_set_death_reason(plugin, num_params)
 {
 	new iPlayer = get_param(1)
-	get_string(2, Player[iPlayer][PlrDeathReasonText], LEN_DEATH_REASON - 1)
+	if (!Player[iPlayer][PlrDeathReasonApplied])
+		get_string(2, Player[iPlayer][PlrDeathReasonText], LEN_DEATH_REASON - 1)
 }
 
 public VisibilityType:_21kc_player_get_visibility(plugin, num_params)
