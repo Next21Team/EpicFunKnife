@@ -94,7 +94,9 @@ new const SOUND_SILENCE_OUT[]		= "next21_efk/silence_out_b01.wav"
 new const MODEL_ICE_DEATH[]			= "models/next21_efk/ice_death.mdl"
 new const MODEL_ACID_DEATH[]		= "models/next21_efk/acid_death.mdl"
 
-new const HEALTH_BAR_MODEL[]		= "sprites/next21_efk/lifebar_def.spr"
+new const MODEL_HEALTH_BAR[]		= "sprites/next21_efk/lifebar_def.spr"
+
+new const MODEL_BLIND[]				= "models/next21_efk/blind_eff_a01.mdl"
 
 new const SPRITE_KNIFE_ICON[]		= "sprites/next21_efk/ncl/hud_knife.spr"
 
@@ -238,7 +240,6 @@ enum _:PlayerProperties
 	PlrFavKnife,
 	PlrKnife,
 	KnifeCrosshair:PlrCrosshair,
-	PlrHpBar,
 	VisionType:PlrVision,
 	VisibilityType:PlrVisibility,
 	PlrClone,
@@ -271,6 +272,8 @@ enum _:PlayerProperties
 	PlrAttacker,
 	PlrDeathReasonText[LEN_DEATH_REASON],
 	bool:PlrDeathReasonApplied,
+	PlrHpBarEnt,
+	PlrBlindEffEnt,
 	PlrCameraEnt,
 	PlrCameraMode,
 	PlrCustomCameraEnt,
@@ -747,7 +750,9 @@ public plugin_precache()
 	g_pCritFlameSpr = precache_model(SPRITE_CRIT_FLAME)
 	g_pGlassGibsMdl = precache_model("models/glassgibs.mdl")
 
-	precache_model(HEALTH_BAR_MODEL)
+	precache_model(MODEL_HEALTH_BAR)
+
+	precache_model(MODEL_BLIND)
 
 	precache_model(CAMERA_MODEL)
 
@@ -1079,10 +1084,10 @@ public client_disconnected(iPlayer)
 	Player[iPlayer][PlrHatBody] = 0
 	Player[iPlayer][PlrHatSkin] = 0
 
-	if (Player[iPlayer][PlrHpBar])
+	if (Player[iPlayer][PlrHpBarEnt])
 	{
-		rg_remove_entity(Player[iPlayer][PlrHpBar])
-		Player[iPlayer][PlrHpBar] = 0
+		rg_remove_entity(Player[iPlayer][PlrHpBarEnt])
+		Player[iPlayer][PlrHpBarEnt] = 0
 	}
 
 	new iBeamEnt = NULLENT
@@ -1090,6 +1095,7 @@ public client_disconnected(iPlayer)
 		if (get_entvar(iBeamEnt, var_aiment) == iPlayer)
 			set_entvar(iBeamEnt, var_flags, FL_KILLME)
 
+	remove_blind_effect(iPlayer)
 	player_set_camera(iPlayer, CAMERA_MODE_1ST, false)
 }
 
@@ -1258,7 +1264,7 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	for (i = 1; i <= MaxClients; i++)
 		Player[i][PlrDamageAccept][iPlayer] = 0
 
-	new iLifeBarEnt = Player[iPlayer][PlrHpBar]
+	new iLifeBarEnt = Player[iPlayer][PlrHpBarEnt]
 	if (iLifeBarEnt)
 	{
 		set_entvar(iLifeBarEnt, var_effects, 0)
@@ -2643,8 +2649,8 @@ public RG_CBasePlayer_Killed_Post(iVictim, iAttacker, iFlags)
 	PlayerF[iVictim][PlrModelAnimTime] = 0.0
 	PlayerF[iVictim][PlrCheckStuckTime] = 0.0
 
-	if (Player[iVictim][PlrHpBar])
-		set_entvar(Player[iVictim][PlrHpBar], var_effects, EF_NODRAW)
+	if (Player[iVictim][PlrHpBarEnt])
+		set_entvar(Player[iVictim][PlrHpBarEnt], var_effects, EF_NODRAW)
 
 	player_set_camera(iVictim, CAMERA_MODE_1ST, false)
 
@@ -3613,7 +3619,7 @@ public event_CurWeapon(iPlayer)
 
 public event_Health(iPlayer)
 {
-	if (Player[iPlayer][PlrHpBar])
+	if (Player[iPlayer][PlrHpBarEnt])
 	{
 		new iHealth = floatround(get_entvar(iPlayer, var_health), floatround_floor)
 		new Float:fMaxHealth = PlayerF[iPlayer][PlrMaxHP]
@@ -3621,7 +3627,7 @@ public event_Health(iPlayer)
 		new Float:fMinFrame = 0.0
 		new Float:fMaxFrame = float(LIFEBAR_FRAMES_NUM - 1)
 
-		set_entvar(Player[iPlayer][PlrHpBar], var_frame,
+		set_entvar(Player[iPlayer][PlrHpBarEnt], var_frame,
 			floatclamp(float(iHealth * LIFEBAR_FRAMES_NUM) / fMaxHealth - 1.0, fMinFrame, fMaxFrame))
 	}
 }
@@ -5519,18 +5525,19 @@ create_hat_entity(iPlayer)
 
 create_lifebar_entity(iPlayer)
 {
-	new iLifeBarEnt = Player[iPlayer][PlrHpBar]
+	new iLifeBarEnt = Player[iPlayer][PlrHpBarEnt]
 	if (iLifeBarEnt > 0)
 		return iLifeBarEnt
 
 	iLifeBarEnt = rg_create_entity(SZ_ENV_SPRITE)
 	if (is_nullent(iLifeBarEnt))
 	{
-		Player[iPlayer][PlrHpBar] = 0
+		Player[iPlayer][PlrHpBarEnt] = 0
 		return NULLENT
 	}
 
-	engfunc(EngFunc_SetModel, iLifeBarEnt, HEALTH_BAR_MODEL)
+	engfunc(EngFunc_SetModel, iLifeBarEnt, MODEL_HEALTH_BAR)
+
 	set_entvar(iLifeBarEnt, var_scale, 0.15)
 	set_entvar(iLifeBarEnt, var_movetype, MOVETYPE_FOLLOW)
 	set_entvar(iLifeBarEnt, var_aiment, iPlayer)
@@ -5541,9 +5548,48 @@ create_lifebar_entity(iPlayer)
 	set_entvar(iLifeBarEnt, var_rendermode, kRenderNormal)
 	set_entvar(iLifeBarEnt, var_impulse, IMPULSE_LIFEBAR)
 
-	Player[iPlayer][PlrHpBar] = iLifeBarEnt
+	Player[iPlayer][PlrHpBarEnt] = iLifeBarEnt
 
 	return iLifeBarEnt
+}
+
+create_blind_effect(iPlayer)
+{
+	new iBlindEffEnt = Player[iPlayer][PlrBlindEffEnt]
+	if (iBlindEffEnt > 0)
+		return iBlindEffEnt
+
+	iBlindEffEnt = rg_create_entity(SZ_INFO_TARGET)
+	if (is_nullent(iBlindEffEnt))
+	{
+		Player[iPlayer][PlrBlindEffEnt] = 0
+		return NULLENT
+	}
+
+	engfunc(EngFunc_SetModel, iBlindEffEnt, MODEL_BLIND)
+
+	set_entvar(iBlindEffEnt, var_solid, SOLID_NOT)
+	set_entvar(iBlindEffEnt, var_movetype, MOVETYPE_FOLLOW)
+	set_entvar(iBlindEffEnt, var_aiment, iPlayer)
+
+	set_entvar(iBlindEffEnt, var_sequence, 0)
+	set_entvar(iBlindEffEnt, var_animtime, get_gametime())
+	set_entvar(iBlindEffEnt, var_frame, 0.0)
+	set_entvar(iBlindEffEnt, var_framerate, 1.0)
+
+	Player[iPlayer][PlrBlindEffEnt] = iBlindEffEnt
+
+	return iBlindEffEnt
+}
+
+remove_blind_effect(iPlayer)
+{
+	new iBlindEffEnt = Player[iPlayer][PlrBlindEffEnt]
+	if (iBlindEffEnt > 0)
+	{
+		rg_remove_entity(iBlindEffEnt)
+		Player[iPlayer][PlrBlindEffEnt] = 0
+	}
 }
 
 add_player_frags(iPlayer, iAmount)
@@ -5622,6 +5668,8 @@ bool:player_blind(iPlayer, iMode, Float:fBlindTime)
 
 		PlayerF[iPlayer][PlrBlindTime] = fGameTime  + fBlindTime
 		PlayerF[iPlayer][PlrScreenFadeTime] = fGameTime  + 0.8
+
+		create_blind_effect(iPlayer)
 	}
 	else
 	{
@@ -5650,6 +5698,8 @@ screenfades_out(iPlayer, bool:bBreaked)
 
 	if (Player[iPlayer][PlrVision] == VISION_NORMAL && g_iDarknessTeam == Player[iPlayer][PlrTeam])
 		Player[iPlayer][PlrVision] = VISION_NIGHT
+
+	remove_blind_effect(iPlayer)
 
 	ExecuteForward(forward_unblind, _, iPlayer, bBreaked)
 }

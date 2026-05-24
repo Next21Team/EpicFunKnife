@@ -9,9 +9,9 @@
 
 new const PLUGIN[] = "EFK: Water Knife"
 
-#define KNIFE_CLASSNAME "weapon_next21_water_r01"
-#define KNIFE_MENUDESC  "KNIFE_WATER_DESC"
-#define KNIFE_CHATDESC  "KNIFE_WATER_CHAT"
+#define KNIFE_CLASSNAME	"weapon_next21_water_r01"
+#define KNIFE_MENUDESC	"KNIFE_WATER_DESC"
+#define KNIFE_CHATDESC	"KNIFE_WATER_CHAT"
 
 #define HP				95.0
 #define GRAVITY			1.0
@@ -19,7 +19,7 @@ new const PLUGIN[] = "EFK: Water Knife"
 #define MINDAMAGE		0.0
 #define MAXDAMAGE		0.0
 
-#define KNIFE_LEVEL     1
+#define KNIFE_LEVEL		1
 
 #define ABIL1_NAME		"Water"
 #define ABIL1_CHARGE	8.334
@@ -38,29 +38,31 @@ new const PLUGIN[] = "EFK: Water Knife"
 #define DRAGON_GUARD_KNOCKBACK_Z	550.0
 #define DRAGON_GUARD_DISTANCE		100.0
 #define DRAGON_GUARD_LIFETIME		7.0
-new const DRAGON_GUARD_ICON[] = "vipsafety"
+new const DRAGON_GUARD_ICON[]		= "vipsafety"
 
-#define EMBODIMENT_SPEED        500.0
-#define EMBODIMENT_RADIUS       340.0
-#define EMBODIMENT_HEALTH       6.0
-#define EMBODIMENT_DAMAGE       7.0
+#define EMBODIMENT_SPEED			500.0
+#define EMBODIMENT_RADIUS			340.0
+#define EMBODIMENT_HEALTH			6.0
+#define EMBODIMENT_DAMAGE			7.0
 
-#define WATER_SPHERE_LIFETIME	    12.0
-#define WATER_SPHERE_REGEN_HP       1.0
-#define WATER_SPHERE_REGEN_DELAY    0.4
+#define WATER_SPHERE_LIFETIME		12.0
+#define WATER_SPHERE_REGEN_HP		1.0
+#define WATER_SPHERE_REGEN_DELAY	0.4
 
-new const WATER_SPHERE_TNAME[] = "next21_watersphere"
+#define AIRTIME						12.0
 
-#define var_dg_lifetime        var_fuser2
+new const WATER_SPHERE_TNAME[]		= "next21_watersphere"
 
-#define var_emb_touches        var_iuser2
-#define var_emb_dir            var_iuser3
+#define var_dg_lifetime				var_fuser2
 
-#define TASK_RESTOREAIR			100
-#define TASK_DRAGONGUARD		200
-#define TASK_WATERSPHERE		1000
+#define var_emb_touches				var_iuser2
+#define var_emb_dir					var_iuser3
 
-#define AIRTIME                 12.0
+#define TASK_RESTOREAIR				100
+#define TASK_DRAGONGUARD			200
+#define TASK_WATERSPHERE			1000
+
+new const SZ_INFO_TARGET[]			= "info_target"
 
 enum _:ViewSeq
 {
@@ -669,7 +671,7 @@ clear_player(iPlayer)
 
 create_dragon_guard(iPlayer, iOwner, Float:fLifeTime = DRAGON_GUARD_LIFETIME)
 {
-	new iEnt = rg_create_entity("info_target", true)
+	new iEnt = rg_create_entity(SZ_INFO_TARGET)
 	if (is_nullent(iEnt))
 		return NULLENT
 
@@ -717,7 +719,7 @@ use_embodiment(iItem, iMode)
 	if (!g_bInEmbodiment[iPlayer])
 		return HAM_IGNORED
 
-	new iEmbEnt = rg_create_entity("info_target")
+	new iEmbEnt = rg_create_entity(SZ_INFO_TARGET)
 	if (is_nullent(iEmbEnt))
 		return HAM_SUPERCEDE
 
@@ -777,7 +779,7 @@ use_embodiment(iItem, iMode)
 
 create_dragon_guard_attack(Float:vOrigin[3], Float:vTargetOrigin[3])
 {
-	new iEnt = rg_create_entity("info_target")
+	new iEnt = rg_create_entity(SZ_INFO_TARGET)
 	if (is_nullent(iEnt))
 		return NULLENT
 
@@ -827,7 +829,7 @@ create_water_sphere(iOwner, Float:vOrigin[3])
 	set_entvar(iEnt, var_effects, EF_NODRAW)
 	set_entvar(iEnt, var_targetname, WATER_SPHERE_TNAME)
 
-	new iShellEnt = rg_create_entity("info_target", true)
+	new iShellEnt = rg_create_entity(SZ_INFO_TARGET)
 	if (is_nullent(iShellEnt))
 	{
 		set_entvar(iEnt, var_flags, FL_KILLME)
