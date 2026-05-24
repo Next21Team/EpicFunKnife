@@ -2913,7 +2913,7 @@ public fw_AddToFullPack(es_state, e, ent, host, hostflags, player)
 			return FMRES_IGNORED
 		}
 
-		if (iImpulse == IMPULSE_DRAGON_GUARD)
+		if (iImpulse == IMPULSE_DRAGON_GUARD || iImpulse == IMPULSE_BLIND_EFFECT)
 		{
 			i = get_entvar(ent, var_aiment)
 			if (!i || Player[i][PlrTeam] == iHostTeam)
@@ -5571,6 +5571,7 @@ create_blind_effect(iPlayer)
 	set_entvar(iBlindEffEnt, var_solid, SOLID_NOT)
 	set_entvar(iBlindEffEnt, var_movetype, MOVETYPE_FOLLOW)
 	set_entvar(iBlindEffEnt, var_aiment, iPlayer)
+	set_entvar(iBlindEffEnt, var_impulse, IMPULSE_BLIND_EFFECT)
 
 	set_entvar(iBlindEffEnt, var_sequence, 0)
 	set_entvar(iBlindEffEnt, var_animtime, get_gametime())
