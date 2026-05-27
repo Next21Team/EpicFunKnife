@@ -1419,7 +1419,10 @@ public kunai_touch(iEnt, iOther)
 		new iOwner = get_entvar(iEnt, var_owner)
 
 		if (is_entity_player(iOwner) && get_member(iOwner, m_iTeam) == get_member(iOther, m_iTeam))
+		{
+			ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iOwner, KUNAI_DAMAGE, DMG_GENERIC)
 			return HC_CONTINUE
+		}
 
 		if (kc_player_apply_concentblock(iOther, iEnt,
 			ATTACK_HEAVINESS_LOW, 150.0, true))
