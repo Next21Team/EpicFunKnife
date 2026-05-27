@@ -1384,7 +1384,7 @@ bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 				}
 				case IMPULSE_PRESENT:
 				{
-					ExecuteHamB(Ham_Touch, iPlayer, iTarget)
+					dllfunc(DLLFunc_Touch, iTarget, iPlayer)
 				}
 				case IMPULSE_FAKEPLAYER:
 				{
