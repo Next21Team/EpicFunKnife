@@ -52,8 +52,8 @@ new const CLASSNAME_PORTAL[] = "next21_blinkportal"
 
 #define var_delay           var_fuser1
 
-new const MODEL_V_KNIFE[] = "models/next21_efk/v_blink_knife_b03.mdl"
-new const MODEL_P_KNIFE[] = "models/next21_efk/p_blink_knife.mdl"
+new const MODEL_V_KNIFE[] = "models/next21_efk/v_blink_knife_b04.mdl"
+new const MODEL_P_KNIFE[] = "models/next21_efk/p_blink_knife_b04.mdl"
 new const MODEL_PORTAL[]  = "models/next21_efk/portal.mdl"
 
 new const SPRITE_SPRINT_TRAIL[]	= "sprites/next21_efk/sprint_trail.spr"
