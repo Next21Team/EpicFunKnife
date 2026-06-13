@@ -43,7 +43,6 @@ new const ABIL3_ICON[] = "suit_empty"
 #define CONCENTBLOCK_TIME	2.5
 
 #define SWAP_TIME		3.0
-#define HEADSHOT_MIN_HP_IGNOR	65
 
 new const MODEL_V_KNIFE[]	= "models/next21_efk/v_swap_knife_b03.mdl"
 new const MODEL_P_KNIFE[]	= "models/next21_efk/p_swap_knife_r2.mdl"

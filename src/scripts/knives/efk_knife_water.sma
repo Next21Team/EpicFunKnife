@@ -42,7 +42,8 @@ new const DRAGON_GUARD_ICON[]		= "vipsafety"
 
 #define EMBODIMENT_SPEED			500.0
 #define EMBODIMENT_RADIUS			340.0
-#define EMBODIMENT_HEALTH			6.0
+#define EMBODIMENT_TARGET_HEAL		6.0
+#define EMBODIMENT_SELF_HEAL		3.0
 #define EMBODIMENT_DAMAGE			7.0
 
 #define WATER_SPHERE_LIFETIME		12.0
@@ -596,13 +597,13 @@ public embodiment_touch(iEmbEnt, iEnt)
 	{
 		kc_player_unburn(iEnt)
 
-		kc_player_heal(iEnt, EMBODIMENT_HEALTH, iOwner)
+		kc_player_heal(iEnt, iEnt == iOwner ? EMBODIMENT_SELF_HEAL : EMBODIMENT_TARGET_HEAL, iOwner)
 		iTouches |= (1 << (iEnt & 31))
 
 		new iShadowActivator = kc_player_get_shadow_activator(iEnt)
 		if (iShadowActivator)
 		{
-			kc_player_heal(iShadowActivator, EMBODIMENT_HEALTH, iOwner)
+			kc_player_heal(iShadowActivator, EMBODIMENT_TARGET_HEAL, iOwner)
 			iTouches |= (1 << (iShadowActivator & 31))
 		}
 
