@@ -36,8 +36,8 @@ new const PLUGIN[] = "EFK: Leap Knife"
 #define LIMIT_CRIT_CHANCE	40.0
 #define ADD_CRIT_CHANCE		2.0
 
-new const MODEL_V_KNIFE[]	= "models/next21_efk/v_leap_knife_b03.mdl"
-new const MODEL_P_KNIFE[]	= "models/next21_efk/p_leap_knife.mdl"
+new const MODEL_V_KNIFE[]	= "models/next21_efk/v_leap_knife_b04.mdl"
+new const MODEL_P_KNIFE[]	= "models/next21_efk/p_leap_knife_b04.mdl"
 
 new const MODEL_STEAM[]		= "sprites/steam1.spr"
 new const MODEL_KUNAI[]		= "models/next21_efk/tknife_a01.mdl"
