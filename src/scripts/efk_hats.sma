@@ -94,6 +94,8 @@ public client_authorized(iPlayer)
 	if (!szValue[0])
 		goto set_hat_and_return
 
+	nvault_touch(g_nvHats, szKey)
+
 	static szHatModel[120], szHatPart[5]
 	split(szValue, szHatModel, charsmax(szHatModel), szHatPart, charsmax(szHatPart), "|")
 
