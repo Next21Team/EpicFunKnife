@@ -149,3 +149,10 @@ Use `.amxxpack.json` configuration file
 ## Assets
 Assets for the mod:
 https://www.dropbox.com/scl/fi/4s941jrbeenkau96inph8/efk_assets.zip?rlkey=dth0ou65a4537jec7anubmolh&dl=1
+
+## Special thanks
+
+* [ChakkiSkrip](https://github.com/ChakkiSkrip)
+* [AllanZed](https://github.com/AllanZed)
+* [SUMY](https://github.com/SUMY-MAN)
+* [Chrescoe1](https://github.com/Chrescoe1)
