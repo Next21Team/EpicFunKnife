@@ -145,8 +145,8 @@ FAKE_SWAP = Swap (R)
 
 TELEKINESIS_MODE_CONTRACTION = Mode: Contraction (E, R)
 TELEKINESIS_MODE_SPREADINGOF = Mode: Spreading of (E, R)
-TELEKINESIS_MODE_PUSH_TO = Mode: Push to the crosshair [To self] (E, R)
-TELEKINESIS_MODE_PUSH_AWAY = Mode: Push away [To self] (E, R)
+TELEKINESIS_MODE_PUSH_TO = Mode: Push to the crosshair [On self] (E, R)
+TELEKINESIS_MODE_PUSH_AWAY = Mode: Push away [On self] (E, R)
 TELEKINESIS_MODE_PUSH_ENEMY = Mode: Push enemy away (E, R)
 
 NPC_ACTION_HUNTER = Hunting (R + ...)

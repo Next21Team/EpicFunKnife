@@ -47,9 +47,6 @@ enum _:ViewSeq
 	VIEW_SEQ_DISTANCE_ATTACK
 }
 
-#define Player[%1][%2]		g_player_data[%1 - 1][%2]
-#define PlayerF[%1][%2]		g_player_data_f[%1 - 1][%2]
-
 enum AbilityMode
 {
 	MODE_PUSH_TO,
@@ -73,27 +70,22 @@ new const DISTANCE_ATTACK_HUD[]		= "Distance Attack (F)"
 
 new const SZ_INFO_TARGET[]			= "info_target"
 
-new const g_CritSounds[][] =
+new const SOUNDS_CRIT[][] =
 {
 	"next21_efk/frash_explosion01.wav",
 	"next21_efk/frash_explosion02.wav",
 	"next21_efk/frash_explosion03.wav"
 }
 
-enum _:PlayerProperties
+enum _:PlayerData
 {
-	Knife,
-	IsAlive,
-	// AbilityType:AbilType,
-	AbilityMode:AbilMode
+	PlrKnife,
+	bool:PlrIsAlive,
+	AbilityMode:AbilMode,
+	Float:PlrCritChance
 }
 
-enum _:PlayerPropertiesF
-{
-	Float:AbilSelfCharge,
-	Float:AbilTargetCharge,
-	Float:CritChance,
-}
+#define Player[%1][%2]	g_ePlayerData[%1 - 1][%2]
 
 enum _:TelekinesisTargetProperties
 {
@@ -102,7 +94,7 @@ enum _:TelekinesisTargetProperties
 	Float:TargetOrigin[3]
 }
 
-new g_iKnifeId, g_player_data[32][PlayerProperties], g_player_data_f[32][PlayerPropertiesF],
+new g_iKnifeId, g_ePlayerData[MAX_PLAYERS][PlayerData],
 sprShockwave, g_pKnifeVStr, g_pKnifePMdl
 
 public plugin_precache()
@@ -115,8 +107,8 @@ public plugin_precache()
 
 	precache_sound(SOUND_TELEKINESIS)
 
-	for (new i; i < sizeof g_CritSounds; i++)
-		precache_sound(g_CritSounds[i])
+	for (new i; i < sizeof SOUNDS_CRIT; i++)
+		precache_sound(SOUNDS_CRIT[i])
 
 	precache_generic(fmt("sprites/%s.txt", KNIFE_CLASSNAME))
 
@@ -151,35 +143,27 @@ public plugin_init()
 
 public client_putinserver(iPlayer)
 {
-	Player[iPlayer][IsAlive] = 0
-	PlayerF[iPlayer][CritChance] = START_CRIT_CHANCE
+	Player[iPlayer][PlrIsAlive] = false
+	Player[iPlayer][PlrCritChance] = START_CRIT_CHANCE
 }
 
 public client_disconnected(iPlayer)
 {
-	Player[iPlayer][IsAlive] = 0
+	Player[iPlayer][PlrIsAlive] = false
 }
 
 public fw_PlayerSpawn(iPlayer)
 {
 	if (is_user_alive(iPlayer))
-		Player[iPlayer][IsAlive] = 1
-
-	PlayerF[iPlayer][AbilSelfCharge] = PlayerF[iPlayer][AbilTargetCharge] = kc_player_get_abil1_charge(iPlayer)
-}
-
-public efk_disenergy(iPlayer)
-{
-	PlayerF[iPlayer][AbilSelfCharge] = floatmax(0.0, PlayerF[iPlayer][AbilSelfCharge] - random_float(20.0, 25.0))
-	PlayerF[iPlayer][AbilTargetCharge] = floatmax(0.0, PlayerF[iPlayer][AbilTargetCharge] - random_float(20.0, 25.0))
+		Player[iPlayer][PlrIsAlive] = true
 }
 
 public fw_PreThink(iPlayer)
 {
-	if (!Player[iPlayer][IsAlive])
+	if (!Player[iPlayer][PlrIsAlive])
 		return HAM_IGNORED
 
-	if (Player[iPlayer][Knife] != g_iKnifeId)
+	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return HAM_IGNORED
 
 	new iButton = get_entvar(iPlayer, var_button)
@@ -191,14 +175,6 @@ public fw_PreThink(iPlayer)
     		Player[iPlayer][AbilMode] = MODE_PUSH_TO
 
 		kc_player_set_abil1_type(iPlayer, ABIL_NORMAL)
-
-		// if(Player[iPlayer][AbilType] != ABIL_NORMAL)
-		// {
-		// 	PlayerF[iPlayer][AbilTargetCharge] = kc_player_get_abil1_charge(iPlayer)
-		// 	kc_player_set_abil1_charge(iPlayer, PlayerF[iPlayer][AbilSelfCharge])
-
-		// 	Player[iPlayer][AbilType] = ABIL_NORMAL
-		// }
 	}
 
 	if ((iButton & IN_RELOAD) && !(iOldButtons & IN_RELOAD))
@@ -207,14 +183,6 @@ public fw_PreThink(iPlayer)
 			Player[iPlayer][AbilMode] = MODE_GROUP1_END
 
 		kc_player_set_abil1_type(iPlayer, ABIL_TARGET_PLAYER)
-
-		// if(Player[iPlayer][AbilType] != ABIL_TARGET_PLAYER)
-		// {
-		// 	PlayerF[iPlayer][AbilSelfCharge] = kc_player_get_abil1_charge(iPlayer)
-		// 	kc_player_set_abil1_charge(iPlayer, PlayerF[iPlayer][AbilTargetCharge])
-
-		// 	Player[iPlayer][AbilType] = ABIL_TARGET_PLAYER
-		// }
 	}
 
 	return HAM_IGNORED
@@ -230,10 +198,10 @@ public fw_SecondaryAttack(iWeapon)
 
 	new iPlayer = get_member(iWeapon, m_pPlayer)
 
-	if (!Player[iPlayer][IsAlive])
+	if (!Player[iPlayer][PlrIsAlive])
 		return HAM_IGNORED
 
-	if (Player[iPlayer][Knife] != g_iKnifeId)
+	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return HAM_IGNORED
 
 	if (Player[iPlayer][AbilMode] >= MODE_GROUP1_END)
@@ -263,7 +231,7 @@ public fw_PlayerDamage(iVictim, gun, attacker, Float:damage, bits)
 	if (GetHamReturnStatus() == HAM_SUPERCEDE)
 		return HAM_SUPERCEDE
 
-	if (Player[iVictim][Knife] == g_iKnifeId)
+	if (Player[iVictim][PlrKnife] == g_iKnifeId)
 	{
 		if (bits & DMG_FALL)
 		{
@@ -276,7 +244,7 @@ public fw_PlayerDamage(iVictim, gun, attacker, Float:damage, bits)
 	if (!is_entity_player(attacker))
 		return HAM_IGNORED
 
-	if (Player[attacker][Knife] != g_iKnifeId)
+	if (Player[attacker][PlrKnife] != g_iKnifeId)
 		return HAM_IGNORED
 
 	if (!(bits & DMG_BULLET))
@@ -295,7 +263,7 @@ public fw_PlayerDamage(iVictim, gun, attacker, Float:damage, bits)
 	while ((ent = engfunc(EngFunc_FindEntityInSphere, ent, vOrigin, 250.0)))
 	{
 		if (is_entity_player(ent)
-			&& ent != iVictim && Player[ent][IsAlive]
+			&& ent != iVictim && Player[ent][PlrIsAlive]
 			&& !kc_player_check_game_flag(ent, PLGF_IN_UNABILITY)
 			&& kc_player_get_visibility(ent) != VIS_INVISION
 			&& get_user_team(attacker) != get_user_team(ent))
@@ -326,32 +294,32 @@ public efk_player_death(iVictim, iAttacker)
 	if (iAttacker == iVictim)
 		return
 
-	if (Player[iAttacker][Knife] != g_iKnifeId)
+	if (Player[iAttacker][PlrKnife] != g_iKnifeId)
 		return
 
-	if (PlayerF[iAttacker][CritChance] >= LIMIT_CRIT_CHANCE)
+	if (Player[iAttacker][PlrCritChance] >= LIMIT_CRIT_CHANCE)
 	{
-		PlayerF[iAttacker][CritChance] = CON_CRIT_CHANCE
+		Player[iAttacker][PlrCritChance] = CON_CRIT_CHANCE
 		kc_player_set_crit_chance(iAttacker, CON_CRIT_CHANCE)
 	}
 	else
 	{
-		PlayerF[iAttacker][CritChance] = koef_to_chance(chance_to_koef(PlayerF[iAttacker][CritChance]) - ADD_CRIT_CHANCE)
-		kc_player_set_crit_chance(iAttacker, PlayerF[iAttacker][CritChance])
+		Player[iAttacker][PlrCritChance] = koef_to_chance(chance_to_koef(Player[iAttacker][PlrCritChance]) - ADD_CRIT_CHANCE)
+		kc_player_set_crit_chance(iAttacker, Player[iAttacker][PlrCritChance])
 	}
 }
 
 public fw_PlayerKilled(iVictim, iAttacker)
 {
-	Player[iVictim][IsAlive] = 0
+	Player[iVictim][PlrIsAlive] = false
 }
 
 public fw_PlayerFlashlight(iPlayer)
 {
-	if (!Player[iPlayer][IsAlive])
+	if (!Player[iPlayer][PlrIsAlive])
 		return PLUGIN_CONTINUE
 
-	if (Player[iPlayer][Knife] != g_iKnifeId)
+	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
 	if (pev(iPlayer, pev_viewmodel) != g_pKnifeVStr)
@@ -386,12 +354,12 @@ public fw_PlayerFlashlight(iPlayer)
 
 public efk_change_knife_core_post(iPlayer, iKnifeId)
 {
-	Player[iPlayer][Knife] = iKnifeId
+	Player[iPlayer][PlrKnife] = iKnifeId
 
 	if (g_iKnifeId == iKnifeId)
 	{
 		Player[iPlayer][AbilMode] = MODE_PUSH_TO
-		kc_player_set_crit_chance(iPlayer, PlayerF[iPlayer][CritChance])
+		kc_player_set_crit_chance(iPlayer, Player[iPlayer][PlrCritChance])
 	}
 }
 
@@ -429,7 +397,7 @@ is_extra_abil1_case(iPlayer, iTarget)
 
 public efk_crosshair_draw_pre(iPlayer, iTarget, &AbilityType:iAbilType, bool:bDistanceAllowed)
 {
-	if (Player[iPlayer][Knife] != g_iKnifeId)
+	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
 	new iAbilCase = is_extra_abil1_case(iPlayer, iTarget)
@@ -445,7 +413,7 @@ public efk_crosshair_draw_pre(iPlayer, iTarget, &AbilityType:iAbilType, bool:bDi
 
 public efk_ability_pre(iPlayer, iTarget)
 {
-	if (Player[iPlayer][Knife] != g_iKnifeId)
+	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
 	new extraCase = is_extra_abil1_case(iPlayer, iTarget)
@@ -527,7 +495,7 @@ bool:telekinesis_target(iPlayer, iVictim, AbilityMode:iMode, bool:bIgnoreTeammat
 
 	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vCenterOrigin, 400.0)))
 	{
-		if (iTarget == iPlayer || !is_entity_player(iTarget) || !Player[iTarget][IsAlive])
+		if (iTarget == iPlayer || !is_entity_player(iTarget) || !Player[iTarget][PlrIsAlive])
 			continue
 
 		get_entvar(iTarget, var_origin, vTargetOrigin)
@@ -564,7 +532,7 @@ bool:telekinesis_target(iPlayer, iVictim, AbilityMode:iMode, bool:bIgnoreTeammat
 			}
 
 			new Float:damage =
-				random_float(0.0, 100.0) <= PlayerF[iPlayer][CritChance] && kc_player_try_crit(iTarget, iPlayer)
+				random_float(0.0, 100.0) <= Player[iPlayer][PlrCritChance] && kc_player_try_crit(iTarget, iPlayer)
 				? 1337.0
 				: 10.0
 
@@ -574,10 +542,10 @@ bool:telekinesis_target(iPlayer, iVictim, AbilityMode:iMode, bool:bIgnoreTeammat
 			ExecuteHamB(Ham_TakeDamage, iTarget, iPlayer, iPlayer, damage, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
 			set_member(iTarget, m_flVelocityModifier, fVelocityModifier)
 
-			if (!Player[iTarget][IsAlive])
+			if (!Player[iTarget][PlrIsAlive])
 			{
 				engfunc(EngFunc_EmitSound, iTarget, CHAN_AUTO,
-					g_CritSounds[random(sizeof g_CritSounds)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+					SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
 
 				send_msg_TE_LAVASPLASH(vTargetOrigin)
 
@@ -605,7 +573,7 @@ bool:telekinesis_target(iPlayer, iVictim, AbilityMode:iMode, bool:bIgnoreTeammat
 				continue
 
 			iTarget = aTargetData[i][TargetId]
-			if (!Player[iTarget][IsAlive])
+			if (!Player[iTarget][PlrIsAlive])
 				continue
 
 			xs_vec_copy(aTargetData[i][TargetOrigin], vTargetOrigin)
@@ -656,7 +624,7 @@ bool:telekinesis_target(iPlayer, iVictim, AbilityMode:iMode, bool:bIgnoreTeammat
 				continue
 
 			iTarget = aTargetData[i][TargetId]
-			if (!Player[iTarget][IsAlive])
+			if (!Player[iTarget][PlrIsAlive])
 				continue
 
 			xs_vec_copy(aTargetData[i][TargetOrigin], vTargetOrigin)
@@ -674,7 +642,7 @@ bool:telekinesis_target(iPlayer, iVictim, AbilityMode:iMode, bool:bIgnoreTeammat
 		}
 	}
 
-	if (Player[iPlayer][Knife] == g_iKnifeId)
+	if (Player[iPlayer][PlrKnife] == g_iKnifeId)
 		kc_player_set_view_anim(iPlayer, VIEW_SEQ_DISTANCE_ATTACK)
 
 	return true
@@ -773,7 +741,7 @@ distance_attack(iPlayer, bool:bOnlyDistance=true)
 
 	if (is_entity_player(pHit))
 	{
-		if (!Player[pHit][IsAlive])
+		if (!Player[pHit][PlrIsAlive])
 			return 0
 
 		if (get_user_team(iPlayer) == get_user_team(pHit))

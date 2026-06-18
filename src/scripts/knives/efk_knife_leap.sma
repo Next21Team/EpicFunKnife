@@ -103,7 +103,7 @@ new const SZ_INFO_TARGET[]			= "info_target"
 #define var_kunai_pair				var_iuser2
 #define var_kunai_target			var_iuser3
 
-new const g_CritSounds[][] =
+new const SOUNDS_CRIT[][] =
 {
 	"next21_efk/frash_explosion01.wav",
 	"next21_efk/frash_explosion02.wav",
@@ -197,8 +197,8 @@ public plugin_precache()
 	precache_sound(SOUND_KUNAI_UNBIND)
 	precache_sound(SOUND_KUNAI_HIT)
 
-	for (new i; i < sizeof(g_CritSounds); i++)
-		precache_sound(g_CritSounds[i])
+	for (new i; i < sizeof SOUNDS_CRIT; i++)
+		precache_sound(SOUNDS_CRIT[i])
 
 	precache_generic(fmt("sprites/%s.txt", KNIFE_CLASSNAME))
 
@@ -886,7 +886,7 @@ bool:leap(iPlayer, iTarget)
 
 	if (random_float(0.0, 100.0) <= PlayerF[iPlayer][CritChance] && kc_player_try_crit(iTarget, iPlayer))
 	{
-		engfunc(EngFunc_EmitSound, iTarget, CHAN_AUTO, g_CritSounds[random(sizeof g_CritSounds)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+		engfunc(EngFunc_EmitSound, iTarget, CHAN_AUTO, SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
 		kc_player_set_death_reason(iTarget, "DEATH_REASON_RIPPED_LEAP")
 		set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
 		ExecuteHamB(Ham_TakeDamage, iTarget, iPlayer, iPlayer, 2000.0, DMG_GENERIC | DMG_ALWAYSGIB)
