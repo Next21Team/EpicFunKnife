@@ -4,6 +4,8 @@
 
 TODO: demo video
 
+A detailed description of the knives and other mechanics is provided in the [Wiki](https://github.com/Next21Team/EpicFunKnife/wiki).
+
 ## Controls
 
 - **MOUSE2 (attack2)** – Activate primary ability
