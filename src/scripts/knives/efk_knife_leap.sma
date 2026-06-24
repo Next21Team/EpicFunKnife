@@ -1779,7 +1779,7 @@ bind_retarget(iPlayer, iTarget)
 
 	if (is_entity_player(iAttachEnt))
 	{
-		new iAttachBeamEnt = Player[iAttachEnt][BindAttachEnt]
+		new iAttachBeamEnt = Player[iAttachEnt][BindBeamEnt]
 
 		if (!is_nullent(iAttachBeamEnt))
 		{
