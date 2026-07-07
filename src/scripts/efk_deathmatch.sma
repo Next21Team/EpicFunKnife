@@ -696,7 +696,7 @@ bool:is_user_inzone(iPlayer)
 	vOrigin[1] -= g_vZoneOrigin[1]
 
 	new Float:fZoneRadius = floatmax(ZONE_RADIUS - (get_gametime() - g_fZoneStartTime) * FRAME_RADIUS, 0.0)
-	return float_sqr(vOrigin[0]) + float_sqr(vOrigin[1]) > float_sqr(fZoneRadius)
+	return float_sqr(vOrigin[0]) + float_sqr(vOrigin[1]) >= float_sqr(fZoneRadius)
 }
 
 zone_set_screenfade(iPlayer)
