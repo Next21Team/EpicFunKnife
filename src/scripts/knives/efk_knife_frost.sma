@@ -7,7 +7,7 @@
 #include <efk_core>
 #include <efk_utils>
 
-new const PLUGIN[] = "Frost Knife"
+new const PLUGIN[] = "EFK: Frost Knife"
 
 #define KNIFE_CLASSNAME "weapon_next21_frost"
 #define KNIFE_MENUDESC  "KNIFE_FROST_DESC"

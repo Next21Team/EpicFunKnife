@@ -1023,7 +1023,10 @@ load_authorized_client_data(iPlayer)
 	new szValue[32]
 	nvault_get(g_nvSettings, szAuthId, szValue, charsmax(szValue))
 	if (szValue[0])
+	{
+		nvault_touch(g_nvSettings, szAuthId)
 		iOptionsFlags = str_to_num(szValue)
+	}
 
 	Player[iPlayer][PlrOptionsFlags] = iOptionsFlags
 	ExecuteForward(forward_player_options_update, _, iPlayer, iOptionsFlags)

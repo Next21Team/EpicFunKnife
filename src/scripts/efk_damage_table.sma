@@ -9,7 +9,7 @@ const MAX_DISPLAY_TEAM_SIZE = 7;
 new tableContentT[MESSAGE_MAX_LEN], tableContentCt[MESSAGE_MAX_LEN];
 
 public plugin_init() {
-	register_plugin("EFK Damage table", "0.1", "ekke bea?");
+	register_plugin("EFK: Damage table", "0.1", "ekke bea?");
 
 	register_logevent("@on_round_start", 2, "1=Round_Start");
 	register_logevent("@on_round_end", 2, "1=Round_End");
