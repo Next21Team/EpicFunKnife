@@ -64,7 +64,7 @@ The mod uses a modified version of CSStatsX SQL for managing player statistics, 
 | efk_statsx_pass                    |           | MySQL password |
 | efk_statsx_db                      | amxx      | Database name (MySQL or SQLite) |
 | efk_statsx_table                   | efkstats  | Table name in the database |
-| efk_statsx_type                    | mysql     | Database type (`mysql` or `sqlite`) |
+| efk_statsx_type                    | sqlite    | Database type (`mysql` or `sqlite`) |
 | efk_statsx_create_db               | 1         | Create table if it doesn't exist |
 | efk_statsx_rankbots                | 0         | Record stats for bots |
 | efk_statsx_update                  | -1        | How to update player stats in the database<br/>`-2` at death and disconnect<br/>`-1` at the round end and disconnect<br/>`0` at disconnect<br/>`> 0` at the specified number of seconds and disconnect|

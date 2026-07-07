@@ -282,7 +282,7 @@ public plugin_precache()
 	*	mysql - MySQL
 	*	sqlite - local SQLite
 	*/
-	cvar[CVAR_SQL_TYPE] = register_cvar("efk_statsx_type","mysql")
+	cvar[CVAR_SQL_TYPE] = register_cvar("efk_statsx_type","sqlite")
 
 	/*
 	* send a request to create a table
