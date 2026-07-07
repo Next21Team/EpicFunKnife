@@ -228,8 +228,15 @@ new const WEAPON_LIST_DATA[] =
 new const REMOVE_MAP_CLASSNAMES[][] =
 {
 	"player_weaponstrip",
+	"func_bomb_target",
+	"func_escapezone",
+	"func_hostage_rescue",
+	"func_vip_safetyzone",
 	"game_player_equip",
-	"game_end"
+	"game_end",
+	"info_bomb_target",
+	"info_hostage_rescue",
+	"info_vip_start"
 }
 
 enum _:PlayerProperties
@@ -901,8 +908,9 @@ public plugin_init()
 	register_impulse(100, "fw_PlayerFlashlight")
 	register_impulse(201, "fw_PlayerSpray")
 
-	RegisterHam(Ham_GiveAmmo, "player", "fw_GiveAmmo")
-	RegisterHam(Ham_Use, "func_vehicle", "fw_VehicleUse")
+	RegisterHam(Ham_GiveAmmo, "player", "Ham_Player_GiveAmmo_Pre")
+	RegisterHam(Ham_Use, "func_vehicle", "Ham_Vehicle_Use_Pre")
+	RegisterHam(Ham_Spawn, "weapon_c4", "Ham_C4_Spawn_Pre")
 
 	register_clcmd("drop", "clcmd_show_items_menu")
 
@@ -3929,7 +3937,7 @@ public fw_PlayerSpray(iPlayer)
 	return PLUGIN_HANDLED
 }
 
-public fw_VehicleUse(iEnt, iCaller, iActivator, iUseType, Float:fValue)
+public Ham_Vehicle_Use_Pre(iEnt, iCaller, iActivator, iUseType, Float:fValue)
 {
 	if (Player[iCaller][PlrCaptureType] != CAPTURE_NONE)
 		return HAM_SUPERCEDE
@@ -3937,12 +3945,17 @@ public fw_VehicleUse(iEnt, iCaller, iActivator, iUseType, Float:fValue)
 	return HAM_IGNORED
 }
 
-public fw_GiveAmmo(iPlayer, iAmount, const szAmmo[])
+public Ham_Player_GiveAmmo_Pre(iPlayer, iAmount, const szAmmo[])
 {
 	if (equal(szAmmo, "45acp") || equal(szAmmo, "9mm"))
 		return HAM_SUPERCEDE
 
 	return HAM_IGNORED
+}
+
+public Ham_C4_Spawn_Pre(iEnt)
+{
+	return HAM_SUPERCEDE
 }
 
 public logevent_StartRound()
