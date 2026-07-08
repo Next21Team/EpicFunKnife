@@ -322,7 +322,7 @@ public field_part_touch(iEnt, iOther)
 	{
 		switch (get_entvar(iOther, var_impulse))
 		{
-			case IMPULSE_ICILCE, IMPULSE_ZOMBIE_SPIT:
+			case IMPULSE_ICICLE, IMPULSE_ZOMBIE_SPIT:
 			{
 				iOwner = get_entvar(iOther, var_owner)
 				if (is_user_connected(iOwner) && get_entvar(iEnt, var_skin) + 1 != get_member(iOwner, m_iTeam))
@@ -548,7 +548,7 @@ public efk_ability2(iPlayer)
 			iTargetImpulse = get_entvar(iTarget, var_impulse)
 			switch (iTargetImpulse)
 			{
-				case IMPULSE_ICILCE, IMPULSE_ZOMBIE_SPIT, IMPULSE_ACIDB, IMPULSE_EMBODIMENT:
+				case IMPULSE_ICICLE, IMPULSE_ZOMBIE_SPIT, IMPULSE_ACIDB, IMPULSE_EMBODIMENT:
 				{
 					iTargetOwner = get_entvar(iTarget, var_owner)
 					if (is_user_connected(iTargetOwner) && iTeam != get_member(iTargetOwner, m_iTeam))

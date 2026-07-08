@@ -532,7 +532,7 @@ public fw_PlayerDamage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 		return HAM_IGNORED
 	}
 
-	if (iInflictor == iAttacker || get_entvar(iInflictor, var_impulse) == IMPULSE_ICILCE)
+	if (iInflictor == iAttacker || get_entvar(iInflictor, var_impulse) == IMPULSE_ICICLE)
 	{
 		if (Player[iAttacker][Knife] == g_iKnifeId)
 		{
@@ -1272,7 +1272,7 @@ create_icicle(Float:vOrigin[3], Float:vDirection[3], iOwner)
 	set_entvar(iIcicleEnt, var_solid, SOLID_TRIGGER)
 	set_entvar(iIcicleEnt, var_movetype, MOVETYPE_FLY)
 	set_entvar(iIcicleEnt, var_classname, CLASSNAME_ICICLE)
-	set_entvar(iIcicleEnt, var_impulse, IMPULSE_ICILCE)
+	set_entvar(iIcicleEnt, var_impulse, IMPULSE_ICICLE)
 	set_entvar(iIcicleEnt, var_owner, iOwner)
 	set_entvar(iIcicleEnt, var_rendermode, kRenderNormal)
 	set_entvar(iIcicleEnt, var_renderfx, kRenderFxGlowShell)

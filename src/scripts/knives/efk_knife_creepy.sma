@@ -1404,7 +1404,7 @@ bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 						set_entvar(iTarget, var_nextthink, get_gametime())
 					}
 				}
-				case IMPULSE_ICILCE, IMPULSE_KUNAI:
+				case IMPULSE_ICICLE, IMPULSE_KUNAI:
 				{
 					iOwner = get_entvar(iTarget, var_owner)
 					if (is_user_alive(iOwner) && iTeam != get_member(iOwner, m_iTeam))
