@@ -94,7 +94,7 @@ new const FROST_REFLECTION_ICON[] 	= "suit_full"
 
 new const SZ_INFO_TARGET[]			= "info_target"
 
-#define var_icicle_trace			var_iuser1
+#define var_icicle_rangemode		var_iuser1
 #define var_icicle_strong			var_iuser2
 #define var_icicle_buffed			var_iuser3
 #define var_icicle_spawntime		var_fuser1
@@ -153,6 +153,13 @@ enum _:AttackState
 	AD_VICTIM,
 	bool:AD_WAS_HIT,
 	AD_VIEW_SEQ
+}
+
+enum _:IcicleRangeMode
+{
+	IRM_NORMAL,
+	IRM_TRACE,
+	IRM_SHORT
 }
 
 new
@@ -282,6 +289,7 @@ public fw_PlayerSpawn(iPlayer)
 	PlayerF[iPlayer][IcicleNextGrowthTime] = 0.0
 	player_icicle_afterthrow_delay(iPlayer)
 	PlayerF[iPlayer][AttackSpeedTime] = 0.0
+	PlayerF[iPlayer][DamageCounter] = 0.0
 	Player[iPlayer][FrostBuffTime] = 0.0
 	remove_frost_reflection(iPlayer)
 }
@@ -620,7 +628,10 @@ public icicle_think(iIcicleEnt)
 {
 	if (fm_get_speed(iIcicleEnt) > 0.0)
 	{
-		new Float:fMaxLiveTime = ICICLE_FLY_DISTANCE / ICICLE_SPEED
+		new Float:fFlyDistance = get_entvar(iIcicleEnt, var_icicle_rangemode) == IRM_SHORT ?
+			ICICLE_WEAK_DISTANCE : ICICLE_FLY_DISTANCE
+
+		new Float:fMaxLiveTime = fFlyDistance / ICICLE_SPEED
 		new Float:fLiveTime = get_gametime() - Float:get_entvar(iIcicleEnt, var_icicle_spawntime)
 		const Float:FADE_INTERVAL = 0.1
 
@@ -668,7 +679,7 @@ public icicle_touch(iIcicleEnt, iOther)
 		{
 			if (get_user_team(iOwner) != get_user_team(iOther) || iOwner == iOther)
 			{
-				new bool:bTraceIcicle = bool:get_entvar(iIcicleEnt, var_icicle_trace)
+				new bool:bTraceIcicle = get_entvar(iIcicleEnt, var_icicle_rangemode) == IRM_TRACE
 
 				if (kc_player_apply_concentblock(iOther, iIcicleEnt,
 					bTraceIcicle ? ATTACK_HEAVINESS_HIGH : ATTACK_HEAVINESS_LOW, 150.0, true))
@@ -971,6 +982,7 @@ public efk_change_knife_core_post(iPlayer, iKnifeId)
 	Player[iPlayer][AttackSpeed] = 0
 	PlayerF[iPlayer][AttackSpeedTime] = 0.0
 	PlayerF[iPlayer][IcicleNextGrowthTime] = 0.0
+	PlayerF[iPlayer][DamageCounter] = 0.0
 	Player[iPlayer][FrostBuffTime] = 0.0
 	Player[iPlayer][Knife] = iKnifeId
 	remove_frost_reflection(iPlayer)
@@ -1042,7 +1054,7 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 
 	if (PlayerF[iSubject][IcicleNextThrowTime] > fGameTime || Player[iSubject][IcicleAmmo] <= 0)
 		iHudColor = {20, 20, 20}
-	else if (user_can_trace_icicle(iSubject))
+	else if (player_can_trace_icicle(iSubject))
 		iHudColor = {0, 20, 255}
 
 	set_hudmessage(iHudColor[0], iHudColor[1], iHudColor[2], 0.01, -0.8, 0, 0.0, 0.4, 0.0, 0.0, HUDCHANNEL_STATUS)
@@ -1146,7 +1158,7 @@ player_icicle_afterthrow_delay(iPlayer)
 	}
 }
 
-bool:user_can_trace_icicle(iPlayer)
+bool:player_can_trace_icicle(iPlayer)
 {
 	return bool:(get_entvar(iPlayer, var_waterlevel) >= 1)
 }
@@ -1193,15 +1205,26 @@ bool:throw_icicle(iPlayer, bool:bBuffed=false)
 	if (is_nullent(iIcicleEnt))
 		return false
 
+	new WindBoostType:iWindBoost = kc_player_get_windboost(iPlayer)
+	new bool:bCanTrace = player_can_trace_icicle(iPlayer)
+
+	new iRangeMode = IRM_NORMAL
+	if (bCanTrace || iWindBoost == WINDBOOST_POSITIVE)
+		iRangeMode = IRM_TRACE
+	else if (iWindBoost == WINDBOOST_NEGATIVE)
+		iRangeMode = IRM_SHORT
+
+	new bool:bStrong = bCanTrace && iWindBoost != WINDBOOST_NEGATIVE
+
+	set_entvar(iIcicleEnt, var_icicle_rangemode, iRangeMode)
+	set_entvar(iIcicleEnt, var_icicle_strong, bStrong)
 	set_entvar(iIcicleEnt, var_icicle_buffed, bBuffed)
 	set_entvar(iIcicleEnt, var_icicle_spawntime, get_gametime())
 
-	new bool:bCanTrace = user_can_trace_icicle(iPlayer)
-
-	if (bCanTrace || kc_player_get_windboost(iPlayer) == WINDBOOST_POSITIVE)
+	if (iRangeMode == IRM_TRACE)
 	{
-		set_entvar(iIcicleEnt, var_icicle_trace, 1)
-		set_entvar(iIcicleEnt, var_icicle_strong, bCanTrace)
+		new Float:fTraceMaxDistance = iWindBoost == WINDBOOST_NEGATIVE ?
+			ICICLE_WEAK_DISTANCE : 8192.0
 
 		new Float:vStart[3], Float:vViewOfs[3],
 			Float:vDest[3], Float:vHitPos[3], Float:vDirection[3]
@@ -1212,7 +1235,7 @@ bool:throw_icicle(iPlayer, bool:bBuffed=false)
 		get_entvar(iPlayer, var_v_angle, vDirection)
 		engfunc(EngFunc_MakeVectors, vDirection)
 		global_get(glb_v_forward, vDirection)
-		xs_vec_mul_scalar(vDirection, 8192.0, vDest)
+		xs_vec_mul_scalar(vDirection, fTraceMaxDistance, vDest)
 		xs_vec_add(vStart, vDest, vDest)
 
 		engfunc(EngFunc_TraceLine, vStart, vDest, DONT_IGNORE_MONSTERS, iPlayer, 0)
