@@ -22,7 +22,7 @@ new const PLUGIN[] = "EFK: Necro Knife"
 #define KNIFE_LEVEL		10
 
 #define ABIL1_NAME		"Necro"
-#define ABIL1_CHARGE	5.0
+#define ABIL1_CHARGE	4.0
 #define ABIL1_TYPE		ABIL_TARGET_FLOOR
 #define ABIL1_MINDIST	120.0
 #define ABIL1_MAXDIST	3000.0
@@ -52,7 +52,7 @@ new const SOUND_SOUL[] = "next21_efk/soul_pulse.wav"
 
 #define PARASITE_LIFE		4.0
 
-#define MAX_ZOMBIES		5
+#define MAX_ZOMBIES		4
 
 #define NPC_TEAMMATE_DAMAGE_TIME 5.0
 
