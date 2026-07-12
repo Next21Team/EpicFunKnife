@@ -1576,15 +1576,17 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 		if (Player[iPlayer][PlrBurned])
 		{
-			static Float:fBurnDelay[MAX_PLAYERS + 1]
-			if (fBurnDelay[iPlayer] <= fGameTime)
+			if (!Player[iPlayer][PlrBurnAttacker] || (get_entvar(iPlayer, var_flags) & FL_INWATER))
 			{
-				if (!Player[iPlayer][PlrBurnAttacker] || (get_entvar(iPlayer, var_flags) & FL_INWATER))
+				player_unburn(iPlayer)
+			}
+			else
+			{
+				static Float:fBurnDelay[MAX_PLAYERS + 1]
+				if (fBurnDelay[iPlayer] <= fGameTime)
 				{
-					player_unburn(iPlayer)
-				}
-				else
-				{
+					fBurnDelay[iPlayer] = fGameTime + 0.2
+
 					new iBurnAttacker = Player[iPlayer][PlrBurnAttacker]
 					new bool:bBurnCrit = random_num(0, 100) <= BURN_CRIT_CHANCE
 					new iBurnDamage = (bBurnCrit ? BURN_CRIT_DMG : BURN_DMG)
@@ -1631,10 +1633,7 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 						}
 
 						if (Player[iPlayer][PlrBurned] > 1)
-						{
 							Player[iPlayer][PlrBurned]--
-							fBurnDelay[iPlayer] = fGameTime + 0.2
-						}
 						else
 							player_unburn(iPlayer)
 					}

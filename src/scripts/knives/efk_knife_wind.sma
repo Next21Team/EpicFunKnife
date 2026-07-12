@@ -590,7 +590,7 @@ tornado_touch(iTornado, iOther)
 
 		if (get_entvar(iTornado, var_body) == 1 && !kc_player_in_burn(iOther))
 		{
-			new Float:fTornadoLifeTime = Float:get_entvar(iTornado, var_nextthink) - get_gametime()
+			new Float:fTornadoLifeTime = Float:get_entvar(iTornado, var_tornado_endtime) - get_gametime()
 			kc_player_burn(iOther, get_entvar(iTornado, var_owner), floatround(fTornadoLifeTime / 0.2))
 		}
 
