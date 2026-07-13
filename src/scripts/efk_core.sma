@@ -466,7 +466,7 @@ forward_freeze, forward_unfreeze,
 forward_capture, forward_uncapture, forward_swap, forward_undarkness, forward_update_windboost,
 forward_disenergy, forward_preuse_crit,
 forward_apply_damage, forward_reflection_start, forward_reflection_stop, forward_reflection,
-forward_concentblock_timeout, forward_player_options_update,
+forward_concentblock_timeout, forward_player_options_update, forward_ability1_toggle,
 
 g_iTotalKnives, g_iTotalItems, g_iTotalMenuItems,
 HookChain:g_pSV_WriteFullClientUpdate, g_szDeathString[32], g_iAssistKiller,
@@ -824,7 +824,8 @@ public plugin_init()
 	forward_reflection_stop = CreateMultiForward("efk_reflection_end", ET_IGNORE, FP_CELL, FP_CELL)
 	forward_concentblock_timeout = CreateMultiForward("efk_concentblock_timeout", ET_IGNORE, FP_CELL)
 	forward_player_options_update = CreateMultiForward("efk_player_options_update", ET_IGNORE, FP_CELL, FP_CELL)
-
+    forward_ability1_toggle = CreateMultiForward("efk_ability_toggle", ET_STOP, FP_CELL)   
+    
 	register_clcmd("efk_menu", "clcmd_show_main_menu")
 	register_clcmd("chooseteam", "clcmd_show_main_menu")
 	register_clcmd("nightvision", "clcmd_show_shop_menu")
@@ -3930,8 +3931,18 @@ public fw_PlayerSpray(iPlayer)
 	if (!is_valid_knife(iKnifeId) || !CheckKnifeFlag(iKnifeId, KNFF_ABIL1_TOGGLABLE))
 		return PLUGIN_CONTINUE
 
+	// Даём ножу возможность самому обработать нажатие T
+	new iRet
+	ExecuteForward(forward_ability1_toggle, iRet, iPlayer)
+
+	if (iRet == PLUGIN_HANDLED)
+		return PLUGIN_HANDLED
+
+	// Стандартное поведение (для остальных ножей)
 	new bool:bNewVal = !Player[iPlayer][PlrAbility1Disabled]
+
 	client_print(iPlayer, print_center, "%L", iPlayer, bNewVal ? "ABILITY_DISABLED_ON" : "ABILITY_DISABLED_OFF")
+
 	Player[iPlayer][PlrAbility1Disabled] = bNewVal
 
 	client_cmd(iPlayer, "spk %s", _SOUND_GUI_CLICK)

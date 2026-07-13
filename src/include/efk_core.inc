@@ -383,6 +383,14 @@ forward efk_reflection_end(iPlayer, bool:bIsDeath);
 forward efk_player_options_update(iPlayer, iOptions);
 
 /**
+ * Called when the player presses the Ability 1 toggle key (T)
+ *
+ * @param	iPlayer		- Player ID
+ * @noreturn
+ */
+forward efk_ability_toggle(iPlayer);
+
+/**
  * Get the number of registered knives
  *
  * @return					- Number of registered knives

@@ -119,6 +119,22 @@ enum _:PlayerData
 	Float:PlrKillTrail
 }
 
+enum _:AcidTrapMode
+{
+	TRAP_BIND = 0,
+	TRAP_ACTIVE,
+	TRAP_TACTICAL
+}
+
+new g_iTrapMode[MAX_PLAYERS + 1]
+
+new const g_szTrapModeName[][] =
+{
+	"Binding Mine",
+	"Active Mine",
+	"Tactical Mine"
+}
+
 #define Player[%1][%2]	g_ePlayerData[%1 - 1][%2]
 
 new
@@ -185,7 +201,7 @@ public plugin_init()
 
 	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLABLE)
 	kc_knife_set_anim_ext(g_iKnifeId, ANIM_EXT_KNIFE2)
-	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
+	// kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_hit1.wav", SOUND_KNIFE_HIT1)
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_hit2.wav", SOUND_KNIFE_HIT2)
@@ -227,6 +243,7 @@ public client_putinserver(iPlayer)
 	Player[iPlayer][PlrIsAlive] = false
 	Player[iPlayer][PlrTeam] = 0
 	Player[iPlayer][PlrKillTrail] = 0.0
+    g_iTrapMode[iPlayer] = TRAP_BIND
 }
 
 public client_disconnected(iPlayer)
@@ -280,7 +297,8 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 		Player[iPlayer][PlrInSpit] = false
 		Player[iPlayer][PlrWallTime] = 0.0
 		Player[iPlayer][PlrWallPt] = 100
-
+        g_iTrapMode[iPlayer] = TRAP_BIND
+        
 		if (Player[iPlayer][PlrInWall])
 		{
 			send_msg_TE_KILLBEAM(iPlayer, MSG_ALL)
@@ -661,7 +679,8 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 		return PLUGIN_CONTINUE
 
 	set_hudmessage(ACID_COLOR_R, ACID_COLOR_G, ACID_COLOR_B, 0.01, -0.78, 0, 0.0, 0.4, 0.0, 0.0, HUDCHANNEL_STATUS)
-	show_hudmessage(iPlayer, "Wall Run (E): %d%%%s", Player[iSubject][PlrWallPt], g_iUnactiveAcidtrapsNum[iSubject] ? "^nDetonate (F)" : "")
+
+    show_hudmessage(iPlayer, "Wall Run (E): %d%%^nMine: %s%s", Player[iSubject][PlrWallPt], g_szTrapModeName[g_iTrapMode[iSubject]], (g_iTrapMode[iSubject] == TRAP_TACTICAL && g_iUnactiveAcidtrapsNum[iSubject]) ? "^nDetonate (F)" : "")
 
 	return PLUGIN_CONTINUE
 }
@@ -1439,4 +1458,26 @@ draw_acid_particles(Float:vOrigin[3])
 		send_msg_TE_SPRITETRAIL(vOrigin, vEndOrigin, g_pPoisonParticlesModel, 25, 1, 4, 28, 20,
 			MSG_ONE_UNRELIABLE, _, iPlayer)
 	}
+}
+
+public efk_ability_toggle(iPlayer)
+{
+	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
+		return PLUGIN_CONTINUE
+
+	switch_trap_mode(iPlayer)
+
+	client_cmd(iPlayer, "spk %s", SOUND_GUI_CLICK)
+
+	return PLUGIN_HANDLED
+}
+
+switch_trap_mode(iPlayer)
+{
+	g_iTrapMode[iPlayer]++
+
+	if (g_iTrapMode[iPlayer] > TRAP_TACTICAL)
+		g_iTrapMode[iPlayer] = TRAP_BIND
+
+	client_print(iPlayer, print_center, "Mine Mode: %s", g_szTrapModeName[g_iTrapMode[iPlayer]])
 }
