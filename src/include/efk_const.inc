@@ -22,7 +22,7 @@ enum _:KnifeFlags(<<=1)
 {
 	KNFF_ZOOM = 1,			// The knife can increase the FOV
 	KNFF_BAN_BUNNYHOP,		// Bunny hop is prohibited
-	KNFF_ABIL1_TOGGLABLE,	// Activation of the first ability can be disabled
+	KNFF_ABIL1_TOGGLEABLE,	// Activation of the first ability can be disabled or toggleable
 	KNFF_FULL_VISION,		// The knife can see in the dark and hidden objects
 	KNFF_HIDDEN				// The knife is hidden in the menu and cannot be selected
 };
@@ -140,11 +140,11 @@ enum AnimExt
 	ANIM_EXT_NUNCHAKU
 };
 
-enum
+enum AcidTrapState
 {
-	TRAPMODE_FREE,
-	TRAPMODE_FIXED,
-	TRAPMODE_ACTIVE
+	TRAPSTATE_FREE,
+	TRAPSTATE_FIXED,
+	TRAPSTATE_ACTIVE
 };
 
 #define MAX_KNIVES			32
@@ -272,7 +272,8 @@ enum _:BlockAirFlags(<<=1)
 #define var_trapdamage			var_fuser1
 #define var_trapholdtime		var_fuser2
 #define var_trapcreatetime		var_fuser3
-#define var_trapmode			var_iuser3
+#define var_traptype			var_iuser2
+#define var_trapstate			var_iuser3
 #define var_traphighlighter		var_iuser4
 
 #define var_fieldside			var_iuser3

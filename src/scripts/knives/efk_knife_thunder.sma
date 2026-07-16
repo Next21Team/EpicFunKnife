@@ -117,7 +117,7 @@ public plugin_init()
 	kc_register_ability3(g_iKnifeId, ABIL3_NAME, ABIL3_CHARGE)
 
 	kc_knife_set_anim_ext(g_iKnifeId, ANIM_EXT_KNIFE2)
-	kc_knife_set_flags(g_iKnifeId, KNFF_ZOOM | KNFF_ABIL1_TOGGLABLE)
+	kc_knife_set_flags(g_iKnifeId, KNFF_ZOOM | KNFF_ABIL1_TOGGLEABLE)
 	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 
 	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)

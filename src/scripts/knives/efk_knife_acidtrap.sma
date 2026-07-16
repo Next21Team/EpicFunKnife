@@ -64,10 +64,13 @@ new const MODELS_SMOKE[][] =
 #define ACID_GRAVITY		0.7
 
 #define MAX_ACIDTRAPS				30
-#define ACIDTRAP_TIME_EXPLOSION		2.2
+#define ACIDTRAP_FREEZE_TIME		2.2
 #define ACIDTRAP_ADDTIME_FREEZE		0.8
 #define ACIDTRAP_CATCH_RADIUS		150.0
 #define ACIDTRAP_EXPLODE_RADIUS		150.0
+#define ACIDTRAP_BASE_DAMAGE		25.0
+#define ACIDTRAP_EXPLOSION_DELAY	0.5
+#define ACIDTRAP_TACTICAL_DELAY		1.0
 
 #define CLOUD_UPDATERATE			2.0
 #define CLOUD_TIMESTODIE			5
@@ -96,6 +99,20 @@ new const SZ_BEAM[]			= "beam"
 new const SZ_EXPLOSION[]	= "env_explosion"
 new const SZ_INFO_TARGET[]	= "info_target"
 
+new const TRAP_TYPE_NAMES[][] =
+{
+	"Binding",
+	"Active",
+	"Tactical"
+}
+
+enum AcidTrapType
+{
+	TRAP_BIND,
+	TRAP_ACTIVE,
+	TRAP_TACTICAL
+}
+
 enum _:ViewSeq
 {
 	VIEW_SEQ_IDLE,
@@ -108,6 +125,7 @@ enum _:PlayerData
 	PlrKnife,
 	bool:PlrIsAlive,
 	PlrTeam,
+	AcidTrapType:PlrTrapType,
 	PlrWallPt,
 	bool:PlrInWall,
 	bool:PlrInSpit,
@@ -119,31 +137,15 @@ enum _:PlayerData
 	Float:PlrKillTrail
 }
 
-enum _:AcidTrapMode
-{
-	TRAP_BIND = 0,
-	TRAP_ACTIVE,
-	TRAP_TACTICAL
-}
-
-new g_iTrapMode[MAX_PLAYERS + 1]
-
-new const g_szTrapModeName[][] =
-{
-	"Binding Mine",
-	"Active Mine",
-	"Tactical Mine"
-}
-
 #define Player[%1][%2]	g_ePlayerData[%1 - 1][%2]
 
 new
 	g_iKnifeId,
 	g_ePlayerData[MAX_PLAYERS][PlayerData],
-	g_iUnactiveAcidtrapsNum[MAX_PLAYERS + 1],
+	g_iTacticalTrapsNum[MAX_PLAYERS + 1],
 	sprStream, Float:g_fWorldGravity, g_pKnifeVStr, g_pKnifePMdl,
 	g_pPoisonModel, g_pPoisonParticlesModel, g_pBeamModel, g_pCloudModel,
-	g_pSmokeModels[sizeof MODELS_SMOKE], g_iActiveMineQueue[MAX_PLAYERS + 1]
+	g_pSmokeModels[sizeof MODELS_SMOKE]
 
 public plugin_precache()
 {
@@ -199,7 +201,7 @@ public plugin_init()
 	kc_register_ability1(g_iKnifeId, ABIL1_NAME, ABIL1_CHARGE)
 	kc_register_ability3(g_iKnifeId, ABIL3_NAME, ABIL3_CHARGE)
 
-	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLABLE)
+	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLEABLE)
 	kc_knife_set_anim_ext(g_iKnifeId, ANIM_EXT_KNIFE2)
 	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 
@@ -221,7 +223,7 @@ public plugin_init()
 	register_event("CurWeapon", "event_CurWeapon", "be", "1=1")
 
 	register_impulse(100, "fw_PlayerFlashlight")
-	set_task(1.0, "acidtraps_counter", TASK_ACIDTRAPS_COUNTER, .flags="b")
+	set_task(1.0, "tactical_traps_counter", TASK_ACIDTRAPS_COUNTER, .flags="b")
 
 	new szEntity[][] =
 	{
@@ -240,11 +242,10 @@ public plugin_init()
 
 public client_putinserver(iPlayer)
 {
-    Player[iPlayer][PlrIsAlive] = false
-    Player[iPlayer][PlrTeam] = 0
-    Player[iPlayer][PlrKillTrail] = 0.0
-    g_iTrapMode[iPlayer] = TRAP_BIND
-    g_iActiveMineQueue[iPlayer] = 0
+	Player[iPlayer][PlrIsAlive] = false
+	Player[iPlayer][PlrTeam] = 0
+	Player[iPlayer][PlrKillTrail] = 0.0
+	Player[iPlayer][PlrTrapType] = TRAP_BIND
 }
 
 public client_disconnected(iPlayer)
@@ -292,21 +293,31 @@ public RG_CSGameRules_CleanUpMap_Post()
 
 public RG_CBasePlayer_Spawn_Post(iPlayer)
 {
-    if (is_user_alive(iPlayer))
-    {
-        Player[iPlayer][PlrIsAlive] = true
-        Player[iPlayer][PlrInSpit] = false
-        Player[iPlayer][PlrWallTime] = 0.0
-        Player[iPlayer][PlrWallPt] = 100    
-        g_iActiveMineQueue[iPlayer] = 0
-        g_iTrapMode[iPlayer] = TRAP_BIND
-        
-        if (Player[iPlayer][PlrInWall])
-        {
-            send_msg_TE_KILLBEAM(iPlayer, MSG_ALL)
-            Player[iPlayer][PlrInWall] = false
-        }
-    }
+	if (is_user_alive(iPlayer))
+	{
+		Player[iPlayer][PlrIsAlive] = true
+		Player[iPlayer][PlrInSpit] = false
+		Player[iPlayer][PlrWallTime] = 0.0
+		Player[iPlayer][PlrWallPt] = 100
+		Player[iPlayer][PlrTrapType] = TRAP_BIND
+
+		if (Player[iPlayer][PlrInWall])
+		{
+			send_msg_TE_KILLBEAM(iPlayer, MSG_ALL)
+			Player[iPlayer][PlrInWall] = false
+		}
+
+		new iAcidtrapEnt = NULLENT
+		while ((iAcidtrapEnt = rg_find_ent_by_class(iAcidtrapEnt, CLASSNAME_ACIDTRAP_)))
+		{
+			if (get_entvar(iAcidtrapEnt, var_owner) == iPlayer)
+			{
+				// Reset explosion delay for active traps
+				if (get_entvar(iAcidtrapEnt, var_traptype) == TRAP_ACTIVE)
+					set_entvar(iAcidtrapEnt, var_trapholdtime, ACIDTRAP_EXPLOSION_DELAY)
+			}
+		}
+	}
 }
 
 public fw_PreThink(iPlayer)
@@ -640,7 +651,7 @@ public fw_PlayerFlashlight(iPlayer)
 	if (!Player[iPlayer][PlrIsAlive] || Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
-	if (!g_iUnactiveAcidtrapsNum[iPlayer])
+	if (!g_iTacticalTrapsNum[iPlayer])
 		return PLUGIN_HANDLED
 
 	new iTargetAcidtrap = find_highlighted_acidtrap(iPlayer)
@@ -680,9 +691,13 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 	if (iKnifeId != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
+	new AcidTrapType:iTrapType = Player[iSubject][PlrTrapType]
+
 	set_hudmessage(ACID_COLOR_R, ACID_COLOR_G, ACID_COLOR_B, 0.01, -0.78, 0, 0.0, 0.4, 0.0, 0.0, HUDCHANNEL_STATUS)
 
-	show_hudmessage(iPlayer, "Wall Run (E): %d%%^nMine: %s%s", Player[iSubject][PlrWallPt], g_szTrapModeName[g_iTrapMode[iSubject]], is_highlighted_tactical_mine(iSubject) ? "^nDetonate (F)" : "")
+	show_hudmessage(iPlayer, "Wall Run (E): %d%%^nTrap: %s%s",
+		Player[iSubject][PlrWallPt], TRAP_TYPE_NAMES[_:iTrapType],
+		g_iTacticalTrapsNum[iSubject] ? "^nDetonate (F)" : "")
 
 	return PLUGIN_CONTINUE
 }
@@ -713,25 +728,22 @@ public efk_ability3(iPlayer)
 	return PLUGIN_CONTINUE
 }
 
-public acidtraps_counter(iTaskId)
+public tactical_traps_counter(iTaskId)
 {
-	arrayset(g_iUnactiveAcidtrapsNum, 0, sizeof g_iUnactiveAcidtrapsNum)
+	arrayset(g_iTacticalTrapsNum, 0, sizeof g_iTacticalTrapsNum)
 
 	new iOwner
 	new iAcidtrapEnt = MaxClients
 	while ((iAcidtrapEnt = rg_find_ent_by_class(iAcidtrapEnt, CLASSNAME_ACIDTRAP_)))
 	{
-		if (!is_entity_unactive_acidtrap(iAcidtrapEnt))
-			continue
-
-		if (get_entvar(iAcidtrapEnt, var_iuser2) != TRAP_TACTICAL)
+		if (!is_entity_tactical_fixed_acidtrap(iAcidtrapEnt))
 			continue
 
 		iOwner = get_entvar(iAcidtrapEnt, var_owner)
 		if (iOwner <= 0 || iOwner > MaxClients)
 			continue
 
-		g_iUnactiveAcidtrapsNum[iOwner]++
+		g_iTacticalTrapsNum[iOwner]++
 	}
 }
 
@@ -777,10 +789,7 @@ find_highlighted_acidtrap(iPlayer)
 
 		set_entvar(iAcidtrapEnt, var_traphighlighter, 0)
 
-		if (!is_entity_unactive_acidtrap(iAcidtrapEnt))
-			continue
-
-		if (get_entvar(iAcidtrapEnt, var_iuser2) != TRAP_TACTICAL)
+		if (!is_entity_tactical_fixed_acidtrap(iAcidtrapEnt))
 			continue
 
 		get_entvar(iAcidtrapEnt, var_origin, vAcidtrapVector)
@@ -822,23 +831,26 @@ clear_highlighted_acidtrap(iPlayer)
 
 acidtrap_create(iPlayer)
 {
-	new iAcidtrapEnt = NULLENT, iAcidtrapsNum, iOnwerTraps
+	new AcidTrapType:iTrapType = Player[iPlayer][PlrTrapType]
+
+	new iAcidtrapEnt = NULLENT, iSummaryTrapsNum, iSelectedTrapsNum
 	while ((iAcidtrapEnt = rg_find_ent_by_class(iAcidtrapEnt, CLASSNAME_ACIDTRAP_)))
 	{
 		if (get_entvar(iAcidtrapEnt, var_owner) == iPlayer)
-			iOnwerTraps++
-		iAcidtrapsNum++
+		{
+			if (get_entvar(iAcidtrapEnt, var_traptype) == iTrapType)
+				iSelectedTrapsNum++
+		}
+		iSummaryTrapsNum++
 	}
 
-	if (iAcidtrapsNum >= MAX_ACIDTRAPS)
+	if (iSummaryTrapsNum >= MAX_ACIDTRAPS)
 		return NULLENT
 
 	iAcidtrapEnt = rg_create_entity(SZ_INFO_TARGET)
 	if (is_nullent(iAcidtrapEnt))
 		return NULLENT
 
-	new iMode = g_iTrapMode[iPlayer]
-	set_entvar(iAcidtrapEnt, var_iuser2, iMode)
 	new Float:vOrigin[3]
 	get_entvar(iPlayer, var_origin, vOrigin)
 
@@ -858,7 +870,7 @@ acidtrap_create(iPlayer)
 	set_entvar(iAcidtrapEnt, var_movetype, MOVETYPE_PUSHSTEP)
 	set_entvar(iAcidtrapEnt, var_solid, SOLID_TRIGGER)
 	set_entvar(iAcidtrapEnt, var_skin, Player[iPlayer][PlrTeam] - 1)
-	set_entvar(iAcidtrapEnt, var_body, iMode);
+	set_entvar(iAcidtrapEnt, var_body, iTrapType)
 
 	engfunc(EngFunc_SetSize, iAcidtrapEnt, Float:{-5.0, -5.0, 0.0}, Float:{5.0, 5.0, 23.0})
 
@@ -867,21 +879,28 @@ acidtrap_create(iPlayer)
 
 	set_entvar(iAcidtrapEnt, var_sequence, 0)
 	set_entvar(iAcidtrapEnt, var_framerate, 0.0)
-	set_entvar(iAcidtrapEnt, var_trapmode, TRAPMODE_FREE)
+	set_entvar(iAcidtrapEnt, var_trapstate, TRAPSTATE_FREE)
+	set_entvar(iAcidtrapEnt, var_traptype, iTrapType)
 	set_entvar(iAcidtrapEnt, var_traphighlighter, 0)
-
-	if (iMode == TRAP_BIND)
-	{
-		set_entvar(iAcidtrapEnt, var_trapholdtime,
-			ACIDTRAP_TIME_EXPLOSION - iOnwerTraps * 0.2)
-	}
-	else
-	{
-		new Float:fTrapDamage = floatmax(25.0 * (1.0 - iOnwerTraps * 0.1), 12.0)
-		set_entvar(iAcidtrapEnt, var_trapdamage, fTrapDamage)
-	}
-
 	set_entvar(iAcidtrapEnt, var_trapcreatetime, get_gametime())
+
+	switch (iTrapType)
+	{
+		case TRAP_BIND:
+		{
+			set_entvar(iAcidtrapEnt, var_trapholdtime, ACIDTRAP_FREEZE_TIME)
+		}
+		case TRAP_ACTIVE:
+		{
+			new Float:fExplosionDelay = ACIDTRAP_EXPLOSION_DELAY + iSelectedTrapsNum * 0.1
+			set_entvar(iAcidtrapEnt, var_trapholdtime, fExplosionDelay)
+			set_entvar(iAcidtrapEnt, var_trapdamage, ACIDTRAP_BASE_DAMAGE)
+		}
+		case TRAP_TACTICAL:
+		{
+			set_entvar(iAcidtrapEnt, var_trapdamage, ACIDTRAP_BASE_DAMAGE)
+		}
+	}
 
 	SetThink(iAcidtrapEnt, "acidtrap_think")
 	SetTouch(iAcidtrapEnt, "acidtrap_touch")
@@ -897,19 +916,14 @@ public acidtrap_think(iAcidtrapEnt)
 		if (get_entvar(iBeamEnt, var_owner) == iAcidtrapEnt)
 			rg_remove_entity(iBeamEnt)
 
-	new iTrapMode = get_entvar(iAcidtrapEnt, var_iuser2)
+	new AcidTrapType:iTrapType = get_entvar(iAcidtrapEnt, var_traptype)
 
-	if (iTrapMode == TRAP_BIND)
+	if (iTrapType == TRAP_BIND)
 	{
-		new iOwner = get_entvar(iAcidtrapEnt, var_owner)
-
-		if (g_iActiveMineQueue[iOwner] > 0)
-			g_iActiveMineQueue[iOwner]--
-
 		rg_remove_entity(iAcidtrapEnt)
 		return
 	}
-	
+
 	new Float:vOrigin[3], Float:fGameTime
 	get_entvar(iAcidtrapEnt, var_origin, vOrigin)
 	fGameTime = get_gametime()
@@ -968,20 +982,16 @@ public acidtrap_think(iAcidtrapEnt)
 		}
 	}
 
-	if (iTrapMode == TRAP_ACTIVE && g_iActiveMineQueue[iOwner] > 0)
-		g_iActiveMineQueue[iOwner]--
-
 	rg_remove_entity(iAcidtrapEnt)
 }
 
 public acidtrap_touch(iAcidtrapEnt, iOther)
 {
-	static iTeam
-
 	if (iOther && !is_entity(iOther))
 		return HC_CONTINUE
 
-	iTeam = get_entvar(iAcidtrapEnt, var_skin) + 1
+	new iTeam = get_entvar(iAcidtrapEnt, var_skin) + 1
+	new AcidTrapType:iTrapType = get_entvar(iAcidtrapEnt, var_traptype)
 
 	if (is_entity_player(iOther))
 	{
@@ -992,13 +1002,12 @@ public acidtrap_touch(iAcidtrapEnt, iOther)
 			new Float:vOrigin[3]
 			get_entvar(iAcidtrapEnt, var_origin, vOrigin)
 
-			new Float:fTimeExplosion = get_entvar(iAcidtrapEnt, var_trapholdtime)
-			new iTrapMode = get_entvar(iAcidtrapEnt, var_iuser2)
-
-			switch(iTrapMode)
+			switch (iTrapType)
 			{
 				case TRAP_BIND:
 				{
+					new Float:fFreezeTime = get_entvar(iAcidtrapEnt, var_trapholdtime)
+
 					new iTarget = NULLENT
 					while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, ACIDTRAP_CATCH_RADIUS)))
 					{
@@ -1007,8 +1016,8 @@ public acidtrap_touch(iAcidtrapEnt, iOther)
 							&& !kc_player_check_game_flag(iTarget, PLGF_IN_UNABILITY)
 							&& kc_player_get_visibility(iTarget) < VIS_INVISION)
 						{
-							kc_player_slow(iTarget, 0.1, fTimeExplosion + ACIDTRAP_ADDTIME_FREEZE)
-							kc_player_add_glow(iTarget, fTimeExplosion + ACIDTRAP_ADDTIME_FREEZE,
+							kc_player_slow(iTarget, 0.1, fFreezeTime + ACIDTRAP_ADDTIME_FREEZE)
+							kc_player_add_glow(iTarget, fFreezeTime + ACIDTRAP_ADDTIME_FREEZE,
 								ACID_COLOR_R, ACID_COLOR_G, ACID_COLOR_B)
 
 							new iBeamEnt = Beam_Create(MODEL_BEAM, 10.0)
@@ -1021,22 +1030,20 @@ public acidtrap_touch(iAcidtrapEnt, iOther)
 							}
 						}
 					}
-					
-					acidtrap_activate(iAcidtrapEnt);
 
-					return HC_CONTINUE;
+					acidtrap_activate(iAcidtrapEnt)
+
+					return HC_CONTINUE
 				}
-				
 				case TRAP_ACTIVE:
 				{
-					acidtrap_activate(iAcidtrapEnt);
+					acidtrap_activate(iAcidtrapEnt)
 
-					return HC_CONTINUE;
+					return HC_CONTINUE
 				}
-
 				case TRAP_TACTICAL:
 				{
-					return HC_CONTINUE;
+					return HC_CONTINUE
 				}
 			}
 		}
@@ -1047,17 +1054,21 @@ public acidtrap_touch(iAcidtrapEnt, iOther)
 	if (iOther && get_entvar(iOther, var_flags) & FL_MONSTER)
 	{
 		if (get_entvar(iOther, var_skin) + 1 != iTeam)
-			acidtrap_think(iAcidtrapEnt)
+		{
+			if (iTrapType == TRAP_ACTIVE)
+				acidtrap_activate(iAcidtrapEnt)
+		}
+
 		return HC_CONTINUE
 	}
 
 	if (!iOther || get_entvar(iOther, var_solid) >= SOLID_BBOX)
 	{
-		if (get_entvar(iAcidtrapEnt, var_trapmode) == TRAPMODE_FREE)
+		if (iTrapType != TRAP_TACTICAL && get_entvar(iAcidtrapEnt, var_trapstate) == TRAPSTATE_FREE)
 		{
 			engfunc(EngFunc_SetSize, iAcidtrapEnt, Float:{-40.0, -40.0, 0.0}, Float:{40.0, 40.0, 23.0})
 			set_entvar(iAcidtrapEnt, var_velocity, NULL_VECTOR)
-			set_entvar(iAcidtrapEnt, var_trapmode, TRAPMODE_FIXED)
+			set_entvar(iAcidtrapEnt, var_trapstate, TRAPSTATE_FIXED)
 
 			new Float:vOrigin[3], Float:vAxis[3]
 			get_entvar(iAcidtrapEnt, var_origin, vOrigin)
@@ -1086,27 +1097,22 @@ public acidtrap_use(iAcidtrapEnt, iActivator, iCaller, USE_TYPE:iUseType, Float:
 
 acidtrap_activate(iAcidtrapEnt)
 {
-	if (get_entvar(iAcidtrapEnt, var_trapmode) == TRAPMODE_ACTIVE)
+	if (get_entvar(iAcidtrapEnt, var_trapstate) == TRAPSTATE_ACTIVE)
 		return
 
 	new Float:fGameTime = get_gametime()
-	new iOwner = get_entvar(iAcidtrapEnt, var_owner)
-	new iMode = get_entvar(iAcidtrapEnt, var_iuser2)
-
+	new AcidTrapType:iTrapType = get_entvar(iAcidtrapEnt, var_traptype)
 	new Float:fTimeExplosion = get_entvar(iAcidtrapEnt, var_trapholdtime)
 
-	switch (iMode)
+	switch (iTrapType)
 	{
 		case TRAP_BIND:
 		{
 			set_entvar(iAcidtrapEnt, var_body, 3)
 		}
-
 		case TRAP_ACTIVE:
 		{
-			fTimeExplosion = 0.5 + float(g_iActiveMineQueue[iOwner]) * 0.1
 			set_entvar(iAcidtrapEnt, var_body, 7)
-			g_iActiveMineQueue[iOwner]++
 		}
 	}
 
@@ -1115,7 +1121,7 @@ acidtrap_activate(iAcidtrapEnt)
 	set_entvar(iAcidtrapEnt, var_rendermode, kRenderNormal)
 	set_entvar(iAcidtrapEnt, var_framerate, 1.0)
 	set_entvar(iAcidtrapEnt, var_animtime, fGameTime)
-	set_entvar(iAcidtrapEnt, var_trapmode, TRAPMODE_ACTIVE)
+	set_entvar(iAcidtrapEnt, var_trapstate, TRAPSTATE_ACTIVE)
 }
 
 acidtrap_detonate(iAcidtrapEnt)
@@ -1131,7 +1137,7 @@ remove_acidtraps(const iOwner=0)
 		if (iOwner && get_entvar(iAcidtrapEnt, var_owner) != iOwner)
 			continue
 
-		iBeamEnt = -1
+		iBeamEnt = NULLENT
 		while ((iBeamEnt = rg_find_ent_by_class(iBeamEnt, SZ_BEAM)))
 			if (get_entvar(iBeamEnt, var_owner) == iAcidtrapEnt)
 				rg_remove_entity(iBeamEnt)
@@ -1139,12 +1145,25 @@ remove_acidtraps(const iOwner=0)
 	}
 }
 
-bool:is_entity_unactive_acidtrap(iEnt)
+bool:is_entity_tactical_fixed_acidtrap(iEnt)
 {
 	if (get_entvar(iEnt, var_impulse) != IMPULSE_ACIDTRAP)
 		return false
 
-	return get_entvar(iEnt, var_trapmode) == TRAPMODE_FIXED
+	if (get_entvar(iEnt, var_traptype) != TRAP_TACTICAL)
+		return false
+
+	new AcidTrapState:iTrapState = get_entvar(iEnt, var_trapstate)
+	if (iTrapState == TRAPSTATE_FREE)
+	{
+		if (Float:get_entvar(iEnt, var_trapcreatetime) + ACIDTRAP_TACTICAL_DELAY < get_gametime())
+		{
+			iTrapState = TRAPSTATE_FIXED
+			set_entvar(iEnt, var_trapstate, iTrapState)
+		}
+	}
+
+	return iTrapState == TRAPSTATE_FIXED
 }
 
 public acidball_think(iAcidballEnt)
@@ -1539,38 +1558,15 @@ public efk_ability_toggle(iPlayer)
 	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
-	switch_trap_mode(iPlayer)
-
-	client_cmd(iPlayer, "spk %s", SOUND_GUI_CLICK)
-
+	switch_trap_type(iPlayer)
 	return PLUGIN_HANDLED
 }
 
-switch_trap_mode(iPlayer)
+switch_trap_type(iPlayer)
 {
-	g_iTrapMode[iPlayer]++
+	new iTrapType = _:Player[iPlayer][PlrTrapType]
+	iTrapType = (iTrapType + 1) % _:AcidTrapType
 
-	if (g_iTrapMode[iPlayer] > TRAP_TACTICAL)
-		g_iTrapMode[iPlayer] = TRAP_BIND
-
-	client_print(iPlayer, print_center, "Mine Mode: %s", g_szTrapModeName[g_iTrapMode[iPlayer]])
-}
-
-bool:is_highlighted_tactical_mine(iPlayer)
-{
-	new iEnt = NULLENT;
-
-	while ((iEnt = rg_find_ent_by_class(iEnt, CLASSNAME_ACIDTRAP_)))
-	{
-		if (get_entvar(iEnt, var_owner) != iPlayer)
-			continue;
-
-		if (get_entvar(iEnt, var_iuser2) != TRAP_TACTICAL)
-			continue;
-
-		if (get_entvar(iEnt, var_traphighlighter))
-			return true;
-	}
-
-	return false;
+	client_print(iPlayer, print_center, "Trap: %s", TRAP_TYPE_NAMES[iTrapType])
+	Player[iPlayer][PlrTrapType] = AcidTrapType:iTrapType
 }
