@@ -244,6 +244,10 @@ public hats_handler_submenu(iPlayer, iMenu, iItem)
 {
 	new iHatId = g_iMenuHatId[iPlayer]
 	menu_destroy(iMenu)
+
+	if (!is_user_connected(iPlayer))
+		return PLUGIN_HANDLED
+
 	hats_show_menu_ex(iPlayer, floatround(((iHatId + 1) / 7.0), floatround_floor))
 
 	if (iItem == MENU_EXIT)

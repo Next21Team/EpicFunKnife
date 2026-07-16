@@ -1087,6 +1087,8 @@ public client_disconnected(iPlayer)
 		Player[iPlayer][PlrDamageAcceptRnd][i] = 0
 	}
 
+	arrayset(PlayerF[iPlayer][PlrHealedBy], 0.0, MAX_PLAYERS + 1)
+
 	if (Player[iPlayer][PlrHatEnt])
 	{
 		set_entvar(Player[iPlayer][PlrHatEnt], var_flags, FL_KILLME)
@@ -4290,7 +4292,7 @@ public clcmd_show_shop_menu(iPlayer)
 
 show_shop_menu(iPlayer, iPage=0)
 {
-	if (!is_entity_player(iPlayer) || !CheckPlayerGameFlag(iPlayer, PLGF_IS_ONLINE))
+	if (!is_user_connected(iPlayer))
 		return
 
 	new iShopMenu = menu_create(fmt("\yShop Menu [\r%s\y]", GAME_TAG), "handler_shop_menu")
@@ -4344,9 +4346,9 @@ show_shop_menu(iPlayer, iPage=0)
 	menu_display(iPlayer, iShopMenu, iPage)
 }
 
-public handler_main_menu(iPlayer, iMenu, item)
+public handler_main_menu(iPlayer, iMenu, iItem)
 {
-	if (item == MENU_EXIT)
+	if (iItem == MENU_EXIT)
 	{
 		menu_destroy(iMenu)
 		client_cmd(iPlayer, "spk %s", _SOUND_GUI_CLICK)
@@ -4354,18 +4356,17 @@ public handler_main_menu(iPlayer, iMenu, item)
 	}
 
 	new szInfo[5]
-	menu_item_getinfo(iMenu, item, .info=szInfo, .infolen=charsmax(szInfo))
+	menu_item_getinfo(iMenu, iItem, .info=szInfo, .infolen=charsmax(szInfo))
 	menu_destroy(iMenu)
 
 	new iKey = str_to_num(szInfo)
-	new mreturn
 
-	for (new i; i < g_iTotalMenuItems; i++)
+	for (new i, iRet; i < g_iTotalMenuItems; i++)
 	{
 		if (iKey == 1000 + i)
 		{
-			ExecuteForward(MenuItem[i][MItmCallback], mreturn, iPlayer)
-			client_cmd(iPlayer, "spk %s", mreturn ? _SOUND_GUI_ERROR : _SOUND_GUI_CLICK)
+			ExecuteForward(MenuItem[i][MItmCallback], iRet, iPlayer)
+			client_cmd(iPlayer, "spk %s", iRet ? _SOUND_GUI_ERROR : _SOUND_GUI_CLICK)
 			return PLUGIN_CONTINUE
 		}
 	}
@@ -4377,7 +4378,7 @@ public handler_main_menu(iPlayer, iMenu, item)
 		return PLUGIN_CONTINUE
 	}
 
-	switch (item)
+	switch (iItem)
 	{
 		case 0: show_knives_menu(iPlayer)
 		case 1: show_shop_menu(iPlayer)
@@ -4389,18 +4390,18 @@ public handler_main_menu(iPlayer, iMenu, item)
 	return PLUGIN_CONTINUE
 }
 
-public handler_knives_menu(iPlayer, menu, item)
+public handler_knives_menu(iPlayer, iMenu, iItem)
 {
-	if (item == MENU_EXIT)
+	if (iItem == MENU_EXIT)
 	{
-		menu_destroy(menu)
+		menu_destroy(iMenu)
 		client_cmd(iPlayer, "spk %s", _SOUND_GUI_CLICK)
 		return PLUGIN_HANDLED
 	}
 
 	new szInfo[5]
-	menu_item_getinfo(menu, item, .info=szInfo, .infolen=charsmax(szInfo))
-	menu_destroy(menu)
+	menu_item_getinfo(iMenu, iItem, .info=szInfo, .infolen=charsmax(szInfo))
+	menu_destroy(iMenu)
 
 	new iKnifeId = str_to_num(szInfo)
 
