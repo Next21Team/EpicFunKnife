@@ -72,7 +72,7 @@ new const MODELS_SMOKE[][] =
 #define ACIDTRAP_EXPLODE_RADIUS		150.0
 #define ACIDTRAP_BASE_DAMAGE		25.0
 #define ACIDTRAP_EXPLOSION_DELAY	0.8
-#define ACIDTRAP_TACTICAL_DELAY		1.0
+#define ACIDTRAP_TACTICAL_DELAY		1.2
 
 #define CLOUD_UPDATERATE			2.0
 #define CLOUD_TIMESTODIE			5
@@ -303,7 +303,6 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 		Player[iPlayer][PlrInSpit] = false
 		Player[iPlayer][PlrWallTime] = 0.0
 		Player[iPlayer][PlrWallPt] = 100
-		Player[iPlayer][PlrTrapType] = TRAP_BIND
 
 		if (Player[iPlayer][PlrInWall])
 		{
@@ -680,6 +679,7 @@ public efk_change_knife_core_post(iPlayer, iKnifeId)
 
 	Player[iPlayer][PlrKnife] = iKnifeId
 	Player[iPlayer][PlrInSpit] = false
+	Player[iPlayer][PlrTrapType] = TRAP_BIND
 
 	if ((Player[iPlayer][PlrInWall] || Player[iPlayer][PlrKillTrail] > 0.0) && !kc_player_in_chill(iPlayer))
 	{
@@ -699,7 +699,7 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 
 	set_hudmessage(ACID_COLOR_R, ACID_COLOR_G, ACID_COLOR_B, 0.01, -0.78, 0, 0.0, 0.4, 0.0, 0.0, HUDCHANNEL_STATUS)
 
-	show_hudmessage(iPlayer, "Wall Run (E): %d%%^nTrap: %s%s",
+	show_hudmessage(iPlayer, "Wall Run (E): %d%%^nTrap (T): %s%s",
 		Player[iSubject][PlrWallPt], TRAP_TYPE_NAMES[_:iTrapType],
 		g_iTacticalTrapsNum[iSubject] ? "^nDetonate (F)" : "")
 
