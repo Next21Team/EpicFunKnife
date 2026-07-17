@@ -47,7 +47,9 @@ new const MODEL_ACID_CLOUD[]		= "sprites/next21_efk/posion_gas.spr"
 new const MODEL_ACID_WALL[]			= "models/next21_efk/poison_spore2.mdl"
 new const MODEL_BEAM[]				= "sprites/laserbeam.spr"
 
-new const SOUND_ACIDTRAP[]			= "next21_efk/acidtrap_explosion.wav"
+new const SOUND_TRAP_EXPLOSION[]	= "next21_efk/acidtrap_explosion.wav"
+new const SOUND_TRAP_ACTIVATE[]		= "next21_efk/acidtrap_activate.wav"
+new const SOUND_TRAP_UNBIND[]		= "next21_efk/acidtrap_unbind.wav"
 new const SOUND_ACID_BALL[]			= "next21_efk/acid_launch.wav"
 
 new const SOUND_DETONATE[] 			= "next21_efk/acidtrap_detonate.wav"
@@ -165,7 +167,9 @@ public plugin_precache()
 	precache_model(MODEL_ACID_BALL)
 	precache_model(MODEL_ACID_WALL)
 
-	precache_sound(SOUND_ACIDTRAP)
+	precache_sound(SOUND_TRAP_EXPLOSION)
+	precache_sound(SOUND_TRAP_ACTIVATE)
+	precache_sound(SOUND_TRAP_UNBIND)
 	precache_sound(SOUND_ACID_BALL)
 
 	precache_sound(SOUND_DETONATE)
@@ -920,6 +924,7 @@ public acidtrap_think(iAcidtrapEnt)
 
 	if (iTrapType == TRAP_BIND)
 	{
+		engfunc(EngFunc_EmitSound, iAcidtrapEnt, CHAN_STATIC, SOUND_TRAP_UNBIND, 1.0, ATTN_NORM, 0, PITCH_NORM)
 		rg_remove_entity(iAcidtrapEnt)
 		return
 	}
@@ -951,7 +956,7 @@ public acidtrap_think(iAcidtrapEnt)
 		draw_acid_particles(vOrigin)
 	}
 
-	engfunc(EngFunc_EmitSound, iAcidtrapEnt, CHAN_STATIC, SOUND_ACIDTRAP, 1.0, ATTN_NORM, 0, PITCH_NORM)
+	engfunc(EngFunc_EmitSound, iAcidtrapEnt, CHAN_STATIC, SOUND_TRAP_EXPLOSION, 1.0, ATTN_NORM, 0, PITCH_NORM)
 
 	new Float:fDamage = get_entvar(iAcidtrapEnt, var_trapdamage)
 	new iOwner = get_entvar(iAcidtrapEnt, var_owner)
@@ -1122,6 +1127,8 @@ acidtrap_activate(iAcidtrapEnt)
 	set_entvar(iAcidtrapEnt, var_framerate, 1.0)
 	set_entvar(iAcidtrapEnt, var_animtime, fGameTime)
 	set_entvar(iAcidtrapEnt, var_trapstate, TRAPSTATE_ACTIVE)
+
+	engfunc(EngFunc_EmitSound, iAcidtrapEnt, CHAN_STATIC, SOUND_TRAP_ACTIVATE, 1.0, ATTN_NORM, 0, PITCH_NORM)
 }
 
 acidtrap_detonate(iAcidtrapEnt)
