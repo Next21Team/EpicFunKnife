@@ -150,7 +150,7 @@ public plugin_init()
 	kc_register_ability1(g_iKnifeId, ABIL1_NAME, ABIL1_CHARGE, ABIL1_TYPE, ABIL1_MINDIST, ABIL1_MAXDIST)
 	kc_register_ability2(g_iKnifeId, ABIL2_NAME, ABIL2_CHARGE)
 	kc_register_ability3(g_iKnifeId, ABIL3_NAME, ABIL3_CHARGE)
-	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLABLE)
+	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLEABLE)
 	kc_knife_set_anim_ext(g_iKnifeId, ANIM_EXT_NUNCHAKU)
 	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 

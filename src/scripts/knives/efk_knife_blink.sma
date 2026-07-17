@@ -142,7 +142,7 @@ public plugin_init()
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_deploy1.wav", SOUND_KNIFE_DEPLOY)
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_hitwall1.wav", SOUND_KNIFE_HITWALL)
 
-	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLABLE)
+	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLEABLE)
 	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 
 	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)

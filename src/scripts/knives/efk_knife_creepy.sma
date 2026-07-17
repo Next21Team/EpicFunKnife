@@ -201,7 +201,7 @@ public plugin_init()
 	kc_register_ability3(g_iKnifeId, ABIL3_NAME, ABIL3_CHARGE)
 
 	kc_knife_set_anim_ext(g_iKnifeId, ANIM_EXT_DUAL_KNIVES)
-	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLABLE)
+	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLEABLE)
 	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_hit1.wav", SOUND_KNIFE_HIT1)

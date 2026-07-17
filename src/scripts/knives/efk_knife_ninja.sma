@@ -127,7 +127,7 @@ public plugin_init()
 		set_fail_state("[%s] error registration", PLUGIN)
 
 	kc_register_ability1(g_iKnifeId, ABIL1_NAME, ABIL1_CHARGE)
-	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLABLE)
+	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLEABLE)
 	kc_knife_set_charge_boost_coeff(g_iKnifeId, 0.25)
 
 	kc_knife_set_sound(g_iKnifeId, "weapons/knife_hit1.wav", SOUND_KNIFE_HIT1)

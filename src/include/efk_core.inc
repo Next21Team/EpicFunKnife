@@ -92,6 +92,14 @@ forward efk_ability4_pre(iPlayer);
 forward efk_ability4_post(iPlayer);
 
 /**
+ * Called when the player presses the first ability toggle key (impulse 201 / T)
+ *
+ * @param	iPlayer		- Player ID
+ * @return				- Specify PLUGIN_HANDLED if you want to block default action
+ */
+forward efk_ability_toggle(iPlayer);
+
+/**
  * Called before setting the HUD crosshair
  *
  * @param 	iPlayer				- Player ID

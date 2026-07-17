@@ -466,7 +466,7 @@ forward_freeze, forward_unfreeze,
 forward_capture, forward_uncapture, forward_swap, forward_undarkness, forward_update_windboost,
 forward_disenergy, forward_preuse_crit,
 forward_apply_damage, forward_reflection_start, forward_reflection_stop, forward_reflection,
-forward_concentblock_timeout, forward_player_options_update,
+forward_concentblock_timeout, forward_player_options_update, forward_ability1_toggle,
 
 g_iTotalKnives, g_iTotalItems, g_iTotalMenuItems,
 HookChain:g_pSV_WriteFullClientUpdate, g_szDeathString[32], g_iAssistKiller,
@@ -824,6 +824,7 @@ public plugin_init()
 	forward_reflection_stop = CreateMultiForward("efk_reflection_end", ET_IGNORE, FP_CELL, FP_CELL)
 	forward_concentblock_timeout = CreateMultiForward("efk_concentblock_timeout", ET_IGNORE, FP_CELL)
 	forward_player_options_update = CreateMultiForward("efk_player_options_update", ET_IGNORE, FP_CELL, FP_CELL)
+	forward_ability1_toggle = CreateMultiForward("efk_ability_toggle", ET_STOP, FP_CELL)
 
 	register_clcmd("efk_menu", "clcmd_show_main_menu")
 	register_clcmd("chooseteam", "clcmd_show_main_menu")
@@ -2837,7 +2838,7 @@ public fw_AddToFullPack(es_state, e, ent, host, hostflags, player)
 
 	if (iImpulse == IMPULSE_ACIDTRAP)
 	{
-		if (get_entvar(ent, var_trapmode) == TRAPMODE_ACTIVE)
+		if (get_entvar(ent, var_trapstate) == TRAPSTATE_ACTIVE)
 			return FMRES_IGNORED
 
 		if (get_entvar(ent, var_skin) + 1 != iHostTeam)
@@ -3929,12 +3930,20 @@ public fw_PlayerSpray(iPlayer)
 		return PLUGIN_CONTINUE
 
 	new iKnifeId = Player[iPlayer][PlrKnife]
-	if (!is_valid_knife(iKnifeId) || !CheckKnifeFlag(iKnifeId, KNFF_ABIL1_TOGGLABLE))
+	if (!is_valid_knife(iKnifeId) || !CheckKnifeFlag(iKnifeId, KNFF_ABIL1_TOGGLEABLE))
 		return PLUGIN_CONTINUE
 
-	new bool:bNewVal = !Player[iPlayer][PlrAbility1Disabled]
-	client_print(iPlayer, print_center, "%L", iPlayer, bNewVal ? "ABILITY_DISABLED_ON" : "ABILITY_DISABLED_OFF")
-	Player[iPlayer][PlrAbility1Disabled] = bNewVal
+	new iRet
+	ExecuteForward(forward_ability1_toggle, iRet, iPlayer)
+
+	// Default behavior
+	if (iRet == PLUGIN_CONTINUE)
+	{
+		new bool:bNewVal = !Player[iPlayer][PlrAbility1Disabled]
+		Player[iPlayer][PlrAbility1Disabled] = bNewVal
+
+		client_print(iPlayer, print_center, "%L", iPlayer, bNewVal ? "ABILITY_DISABLED_ON" : "ABILITY_DISABLED_OFF")
+	}
 
 	client_cmd(iPlayer, "spk %s", _SOUND_GUI_CLICK)
 
