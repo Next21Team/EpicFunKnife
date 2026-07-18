@@ -219,6 +219,7 @@ public plugin_init()
 	kc_register_ability1(g_iKnifeId, ABIL1_NAME, ABIL1_CHARGE, ABIL1_TYPE, ABIL1_MINDIST, ABIL1_MAXDIST)
 	kc_register_ability2(g_iKnifeId, ABIL2_NAME, ABIL2_CHARGE)
 
+	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLEABLE)
 	kc_knife_set_anim_ext(g_iKnifeId, ANIM_EXT_KNIFE2)
 	kc_knife_set_level(g_iKnifeId, KNIFE_LEVEL)
 
@@ -239,7 +240,6 @@ public plugin_init()
 	RegisterHookChain(RG_CBasePlayerWeapon_SendWeaponAnim, "RG_CBasePlayerWeapon_SendWeaponAnim_Pre")
 
 	register_impulse(100, "fw_PlayerFlashlight")
-	register_impulse(201, "fw_PlayerSpray")
 
 	g_hcRadio = RegisterHookChain(RG_CBasePlayer_Radio, "RG_CBasePlayer_Radio_Pre", false)
 	g_hcThrowGrenade = RegisterHookChain(RG_CBasePlayer_ThrowGrenade, "RG_CBasePlayer_ThrowGrenade_Post", true)
@@ -676,19 +676,6 @@ public fw_PlayerFlashlight(iPlayer)
 	return PLUGIN_HANDLED
 }
 
-public fw_PlayerSpray(iPlayer)
-{
-	if (!Player[iPlayer][IsAlive])
-		return PLUGIN_CONTINUE
-
-	if (Player[iPlayer][Knife] != g_iKnifeId)
-		return PLUGIN_CONTINUE
-
-	Player[iPlayer][PlrKunaiMode] = _:((_:Player[iPlayer][PlrKunaiMode] + 1) % _:KunaiMode)
-
-	return PLUGIN_HANDLED
-}
-
 public efk_status_draw(iPlayer, iSubject, iKnifeId)
 {
 	if (iKnifeId != g_iKnifeId)
@@ -1025,6 +1012,20 @@ public efk_ability2(iPlayer)
 	free_tr2(iTraceId)
 
 	return PLUGIN_CONTINUE
+}
+
+public efk_ability_toggle(iPlayer)
+{
+	if (Player[iPlayer][Knife] != g_iKnifeId)
+		return PLUGIN_CONTINUE
+
+	new iKunaiMode = _:Player[iPlayer][PlrKunaiMode]
+	iKunaiMode = (iKunaiMode + 1) % _:KunaiMode
+
+	client_print(iPlayer, print_center, "Kunai: %s", KUNAI_MODE_NAMES[iKunaiMode])
+	Player[iPlayer][PlrKunaiMode] = KunaiMode:iKunaiMode
+
+	return PLUGIN_HANDLED
 }
 
 public efk_disenergy(iPlayer)
