@@ -72,7 +72,7 @@ new const MODELS_SMOKE[][] =
 #define ACIDTRAP_EXPLODE_RADIUS		150.0
 #define ACIDTRAP_BASE_DAMAGE		25.0
 #define ACIDTRAP_EXPLOSION_DELAY	0.8
-#define ACIDTRAP_TACTICAL_DELAY		1.2
+#define ACIDTRAP_TACTICAL_DELAY		1.75
 
 #define CLOUD_UPDATERATE			2.0
 #define CLOUD_TIMESTODIE			5
@@ -227,7 +227,7 @@ public plugin_init()
 	register_event("CurWeapon", "event_CurWeapon", "be", "1=1")
 
 	register_impulse(100, "fw_PlayerFlashlight")
-	set_task(1.0, "tactical_traps_counter", TASK_ACIDTRAPS_COUNTER, .flags="b")
+	set_task(0.4, "tactical_traps_counter", TASK_ACIDTRAPS_COUNTER, .flags="b")
 
 	new szEntity[][] =
 	{
@@ -594,7 +594,7 @@ public fw_PreThink(iPlayer)
 	}
 
 	static Float:fLastTrapHighlightTime[MAX_PLAYERS + 1]
-	if (fLastTrapHighlightTime[iPlayer] < fGameTime)
+	if (g_iTacticalTrapsNum[iPlayer] && fLastTrapHighlightTime[iPlayer] < fGameTime)
 	{
 		new iTargetAcidtrap = find_highlighted_acidtrap(iPlayer)
 		if (!is_nullent(iTargetAcidtrap))
@@ -730,6 +730,15 @@ public efk_ability3(iPlayer)
 	set_member(iPlayer, m_flNextAttack, 1.0)
 
 	return PLUGIN_CONTINUE
+}
+
+public efk_ability_toggle(iPlayer)
+{
+	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
+		return PLUGIN_CONTINUE
+
+	switch_trap_type(iPlayer)
+	return PLUGIN_HANDLED
 }
 
 public tactical_traps_counter(iTaskId)
@@ -1558,15 +1567,6 @@ draw_acid_particles(Float:vOrigin[3])
 		send_msg_TE_SPRITETRAIL(vOrigin, vEndOrigin, g_pPoisonParticlesModel, 25, 1, 4, 28, 20,
 			MSG_ONE_UNRELIABLE, _, iPlayer)
 	}
-}
-
-public efk_ability_toggle(iPlayer)
-{
-	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
-		return PLUGIN_CONTINUE
-
-	switch_trap_type(iPlayer)
-	return PLUGIN_HANDLED
 }
 
 switch_trap_type(iPlayer)
