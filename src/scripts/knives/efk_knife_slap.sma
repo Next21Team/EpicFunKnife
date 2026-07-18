@@ -636,6 +636,9 @@ public efk_ability2(iPlayer)
 				{
 					if (iTeam != get_entvar(iTarget, var_skin) + 1)
 					{
+						set_entvar(iTarget, var_owner, iPlayer)
+						set_entvar(iTarget, var_skin, iTeam - 1)
+
 						ExecuteHamB(Ham_Use, iTarget, iPlayer, iPlayer, USE_SET, 1.0)
 					}
 				}

@@ -911,6 +911,7 @@ acidtrap_create(iPlayer)
 		}
 		case TRAP_TACTICAL:
 		{
+			set_entvar(iAcidtrapEnt, var_trapholdtime, ACIDTRAP_EXPLOSION_DELAY)
 			set_entvar(iAcidtrapEnt, var_trapdamage, ACIDTRAP_BASE_DAMAGE)
 		}
 	}
@@ -1007,59 +1008,16 @@ public acidtrap_touch(iAcidtrapEnt, iOther)
 	new iTeam = get_entvar(iAcidtrapEnt, var_skin) + 1
 	new AcidTrapType:iTrapType = get_entvar(iAcidtrapEnt, var_traptype)
 
+	if (iTrapType == TRAP_TACTICAL)
+		return HC_CONTINUE
+
 	if (is_entity_player(iOther))
 	{
 		if (Player[iOther][PlrIsAlive] && !kc_player_check_game_flag(iOther, PLGF_IN_UNABILITY)
 			&& Player[iOther][PlrTeam] != iTeam
 			&& kc_player_get_visibility(iOther) < VIS_INVISION)
 		{
-			new Float:vOrigin[3]
-			get_entvar(iAcidtrapEnt, var_origin, vOrigin)
-
-			switch (iTrapType)
-			{
-				case TRAP_BIND:
-				{
-					new Float:fFreezeTime = get_entvar(iAcidtrapEnt, var_trapholdtime)
-
-					new iTarget = NULLENT
-					while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, ACIDTRAP_CATCH_RADIUS)))
-					{
-						if (is_entity_player(iTarget) && Player[iTarget][PlrIsAlive]
-							&& Player[iTarget][PlrTeam] != iTeam
-							&& !kc_player_check_game_flag(iTarget, PLGF_IN_UNABILITY)
-							&& kc_player_get_visibility(iTarget) < VIS_INVISION)
-						{
-							kc_player_slow(iTarget, 0.1, fFreezeTime + ACIDTRAP_ADDTIME_FREEZE)
-							kc_player_add_glow(iTarget, fFreezeTime + ACIDTRAP_ADDTIME_FREEZE,
-								ACID_COLOR_R, ACID_COLOR_G, ACID_COLOR_B)
-
-							new iBeamEnt = Beam_Create(MODEL_BEAM, 10.0)
-							if (!is_nullent(iBeamEnt))
-							{
-								Beam_EntsInit(iBeamEnt, iAcidtrapEnt, iTarget)
-								Beam_SetColor(iBeamEnt, Float:{ACID_COLOR_R.0, ACID_COLOR_G.0, ACID_COLOR_B.0})
-								set_entvar(iBeamEnt, var_owner, iAcidtrapEnt)
-								set_entvar(iBeamEnt, var_impulse, IMPULSE_ACIDTRAP_BEAM)
-							}
-						}
-					}
-
-					acidtrap_activate(iAcidtrapEnt)
-
-					return HC_CONTINUE
-				}
-				case TRAP_ACTIVE:
-				{
-					acidtrap_activate(iAcidtrapEnt)
-
-					return HC_CONTINUE
-				}
-				case TRAP_TACTICAL:
-				{
-					return HC_CONTINUE
-				}
-			}
+			acidtrap_activate(iAcidtrapEnt)
 		}
 
 		return HC_CONTINUE
@@ -1068,17 +1026,14 @@ public acidtrap_touch(iAcidtrapEnt, iOther)
 	if (iOther && get_entvar(iOther, var_flags) & FL_MONSTER)
 	{
 		if (get_entvar(iOther, var_skin) + 1 != iTeam)
-		{
-			if (iTrapType == TRAP_ACTIVE)
-				acidtrap_activate(iAcidtrapEnt)
-		}
+			acidtrap_activate(iAcidtrapEnt)
 
 		return HC_CONTINUE
 	}
 
 	if (!iOther || get_entvar(iOther, var_solid) >= SOLID_BBOX)
 	{
-		if (iTrapType != TRAP_TACTICAL && get_entvar(iAcidtrapEnt, var_trapstate) == TRAPSTATE_FREE)
+		if (get_entvar(iAcidtrapEnt, var_trapstate) == TRAPSTATE_FREE)
 		{
 			engfunc(EngFunc_SetSize, iAcidtrapEnt, Float:{-40.0, -40.0, 0.0}, Float:{40.0, 40.0, 23.0})
 			set_entvar(iAcidtrapEnt, var_velocity, NULL_VECTOR)
@@ -1115,6 +1070,7 @@ acidtrap_activate(iAcidtrapEnt)
 		return
 
 	new Float:fGameTime = get_gametime()
+	new iTeam = get_entvar(iAcidtrapEnt, var_skin) + 1
 	new AcidTrapType:iTrapType = get_entvar(iAcidtrapEnt, var_traptype)
 	new Float:fTimeExplosion = get_entvar(iAcidtrapEnt, var_trapholdtime)
 
@@ -1122,6 +1078,46 @@ acidtrap_activate(iAcidtrapEnt)
 	{
 		case TRAP_BIND:
 		{
+			new Float:vOrigin[3]
+			get_entvar(iAcidtrapEnt, var_origin, vOrigin)
+
+			new Float:fFreezeTime = get_entvar(iAcidtrapEnt, var_trapholdtime)
+
+			new iTarget = NULLENT
+			while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, ACIDTRAP_CATCH_RADIUS)))
+			{
+				if (is_entity_player(iTarget))
+				{
+					if (!Player[iTarget][PlrIsAlive]
+						|| Player[iTarget][PlrTeam] == iTeam
+						|| kc_player_check_game_flag(iTarget, PLGF_IN_UNABILITY)
+						|| kc_player_get_visibility(iTarget) >= VIS_INVISION)
+					{
+						continue
+					}
+
+					kc_player_slow(iTarget, 0.1, fFreezeTime + ACIDTRAP_ADDTIME_FREEZE)
+					kc_player_add_glow(iTarget, fFreezeTime + ACIDTRAP_ADDTIME_FREEZE,
+						ACID_COLOR_R, ACID_COLOR_G, ACID_COLOR_B)
+
+					acidtrap_create_beam(iAcidtrapEnt, iTarget)
+				}
+				else if (get_entvar(iTarget, var_flags) & FL_MONSTER)
+				{
+					if (get_entvar(iTarget, var_skin) + 1 == iTeam)
+						continue
+
+					new Float:vVelocity[3]
+					get_entvar(iTarget, var_velocity, vVelocity)
+					vVelocity[2] = 0.0
+
+					set_entvar(iTarget, var_velocity, vVelocity)
+					set_entvar(iTarget, var_nextthink, fGameTime + fFreezeTime)
+
+					acidtrap_create_beam(iAcidtrapEnt, iTarget)
+				}
+			}
+
 			set_entvar(iAcidtrapEnt, var_body, 3)
 		}
 		case TRAP_ACTIVE:
@@ -1143,6 +1139,18 @@ acidtrap_activate(iAcidtrapEnt)
 acidtrap_detonate(iAcidtrapEnt)
 {
 	set_entvar(iAcidtrapEnt, var_nextthink, get_gametime())
+}
+
+acidtrap_create_beam(iAcidtrapEnt, iTarget)
+{
+	new iBeamEnt = Beam_Create(MODEL_BEAM, 10.0)
+	if (!is_nullent(iBeamEnt))
+	{
+		Beam_EntsInit(iBeamEnt, iAcidtrapEnt, iTarget)
+		Beam_SetColor(iBeamEnt, Float:{ACID_COLOR_R.0, ACID_COLOR_G.0, ACID_COLOR_B.0})
+		set_entvar(iBeamEnt, var_owner, iAcidtrapEnt)
+		set_entvar(iBeamEnt, var_impulse, IMPULSE_ACIDTRAP_BEAM)
+	}
 }
 
 remove_acidtraps(const iOwner=0)
