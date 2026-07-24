@@ -11,3 +11,10 @@ SM_DEALT_DAMAGE = Вы нанесли ^3%d ^1урона
 SM_NO_DEALT_DAMAGE = Вы никого не ранили
 SM_DEATH = Вас убил ^3%s^1. У него оставалось ^3%d ^1HP
 SM_NO_DEATH = Вас не убивал противник
+
+[es]
+SM_NOT_AVAILABLE = Esta función solo está disponible para jugadores muertos
+SM_DEALT_DAMAGE = Has causado ^3%d ^1de daño
+SM_NO_DEALT_DAMAGE = No has dañado a ningún enemigo
+SM_DEATH = ^3%s^1 te mató. Le quedaron ^3%d ^1HP
+SM_NO_DEATH = No fuiste asesinado por un enemigo
