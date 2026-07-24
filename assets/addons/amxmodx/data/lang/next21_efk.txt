@@ -445,3 +445,227 @@ AUTO_BALANCE_TEAM_CT = Вы перемещены в ^3синюю ^1команд�
 AUTO_BALANCE_TEAM_CHANGED = Вы перемещены в другую команду
 
 ZONE_START = Зона сужается!
+
+[es]
+DHUD_BUY = Para cambiar el cuchillo, apreta la Z
+DHUD_GM_RANDOM_KNIFE = CUCHILLO AL AZAR
+DHUD_GM_ONE_LIFE = UNA VIDA
+
+KNIFE_BLINK_DESC = \y[\rCuchillo Blink\y]
+KNIFE_SLAP_DESC = \y[\rCuchillo Slap\y]
+KNIFE_FLASH_DESC = \y[\rCuchillo Flash\y]
+KNIFE_NINJA_DESC = \y[\rCuchillo Ninja\y]
+KNIFE_LEAP_DESC = \y[\rCuchillo Leap\y]
+KNIFE_FIRE_DESC = \y[\rCuchillo de Fuego\y]
+KNIFE_NUCLEAR_DESC = \y[\rCuchillo Nuclear\y]
+KNIFE_FROST_DESC = \y[\rCuchillo de Hielo\y]
+KNIFE_THUNDER_DESC = \y[\rCuchillo Trueno\y]
+KNIFE_RAZOR_DESC = \y[\rCuchillo Navaja\y]
+KNIFE_TELEKINESIS_DESC = \y[\rCuchillo Telequinesis\y]
+KNIFE_SWAP_DESC = \y[\rCuchillo Intercambio\y]
+KNIFE_NECRO_DESC = \y[\rCuchillo Nigromante\y]
+KNIFE_SPIKES_DESC = \y[\rCuchillo Espinas\y]
+KNIFE_DARK_DESC = \y[\rCuchillo Oscuro\y]
+KNIFE_ACIDTRAP_DESC = \y[\rCuchillo Trampa Ácida\y]
+KNIFE_TENTACLES_DESC = \y[\rCuchillo Tentáculos\y]
+KNIFE_CREEPY_DESC = \y[\rCuchillo Macabro\y]
+KNIFE_WIND_DESC = \y[\rCuchillo Viento\y]
+KNIFE_WATER_DESC = \y[\rCuchillo Agua\y]
+
+KNIFE_BLINK_CHAT = ^4[Cuchillo Transportador] Propiedades: ^1portal detrás del enemigo, sprint, doble salto
+KNIFE_SLAP_CHAT = ^4[Cuchillo Cacheteador] Propiedades: ^1impulso de energía, HP-, velocidad-
+KNIFE_FLASH_CHAT = ^4[Cuchillo Flash] Propiedades: ^1ve todos los objetos invisibles, bloquea la habilidad del enemigo
+KNIFE_NINJA_CHAT = ^4[Cuchillo Ninja] Propiedades: ^1ilusiones, HP+, gravedad-
+KNIFE_LEAP_CHAT = ^4[Cuchillo Salto Largo] Propiedades: ^1salto largo (Ctrl+Espacio), HP-, velocidad+, daño+
+KNIFE_FIRE_CHAT = ^4[Cuchillo de Fuego] Propiedades: ^1tiempo de quemadura, reactividad, HP+, velocidad+
+KNIFE_NUCLEAR_CHAT = ^4[Cuchillo Nuclear] Propiedades: ^1refleja el daño, invulnerabilidad de habilidad, autodestrucción, HP+, velocidad-
+KNIFE_FROST_CHAT = ^4[Cuchillo de Hielo] Propiedades: ^1lanza hielo, aumenta la velocidad de ataque tras cada golpe, HP-
+KNIFE_THUNDER_CHAT = ^4[Cuchillo Trueno] Propiedades: ^1levitación, HP-
+KNIFE_RAZOR_CHAT = ^4[Cuchillo Navaja] Propiedades: ^1velocidad+
+KNIFE_TELEKINESIS_CHAT = ^4[Cuchillo Telequinesis] Propiedades: ^1menos daño por caída, daño a distancia, daño+
+KNIFE_SWAP_CHAT = ^4[Cuchillo Intercambio] Propiedades: ^1intercambia la posición con el enemigo, confunde los botones de ataque
+KNIFE_NECRO_CHAT = ^4[Cuchillo Nigromante] Propiedades: ^1recoge las almas de los jugadores muertos para curarse, HP-
+KNIFE_SPIKES_CHAT = ^4[Cuchillo Espinas] Propiedades: ^1salto alto, salto hacia abajo, espinas en la espalda, velocidad+
+KNIFE_DARK_CHAT = ^4[Cuchillo Oscuro] Propiedades: ^1se disfraza como enemigo, oscuridad global, HP+
+KNIFE_ACIDTRAP_CHAT = ^4[Cuchillo Trampa Ácida] Propiedades: ^1trampas, correr por paredes, HP-, daño+
+KNIFE_TENTACLES_CHAT = ^4[Cuchillo Tentáculos] Propiedades: ^1neutralización, ataque con tentáculos, robo de dinero, HP-, daño-
+KNIFE_CREEPY_CHAT = ^4[Cuchillo Macabro] Propiedades: ^1telaraña, doncella de hierro, HP-
+KNIFE_WIND_CHAT = ^4[Cuchillo Viento] Propiedades: ^1impulso de viento, tornado, corriente de aire
+KNIFE_WATER_CHAT = ^4[Cuchillo Agua] Propiedades: ^1guardián dragón, encarnación, esfera de agua, transparencia acuática
+
+ITEM_RET_HAVE = Ya tienes este objeto
+ITEM_RET_NOT = No puedes comprar este objeto
+ITEM_RET_DEAD = Estás muerto y no puedes comprar este objeto
+ITEM_RET_ALIVE = Estás vivo y no puedes comprar este objeto
+ITEM_NEED_LEVEL = Necesitas ser nivel ^4%i ^1para acceder a este objeto
+ITEM_NOT_MONEY = No tienes suficiente dinero
+ITEM_NEXT_SPAWN = Este objeto se entregará en tu próxima spawn
+ITEM_CASHBACK = Tu dinero ha sido reembolsado
+
+INVENTORY_EMPTY = Tu inventario esta vacío
+
+KNIVES_MENUNAME = Cuchillos
+SHOP_MENUNAME = Tienda
+TEAM_MENUNAME = Cambiar Equipo
+
+MENU_EXIT = Salir
+MENU_NEXT = Siguiente
+MENU_BACK = Atrás
+
+KNIFE_CHANGE_DELAY = Puedes cambiar el cuchillo durante el tiempo de spawn o en ^3%i ^1seg.
+KNIFE_ALREADY_HAVE = Ya tienes este cuchillo
+KNIFE_LEVEL = Necesitas ser nivel ^4%i ^1para acceder a este cuchillo
+KNIFE_CHANGE_GM = El cuchillo seleccionado se equipará en la próxima ronda
+
+ABILITY_CHARGED = ¡Cargado!
+ABILITY_CHARGING = Cargando: %d seg.
+ABILITY_DISABLED = [Habilidad primaria deshabilitada]
+ABILITY_DISABLED_ON = La activación de la habilidad primaria está deshabilitada
+ABILITY_DISABLED_OFF = La activación de la habilidad primaria está habilitada
+
+RAZOR_POWER_DAMAGE = Daño aumentado: %d
+
+CRIT_CHANCE = Probabilidad de crítico:
+CRIT_ATTACKER = ¡Golpe crítico!
+CRIT_VICTIM = ¡Golpe crítico!
+CRIT_BLIND = %n ha sido cegado: %..1f seg.^n¡Ahora puedes asestarle un golpe crítico!
+
+INVISION_TIMER = ¡Eres invisible!^n(%..1f seg. restantes)
+KAMUI_TIMER = Tiempo de Kamui^n(%..1f seg. restantes)
+
+DAMAGE_REFLECTED = Daño reflejado:
+DAMAGE_REFLECTED_COEFF = Coeficiente de daño reflejado:
+
+GHOST_TIMER = Tiempo fantasma: %..1f seg.^nCambiar cámara (F)
+
+ITEM_BUNNY = Bunnyhop
+ITEM_REGENERATION = Regeneración
+ITEM_VAMPIRISM = Vampirismo (25%%)
+ITEM_RESPAWN = Respawn
+ITEM_HPSCAN = Monitor de salud
+ITEM_FLASH = Granada cegadora
+ITEM_IPAD = iPad (HE)
+ITEM_FROSTFIRE = Granada de Hielo/Fuego
+ITEM_GAS = Granada de gas
+ITEM_HP = 60 HP
+ITEM_HS = Protección contra disparos a la cabeza
+ITEM_CRITS = Protección contra críticos
+ITEM_CHARGEBOOSTER = Potenciador de carga
+
+BUY_BUNNY = Has comprado Bunnyhop. Mantén presionado el botón de salto.
+BUY_REGENERATION = Has comprado regeneración de salud
+BUY_VAMPIRISM = Recuperarás el 25%% de la salud según el daño que causes
+BUY_RESPAWN = Has comprado un respawn
+BUY_HPSCAN = Has comprado un monitor de salud
+BUY_FLASH = Has comprado una granada cegadora
+BUY_IPAD = Has comprado un iPad
+BUY_FROSTFIRE = Has comprado una granada de Hielo/Fuego (clic derecho para cambiar el modo)
+BUY_GAS = Has comprado una granada de gas
+BUY_HP = Has comprado 60 HP
+BUY_HS = Has comprado protección contra disparos a la cabeza
+BUY_CRITS = Has comprado protección contra críticos
+BUY_CHARGEBOOSTER = Has comprado un potenciador de carga
+
+REGENERATION = Regeneración
+REGENERATION_CHARGE = Has aumentado la regeneración al %d por ciento
+REGENERATION_EXHAUSTED = La regeneración se ha agotado
+REGENERATION_ON = Regeneración activada
+REGENERATION_OFF = Regeneración desactivada
+
+VAMPIRISM_CHARGE = El vampirismo se ha cargado hasta %d HP
+VAMPIRISM_EXHAUSTED = El vampirismo se ha agotado
+
+CHARGEBOOSTER_EXHAUSTED = El potenciador de carga se ha agotado
+
+BUNNY_LAST_ROUND = Última ronda con Bunnyhop
+BUNNY_KNIFE_CANNOT = ¡El Bunnyhop está prohibido para algunos cuchillos!
+
+PHS_OVER = La protección contra disparos a la cabeza se ha agotado
+PCRIT_OVER = La protección contra críticos se ha agotado
+
+HPSCAN_LAST_ROUND = Última ronda con monitor de salud
+
+RESPAWN_COMPENSATION = Se te ha reembolsado parte del dinero del respawn
+
+FAKE_MODE_LASTMOVE = Modo: último movimiento (E)
+FAKE_MODE_FOLLOW = Modo: seguir (E)
+FAKE_SWAP = Intercambiar (R)
+
+TELEKINESIS_MODE_CONTRACTION = Modo: atracción (E, R)
+TELEKINESIS_MODE_SPREADINGOF = Modo: dispersión (E, R)
+TELEKINESIS_MODE_PUSH_TO = Modo: empujar hacia la mira [Sobre ti] (E, R)
+TELEKINESIS_MODE_PUSH_AWAY = Modo: alejar [Sobre ti] (E, R)
+TELEKINESIS_MODE_PUSH_ENEMY = Modo: alejar al enemigo (E, R)
+
+NPC_ACTION_HUNTER = Cazar (R + ...)
+NPC_ACTION_MOVE = Mover a un punto (R + MOUSE1)
+NPC_ACTION_FOLLOW = Seguirte (R + MOUSE2)
+NPC_ACTION_TARGET = Perseguir a una víctima (R + MOUSE1)
+NPC_ACTION_CIRCLE = Alrededor de un punto (R + E)
+NPC_ACTION_CANNIBAL = Canibalismo (E + T)
+
+DEATH_REASON_FALL = ESTAMPADO CONTRA EL PISO
+DEATH_REASON_DROWN = AHOGADO
+DEATH_REASON_WASTED = DESTRUIDO
+DEATH_REASON_EXPLODE = EXPLOTADO
+DEATH_REASON_SHOOT = BALEADO
+DEATH_REASON_STAB = APUÑALADO
+DEATH_REASON_STAB_HEAD = APUÑALADO EN LA CABEZA
+DEATH_REASON_STAB_BACK = APUÑALADO EN LA ESPALDA
+DEATH_REASON_RIPPED_INSIDE = DESTRUIDO POR DENTRO
+DEATH_REASON_RIPPED_LEAP = CORTADO POR CABLE MONOMOLECULAR
+DEATH_REASON_ENERGY_WAVE = DESTROZADO POR UNA ONDA DE ENERGÍA
+DEATH_REASON_SHADOW_WAVE = DESTROZADO POR UNA ONDA DE SOMBRA
+DEATH_REASON_BURNED = QUEMADO
+DEATH_REASON_ICICLE = MUERTO POR UN TROZO DE HIELO
+DEATH_REASON_KUNAI = MUERTO POR UN KUNAI
+DEATH_REASON_PAIR = DESTROZADO POR UNA FUERZA REDIRIGIDA
+DEATH_REASON_THUNDER = DESTROZADO POR UN RAYO
+DEATH_REASON_TELEKINESIS = DESTROZADO POR UN IMPACTO TELEQUINÉTICO
+DEATH_REASON_SPIKES = EMPALADO POR ESPINAS
+DEATH_REASON_ACID = CORROÍDO POR ÁCIDO
+DEATH_REASON_GAS = ASFIXIADO POR GAS
+DEATH_REASON_ZOMBIE = DESTROZADO POR UN ZOMBI
+DEATH_REASON_BUG = ASESINADO POR UN BICHO
+DEATH_REASON_FROZEN = CONGELADO
+DEATH_REASON_GHOST = DESTROZADO POR UN FANTASMA
+DEATH_REASON_DRAGON_GUARD = MUERTO POR EL GUARDIÁN DRAGÓN
+
+CAM_MENU_EFK = Tipo de cámara
+CAM_MENU = Tipo de cámara:
+CAM_3RD = Tercera Persona
+CAM_BACK = Atrás
+CAM_1ST = Primera Persona
+
+SILENCE_T = El silencio cayó sobre el equipo ^3rojo
+SILENCE_CT = El silencio cayó sobre el equipo ^3azul
+SILENCE_OUT_T = El silencio fue eliminado del equipo ^3rojo
+SILENCE_OUT_CT = El silencio fue eliminado del equipo ^3azul
+
+KNIFE_INFO = ^4Para obtener información completa sobre el cuchillo, escribe ^1knf ^4en el chat
+HELP_MENU = \r¿Cómo jugar?
+SETTINGS_MENU = Configuración
+
+SETTINGS_HIDEHATS = Renderizado de sombreros
+SETTINGS_LOWPOLY_PLAYER = Modelo de jugador de baja calidad
+SETTINGS_DISABLE_PARTICLES = Partículas
+SETTINGS_VIEW_MODEL_FX = Efectos del modelo en primera persona [NCL]
+SETTINGS_FORBID_TEAMMATES_HELP = Ayuda de los compañeros de equipo
+SETTINGS_DAMAGER = Indicador de daño
+SETTINGS_LIMITED_VAMP = Límite de vampirismo
+SETTINGS_ONE_DIRECTION_LJ = Long Jump en una sola dirección
+
+DEATHMATCH_SPAWNTIME = Aparecerás en %d seg.
+DEATHMATCH_WIN = Tu equipo ganó %d pts.
+DEATHMATCH_LOSE = Tu equipo perdió %d pts.
+DEATHMATCH_TIMEOUT = TIEMPO AGOTADO
+
+DM_CHAT_COMMON_TE_SCORE = El equipo rojo lidera por %d puntos
+DM_CHAT_COMMON_CT_SCORE = El equipo azul lidera por %d puntos
+DM_CHAT_COMMON_DEF_SCORE = Los equipos están empatados en puntos
+
+AUTO_BALANCE_TEAM_T = Has sido movido al equipo ^3rojo
+AUTO_BALANCE_TEAM_CT = Has sido movido al equipo ^3azul
+AUTO_BALANCE_TEAM_CHANGED = Has sido movido al equipo contrario
+
+ZONE_START = ¡La zona se está reduciendo!
