@@ -78,6 +78,8 @@ The mod uses a modified version of CSStatsX SQL for managing player statistics, 
 | efk_aes_assistans                  | *asdl     | Columns shown in `/assist` columns |
 | efk_aes_level                      | *al       | Columns shown in `/level` columns |
 | efk_aes_rank                       | bcs       | Columns shown in `/rankstats` columns |
+| efk_aes_xp_step                    | 100       | Number of points required to reach the next level |
+| efk_aes_xp_scale                   | 1.0       | Additional multiplier for the required points per level, applied to the base value of `efk_aes_xp_step` with each level-up. For example, with `efk_aes_xp_step 100` and `efk_aes_xp_scale 0.5`, reaching level 1 requires 100 points, level 2 requires 250 points (100 + (100 + 100 * 1 * 0.5)), level 3 requires 450 points (250 + (100 + 100 * 2 * 0.5)), and so on. With `efk_aes_xp_scale 0.0`, there is no multiplier, and each level will simply require 100 points |
 
 Columns tags:<br/>
 `*` - Rank<br/>

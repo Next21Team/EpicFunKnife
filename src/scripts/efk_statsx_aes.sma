@@ -25,6 +25,8 @@ enum _:cvars {
 }
 
 new cvar[cvars]
+new g_iXPStep
+new Float:g_fXPScale
 
 #define MAX_TOP			10
 
@@ -41,7 +43,7 @@ public SayRankStats         = 0 // displays user's rank stats
 public SayRank              = 0 // displays user's rank
 public SayTop15             = 0 // displays first 15 players
 public SayStatsAll          = 0 // displays all players stats and rank
-public SayHot	= 0	// displays top from current players
+public SayHot               = 0	// displays top from current players
 
 //*** LEVELS ***//
 
@@ -126,11 +128,11 @@ public print_level(id)
 	if (rank < 1)
 		return
 
+	new iLevel, iNextXP
+	iLevel = frags_to_level(stats[STATS_KILLS], stats[STATS_ASSISTS], iNextXP)
+
 	client_print_color(id, print_team_red, "^4[%s] ^1%L",
-		GAME_TAG,
-		id, "AES_LEVELFRAGS",
-		frags_to_level(stats[STATS_KILLS], stats[STATS_ASSISTS]),
-		next_level(stats[STATS_KILLS], stats[STATS_ASSISTS]))
+		GAME_TAG, id, "AES_LEVELFRAGS", iLevel, iNextXP)
 }
 
 public fw_DeathMsg()
@@ -173,33 +175,6 @@ public client_putinserver(id)
 	g_CurRank[id] = 0
 }
 
-frags_to_level(const frags, const assists)
-{
-	new
-	level = 0,
-	i = 100
-
-	while(i <= (frags + assists / 3))
-	{
-		i += (level + 2) * 100
-		level++
-	}
-
-	return level
-}
-
-next_level(const frags, const assists)
-{
-	new
-	curLevel = frags_to_level(frags, assists),
-	maxFrags = 100
-
-	for(new i = 0; i < curLevel; i++)
-		maxFrags += (i + 2) * 100
-
-	return maxFrags - (frags + assists / 3)
-}
-
 public plugin_precache()
 {
 	register_plugin(PLUGIN, EFK_VERSION, AUTHOR)
@@ -222,11 +197,13 @@ public plugin_precache()
 	//   s - Assists
 	*/
 
-	cvar[CVAR_MOTD_DESC] = register_cvar("efk_aes_top","*abcsfiel")
-	cvar[CVAR_MOTD_ONLINE_DESC] = register_cvar("efk_aes_online","*anl")
-	cvar[CVAR_MOTD_ASSISTANS_DESC] = register_cvar("efk_aes_assistans","*asdl")
-	cvar[CVAR_MOTD_LEVEL_DESC] = register_cvar("efk_aes_level","*al")
-	cvar[CVAR_CHAT_DESC] = register_cvar("efk_aes_rank","bcs")
+	cvar[CVAR_MOTD_DESC] = register_cvar("efk_aes_top", "*abcsfiel")
+	cvar[CVAR_MOTD_ONLINE_DESC] = register_cvar("efk_aes_online", "*anl")
+	cvar[CVAR_MOTD_ASSISTANS_DESC] = register_cvar("efk_aes_assistans", "*asdl")
+	cvar[CVAR_MOTD_LEVEL_DESC] = register_cvar("efk_aes_level", "*al")
+	cvar[CVAR_CHAT_DESC] = register_cvar("efk_aes_rank", "bcs")
+	bind_pcvar_num(register_cvar("efk_aes_xp_step", "100"), g_iXPStep)
+	bind_pcvar_float(register_cvar("efk_aes_xp_scale", "1.0"), g_fXPScale)
 
 	register_dictionary("statsx.txt")
 	register_dictionary("efk_aes.txt")
@@ -1745,4 +1722,43 @@ public actionStatsMenu(id,key){
 	}
 
 	return PLUGIN_HANDLED
+}
+
+frags_to_level(const iKills, const iAssists, &iNextXP = 0)
+{
+	new iXP = iKills + iAssists / 3
+	iNextXP = g_iXPStep - iXP
+
+	if (iXP < g_iXPStep)
+		return 0
+
+	if (g_fXPScale == 0.0)
+	{
+		iNextXP = g_iXPStep - (iXP % g_iXPStep)
+		return iXP / g_iXPStep
+	}
+
+	new iStepIncrease = floatround(g_iXPStep * g_fXPScale)
+	new Float:fInvStepIncrease = 1.0 / iStepIncrease
+	new Float:fB = float(2 * g_iXPStep) * fInvStepIncrease - 1.0
+	new Float:fC = -float(2 * iXP) * fInvStepIncrease
+	new Float:fD = fB * fB - 4.0 * fC
+
+	if (fD < 0.0)
+		return 0
+
+	new iLevel = floatround((-fB + floatsqroot(fD)) / 2.0, floatround_floor)
+	new iBaseXP = iLevel * g_iXPStep + (iLevel * (iLevel - 1) * iStepIncrease) / 2
+
+	if (iBaseXP > iXP)
+	{
+		iLevel--
+		iNextXP = iBaseXP - iXP
+	}
+	else
+	{
+		iNextXP = iBaseXP + (g_iXPStep + iLevel * iStepIncrease) - iXP
+	}
+
+	return iLevel
 }
