@@ -11,3 +11,10 @@ HATS_REMOVE = Вы сняли шапку
 HATS_SET = Вы надели шапку
 HATS_MENU_REMOVE = Снять шапку
 HATS_NEED_LEVEL = Вам нужен %i уровень для доступа к этой шапке
+
+[es]
+HATS_MENUNAME = Sombreros
+HATS_REMOVE = Te quitaste el sombrero
+HATS_SET = Recibiste un sombrero
+HATS_MENU_REMOVE = Quitar sombrero
+HATS_NEED_LEVEL = Necesitas ser nivel %i para tener este sombrero.
