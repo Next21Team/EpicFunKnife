@@ -9,9 +9,12 @@ new const PLUGIN[] = "EFK: Deathmatch"
 
 new const GAME_TAG[] = EFK_GAME_TAG
 
-new const MODEL_ZONE[] = "models/next21_efk/zone_b01.mdl"
-#define ZONE_RADIUS 		2560.0
+new const MODEL_ZONE[] = "models/next21_efk/zone_b02.mdl"
+#define ZONE_DURATION	 	120.0
 #define ZONE_DAMAGE 		4.0
+#define ZONE_RADIUS 		2490.0
+#define ZONE_SEQ_NUM		15
+#define ZONE_SPEED			(ZONE_SEQ_NUM / ZONE_DURATION)
 
 new const SOUND_ZONE_START[] = "sound/next21_efk/zone_start_b01.wav"
 new const SOUND_GAME_MODE1[] = "sound/next21_efk/game_mode_1b01.wav"
@@ -589,7 +592,7 @@ create_zone()
 		set_entvar(iZoneEnt, var_skin, g_iWinTeam)
 
 		set_entvar(iZoneEnt, var_sequence, 0)
-		set_entvar(iZoneEnt, var_framerate, 0.25)
+		set_entvar(iZoneEnt, var_framerate, ZONE_SPEED)
 		set_entvar(iZoneEnt, var_animtime, fGameTime)
 
 		set_entvar(iZoneEnt, var_rendermode, kRenderTransAdd)
@@ -640,9 +643,15 @@ remove_zone()
 
 public zone_fade_in(iEnt)
 {
+	zone_move(iEnt)
+
 	new Float:fAmt = get_entvar(iEnt, var_renderamt)
 	if (fAmt >= 255.0)
+	{
+		SetThink(iEnt, "zone_think")
+		set_entvar(iEnt, var_nextthink, get_gametime() + 0.1)
 		return
+	}
 
 	fAmt = floatmin(fAmt + 2.0, 255.0)
 	set_entvar(iEnt, var_renderamt, fAmt)
@@ -661,6 +670,23 @@ public zone_fade_out(iEnt)
 	fAmt = floatmax(fAmt - 5.0, 0.0)
 	set_entvar(iEnt, var_renderamt, fAmt)
 	set_entvar(iEnt, var_nextthink, get_gametime() + 0.05)
+}
+
+public zone_think(iEnt)
+{
+	zone_move(iEnt)
+	set_entvar(iEnt, var_nextthink, get_gametime() + 0.1)
+}
+
+zone_move(iEnt)
+{
+	new Float:fGameTime = get_gametime()
+	new iSeq = floatround((fGameTime - g_fZoneStartTime) * ZONE_SPEED, floatround_floor)
+	if (get_entvar(iEnt, var_sequence) != iSeq && iSeq < ZONE_SEQ_NUM)
+	{
+		set_entvar(iEnt, var_animtime, fGameTime)
+		set_entvar(iEnt, var_sequence, iSeq)
+	}
 }
 
 public task_check_zone(iTaskId)
@@ -688,7 +714,7 @@ public task_check_zone(iTaskId)
 
 bool:is_user_inzone(iPlayer)
 {
-	new const Float:FRAME_RADIUS = ZONE_RADIUS / 29.0 * 0.25
+	new const Float:FRAME_RADIUS = (ZONE_RADIUS - 1.0) / ZONE_DURATION
 
 	new Float:vOrigin[3]
 	get_entvar(iPlayer, var_origin, vOrigin)
