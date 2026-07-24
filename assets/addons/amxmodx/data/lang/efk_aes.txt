@@ -195,3 +195,102 @@ AGO = ago
 AES_TOP_NOW = Top current players
 CSXSQL_SESTATS_CFG = Say /history, /sestats
 AES_SAY_HOT = Say /hot,/topnow
+
+[es]
+MENU_TAG = \r[\yESTADISTICAS\r]\w
+MENU_TITLE = Estadisticas del servidor
+MENU_RANK = Rankstats
+MENU_STATS = Statsme
+
+AES_YOUR_RANK_IS = Tu rango es ^4%d^1 de ^4%d^1
+STATS_RANK = Rango
+STATS_EXP = Exp.
+AES_META = <meta charset=UTF-8>
+AES_STYLE = <link href="http://cs.next21.ru/efk/stats/css/style.css" rel=stylesheet type=text/css>
+AES_HEADER_ROW = <tr>%s</tr>
+AES_HEADER_CELL = <th%s>%L
+AES_BODY_ROW = <tr%s>%s</tr>
+AES_BODY_CELL = <td>%s
+AES_CLOSE = </table>
+AES_TOP_BODY = <h2>%L</h2><table width=100%% border=0 align=center cellpadding=0 cellspacing=1>
+AES_TOP_HEADER_ROW = <tr>%s</tr>
+
+NO_DATA = Sin datos.
+
+RANKSTATS_TITLE = Rankstats
+AES_RANKSTATS_BODY = <p>Rankstats</p>
+AES_RANKSTATS_TSTATS = %s rango es %d de %d
+AES_RANKSTATS_THITS = Aciertos
+
+STATS_TITLE = Statsme
+AES_STATS_BODY = <p>Statsme</p>
+AES_STATS_HEADER1 = Estadisticas
+
+
+THE_STATS = Estadisticas
+THE_RANKS = Rangos
+
+AES_BOT_TOP = Top de bots
+AES_POS = #
+AES_PLAYER_TOP = Top de jugadores
+AES_ONLINE_TOP = Top de jugadores conectados
+AES_ASSISTS_TOP = Top de asistencias
+AES_LEVEL_TOP = Top de niveles
+AES_HOT_PLAYERS = Top de jugadores
+AES_RANK_IS = %s's rango es %d de %d
+AES_KNIFE = Cuchillo
+AES_YOU = Tu
+AES_PLAYER = Jugador
+AES_NAME = Nombre
+AES_KILLS = Asesinatos
+AES_DMG = Daño
+AES_DEATHS = Muertes
+AES_HEAL = Vida
+AES_FAV_KNIFE = Mejor cuchillo
+AES_DUELS = Duelos ganados
+AES_ACC = aci.
+AES_EFF = efi.
+AES_LEVEL = Nivel
+AES_ASSISTS = Asistencias
+AES_NOT_TRACKED = <div class="r">Sin rango todavía</div>
+AES_SKILL_VALUE = <div class="%s"></div>
+AES_DAMAGE = Daño
+AES_SKILL = ELO
+
+AES_KS = A:M
+AES_HSK = HS:A
+AES_HSP = HS
+AES_TIME = Tiempo Jugado
+
+AES_RANK = %s (%.0f)
+AES_SKILL_FMT = <div id="%s">%.0f</div>
+AES_STATS_INFO1 = Database connection failed.
+AES_STATS_INFO2 = Stats are unavailable at this time.
+AES_LEVELFRAGS = Tu nivel es ^3%d^1. Frags para el sig. nivel: ^3%d
+AES_NEWLEVEL = ^3%s ^1llegó al nivel ^3%d^1, ¡felicidades!
+
+AES_STATS_DESC1 = %dd %02d:%02dh
+AES_STATS_DESC2 = %02d:%02dh
+AES_STATS_DESC3 = %02dm
+AES_STATS_DESC4 = %02ds
+
+CSXSQL_JOINS = Conecciones
+CSXSQL_ROUNDS = Rondas jugadas
+CSXSQL_WINS = Rondas ganadas
+CSXSQL_AS_T = %d como Terrorista
+CSXSQL_AS_CT = %d como Anti-Terrorista
+CSXSQL_FIRSTJOIN = Jugando desde
+
+CSXSQL_DATE = Fecha
+CSXSQL_SKILLCHANGE = Cambios de skill
+CSXSQL_MAP = Mapa
+CSXSQL_SETITLE = Historial de partidas
+CSXSQL_SEHTML = <h2>%s</h2><table width=100%% border=0 align=center cellpadding=0 cellspacing=1>
+
+YOURS = Tu
+LAST = último
+AGO = desde
+
+AES_TOP_NOW = Top de jugadores conectados
+CSXSQL_SESTATS_CFG = Escribi /history, /sestats
+AES_SAY_HOT = Escribi /hot,/topnow
