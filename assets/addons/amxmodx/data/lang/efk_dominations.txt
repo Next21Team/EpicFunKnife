@@ -15,3 +15,12 @@ DOMINATION_KILL_A = Вы снова убили свою жертву ^4%s
 DOMINATION_KILL_V = Вас снова убил ваш палач ^4%s
 DOMINATION_REVENGE = Игрок ^4%s ^3отомстил своему обидчику ^4%s
 DOMINATION_COUNT = доминирует над ^4%d ^3игроками.
+
+[es]
+DOMINATION_DISCONNECT_ONE = Jugador ^4%s ^3se fue del servidor, no se vengó de ^4%s
+DOMINATION_DISCONNECT_MULT = Jugador ^4%s ^3se fue del servidor, no se vengó de ^4%d
+DOMINATION_ADD = Jugador ^4%s ^3ahora esta dominando a ^4%s
+DOMINATION_KILL_A = Mataste a tu victima ^4%s de nuevo
+DOMINATION_KILL_V = Te vengaste de ^4%s de nuevo
+DOMINATION_REVENGE = Jugador ^4%s ^3se vengó de ^4%s
+DOMINATION_COUNT = Domina el ^4%d ^3 jugadores.

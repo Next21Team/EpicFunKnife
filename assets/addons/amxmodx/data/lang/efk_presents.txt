@@ -31,3 +31,20 @@ PRESENT_HP = %i HP
 PRESENT_HS = защиту от HS ^3(%i ударов)
 PRESENT_CRITS = защиту от критов ^3(%i критов)
 PRESENT_CHARGEBOOSTER = ускоритель перезарядки ^3(%i зарядов)
+
+[es]
+PRESENT_GET = Has obtenido
+PRESENT_MONEY = $%i
+PRESENT_BUNNY = bunnyhop (5 rondas)
+PRESENT_REGENERATION = regeneración de salud
+PRESENT_VAMPIRISM = vampirismo
+PRESENT_RESPAWN = Has revivido a un jugador aleatorio de tu equipo
+PRESENT_HPSCAN = monitoreo de salud
+PRESENT_FLASH = granada cegadora
+PRESENT_IPAD = conjunto de granadas ^3(%i iPad)
+PRESENT_FROSTFIRE = conjunto de granadas ^3(%i granadas de hielo/fuego)
+PRESENT_GAS = conjunto de granadas ^3(%i granadas de gas)
+PRESENT_HP = %i HP
+PRESENT_HS = protección contra disparos a la cabeza ^3(%i impactos)
+PRESENT_CRITS = protección contra críticos ^3(%i críticos)
+PRESENT_CHARGEBOOSTER = potenciador de cargas ^3(%i cargas)
