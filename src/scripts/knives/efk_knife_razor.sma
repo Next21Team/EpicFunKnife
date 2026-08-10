@@ -44,8 +44,6 @@ new const PLUGIN[] = "EFK: Razor Knife"
 #define ABIL3_SCREENSHAKE_RADIUS	150.0
 #define ABIL3_SCREENSHAKE_VELOCITY	400.0
 #define ABIL3_FALLDMGDIVIDER		9.0
-#define ABIL3_SLOW_MUL				0.5
-#define ABIL3_SLOW_TIME				2.5
 
 new const MODEL_V_KNIFE[]		= "models/next21_efk/v_razor_knife_b02.mdl"
 new const MODEL_P_KNIFE[]		= "models/next21_efk/p_razor_knife_r2.mdl"
@@ -552,10 +550,11 @@ public sphere_think(iSphereEnt)
 					}
 					else
 					{
-						// Ball no longer deals real damage - only drains the target's power pool,
-						// with a brief slow burst instead (one-shot, same pattern Thunder uses).
 						kc_player_set_powerdamage(iTarget, kc_player_get_powerdamage(iTarget) - iDamage)
-						kc_player_slow(iTarget, floatmax(1.0 - float(iDamage) * 0.01, 0.4), 1.5)
+
+						kc_player_set_death_reason(iTarget, "DEATH_REASON_ENERGY_WAVE")
+						set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
+						ExecuteHamB(Ham_TakeDamage, iTarget, iSphereEnt, iOwner, float(iDamage), DMG_ENERGYBEAM | DMG_ALWAYSGIB)
 					}
 				}
 			}
@@ -883,13 +882,6 @@ steal_damage(iPlayer, iTarget, Float:fAdd, Float:fSub)
 {
 	kc_player_set_powerdamage(iPlayer, kc_player_get_powerdamage(iPlayer) + fAdd)
 	kc_player_set_powerdamage(iTarget, kc_player_get_powerdamage(iTarget) - fSub)
-
-	// Brief one-shot speed pulse per steal tick (channel ticks at most every 0.5s,
-	// same call pattern Thunder already uses for its own charge rush - not a
-	// continuously-refreshed effect, so it doesn't fight kc_player_rush/slow's
-	// own internal timers.
-	kc_player_rush(iPlayer, kc_player_get_maxspeed(iPlayer) + fAdd * 2.0, 1.0)
-	kc_player_slow(iTarget, floatmax(1.0 - fSub * 0.02, 0.6), 1.0)
 }
 
 bool:razor_punch_explosion(iPlayer)
@@ -899,6 +891,10 @@ bool:razor_punch_explosion(iPlayer)
 		razor_punch_end(iPlayer)
 		return false
 	}
+
+	new iItem = get_member(iPlayer, m_pActiveItem)
+	if (is_nullent(iItem))
+		iItem = 0
 
 	new iPushedPlayers[MAX_PLAYERS], iPushedPlayersNum, Float:vVec[3]
 
@@ -918,6 +914,8 @@ bool:razor_punch_explosion(iPlayer)
 
 	if (iPushedPlayersNum)
 	{
+		new Float:fDamage = Player[iPlayer][PlrPushDamage] / float(iPushedPlayersNum)
+
 		xs_vec_copy(Player[iPlayer][PlrLastVelocity], vVec)
 		fix_velocity(vVec)
 
@@ -927,8 +925,10 @@ bool:razor_punch_explosion(iPlayer)
 
 			kc_player_unfreeze(iTarget)
 
-			// Power Punch no longer deals damage - it slows the pushed enemy instead
-			kc_player_slow(iTarget, ABIL3_SLOW_MUL, ABIL3_SLOW_TIME)
+			kc_player_set_override_attacker(iTarget, iPlayer, 4.0)
+			kc_player_set_death_reason(iTarget, "DEATH_REASON_ENERGY_WAVE")
+			set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
+			ExecuteHamB(Ham_TakeDamage, iTarget, iItem, iPlayer, fDamage, DMG_ENERGYBEAM | DMG_NEVERGIB)
 
 			set_member(iTarget, m_flVelocityModifier, 1.0)
 			set_entvar(iTarget, var_velocity, vVec)
@@ -1029,7 +1029,7 @@ bool:razor_punch_explosion(iPlayer)
 				{
 					xs_vec_mul_scalar(vTargetVelocity, ABIL3_SCREENSHAKE_VELOCITY, vTargetVelocity)
 					set_entvar(iTarget, var_velocity, vTargetVelocity)
-					kc_player_slow(iTarget, ABIL3_SLOW_MUL, ABIL3_SLOW_TIME)
+					kc_player_set_override_attacker(iTarget, iPlayer, 4.0)
 				}
 			}
 		}
