@@ -17,8 +17,8 @@ new const PLUGIN[] = "EFK: Razor Knife"
 #define HP				90.0
 #define GRAVITY			1.0
 #define SPEED			270.0
-#define MINDAMAGE		0.0
-#define MAXDAMAGE		0.0
+#define MINDAMAGE		5.0
+#define MAXDAMAGE		10.0
 
 #define KNIFE_LEVEL     1
 
