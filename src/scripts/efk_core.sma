@@ -117,6 +117,9 @@ new const CAMERA_MODEL[]			= "models/rpgrocket.mdl"
 #define MIN_GRAVITY					0.000001
 #define MIN_PLAYER_SPEED			0.000001
 
+// A positive powerspeed gain gets this much time before decay can start eating into it again.
+#define POWERSPEED_GAIN_GRACE		3.0
+
 enum _:LevitationFlags(<<=1)
 {
 	LEVITATION_ON = 1,
@@ -1008,6 +1011,11 @@ public client_putinserver(iPlayer)
 
 	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_AUTHORIZED))
 		load_authorized_client_data(iPlayer)
+
+	// sv_maxspeed only raises the ceiling - actual walking speed is still capped by these
+	// client-side input scalers (default 400 each), so push them up too on every connect.
+	if (!is_user_bot(iPlayer))
+		client_cmd(iPlayer, "cl_forwardspeed 9999; cl_sidespeed 9999; cl_backspeed 9999")
 }
 
 public client_authorized(iPlayer)
@@ -7474,8 +7482,16 @@ public Float:_21kc_player_get_powerdamage(plugin, num_params)
 public _21kc_player_set_powerspeed(plugin, num_params)
 {
 	new iPlayer = get_param(1)
-	PlayerF[iPlayer][PlrPowerSpeed] = get_param_f(2)
-	PlayerF[iPlayer][PlrPowerSpeedDelay] = get_gametime() + 0.5
+	new Float:fOldPowerSpeed = PlayerF[iPlayer][PlrPowerSpeed]
+	new Float:fNewPowerSpeed = get_param_f(2)
+	PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
+
+	// A gain (value going up while staying positive) resets a 3s grace window before decay
+	// can touch it again - keep topping it up and it won't start dropping. Anything else
+	// (a loss, going negative, a manual decrease) keeps the usual short delay.
+	PlayerF[iPlayer][PlrPowerSpeedDelay] = (fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
+		? get_gametime() + POWERSPEED_GAIN_GRACE
+		: get_gametime() + 0.5
 
 	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE) && PlayerF[iPlayer][PlrRushTime] == 0.0
 		&& PlayerF[iPlayer][PlrFrozen] == 0.0 && Player[iPlayer][PlrCaptureType] == CAPTURE_NONE

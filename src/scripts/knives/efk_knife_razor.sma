@@ -285,8 +285,8 @@ public RG_CBasePlayer_PreThink_Post(iPlayer)
 			}
 			else
 			{
-				Player[iPlayer][PlrStolenSpeed][iStealingTarget] += 5.0
-				steal_speed(iPlayer, iStealingTarget, 4.0, 5.0)
+				Player[iPlayer][PlrStolenSpeed][iStealingTarget] += 4.0
+				steal_speed(iPlayer, iStealingTarget, 5.0, 4.0)
 			}
 
 			Player[iPlayer][PlrStealDelay] += 0.5

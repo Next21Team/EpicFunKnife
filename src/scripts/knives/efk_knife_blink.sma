@@ -228,6 +228,17 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 	static Float:fSprintAnimTime[MAX_PLAYERS + 1][2]
 	if (Player[iPlayer][PlrInSprint])
 	{
+		// Keep re-adding the live (still decaying) powerspeed on top of the sprint speed
+		// instead of freezing it at the value from the moment sprint started - refresh our
+		// own snapshot together with the real speed so the allow-sprint check below still
+		// sees them matching, and only genuinely external changes trip it.
+		new Float:fLiveExpectedSpeed = SPRINT_SPEED + kc_player_get_powerspeed(iPlayer)
+		if (Player[iPlayer][PlrSprintExpectedSpeed] != fLiveExpectedSpeed)
+		{
+			Player[iPlayer][PlrSprintExpectedSpeed] = fLiveExpectedSpeed
+			kc_player_set_maxspeed(iPlayer, fLiveExpectedSpeed)
+		}
+
 		if (!player_allow_sprint(iPlayer, Player[iPlayer][PlrSprintExpectedSpeed]))
 		{
 			if (kc_player_get_maxspeed(iPlayer) == Player[iPlayer][PlrSprintExpectedSpeed])
@@ -261,7 +272,10 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 	}
 	else
 	{
-		new Float:fExpectedSpeed = SPEED + kc_player_get_powerspeed(iPlayer)
+		// Snapshot core's own bookkeeping value (not SPEED + powerspeed recomputed here) -
+		// core clamps it to MIN_PLAYER_SPEED when powerspeed cancels SPEED out entirely,
+		// and a manual recompute here would miss that clamp and never match, blocking sprint.
+		new Float:fExpectedSpeed = kc_player_get_maxspeed(iPlayer)
 		if (player_allow_sprint(iPlayer, fExpectedSpeed) && Player[iPlayer][PlrSprintPt] >= 20)
 		{
 			Player[iPlayer][PlrSprintExpectedSpeed] = fExpectedSpeed

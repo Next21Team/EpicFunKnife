@@ -100,6 +100,7 @@ new const SOUNDS_FIELD_BREAK[][] = { "next21_efk/field_break1.wav", "next21_efk/
 
 #define TASK_DAMAGE				64
 #define TASK_WEB_STUNNED		128
+#define TASK_RUSH_SPEED			5000
 
 new const SZ_INFO_TARGET[]		= "info_target"
 
@@ -669,7 +670,16 @@ coffin_release(const iPlayer, const iWeapon)
 	if (is_user_has_knife(iPlayer) && g_ePlayerData[iPlayer][IN_COFFIN] && fCoffinTime > COFFIN_DELAY)
 	{
 		coffin_set_status(iPlayer, false)
-		kc_player_rush(iPlayer, 300.0, fCoffinTime * 2.0)
+
+		new Float:fRushTime = fCoffinTime * 2.0
+		kc_player_rush(iPlayer, 300.0 + kc_player_get_powerspeed(iPlayer), fRushTime)
+
+		// Keep re-adding the live (still decaying) powerspeed on top of the rush base for as
+		// long as the rush lasts, instead of freezing it at the value from the moment of cast.
+		remove_task(iPlayer + TASK_RUSH_SPEED)
+		set_task(0.5, "task_creepy_rush_update", iPlayer + TASK_RUSH_SPEED, _, _, "a",
+			floatround(fRushTime / 0.5, floatround_ceil))
+
 		kc_player_add_glow(iPlayer, fCoffinTime * 2.0, 255, 0, 0)
 		engfunc(EngFunc_EmitSound, iPlayer, CHAN_STATIC, SOUND_SHADOWJUMP, 1.0, ATTN_NORM, 0, PITCH_NORM)
 
@@ -678,6 +688,19 @@ coffin_release(const iPlayer, const iWeapon)
 		// set_member(iWeapon, m_Weapon_flNextSecondaryAttack, -1.0)
 		// set_member(iPlayer, m_flNextAttack, 0.0)
 	}
+}
+
+public task_creepy_rush_update(iTaskId)
+{
+	new iPlayer = iTaskId - TASK_RUSH_SPEED
+
+	if (!is_user_alive(iPlayer))
+	{
+		remove_task(iTaskId)
+		return
+	}
+
+	kc_player_set_maxspeed(iPlayer, 300.0 + kc_player_get_powerspeed(iPlayer))
 }
 
 public fw_Player_TakeDamage_Pre(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
