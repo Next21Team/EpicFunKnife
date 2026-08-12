@@ -510,8 +510,9 @@ public fw_PreThink(iPlayer)
 	{
 		button = get_entvar(iPlayer, var_button)
 
+		// A Razor speed theft (negative powerspeed) shouldn't block this on its own.
 		if (!(button & iWallRunButton) || fGameTime >= Player[iPlayer][PlrWallTime] || (get_entvar(iPlayer, var_flags) & FL_ONGROUND)
-			|| !Player[iPlayer][PlrWallPt] || Float:get_entvar(iPlayer, var_maxspeed) < SPEED)
+			|| !Player[iPlayer][PlrWallPt] || Float:get_entvar(iPlayer, var_maxspeed) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) < SPEED)
 		{
 			Player[iPlayer][PlrKillTrail] = fGameTime + 0.2
 			Player[iPlayer][PlrInWall] = false
@@ -562,8 +563,9 @@ public fw_PreThink(iPlayer)
 		}
 		else
 		{
+			// A Razor speed theft (negative powerspeed) shouldn't block this on its own.
 			if (Player[iPlayer][PlrWallPt] && fGameTime < Player[iPlayer][PlrWallTime] && Player[iPlayer][PlrUnWallTime] <= fGameTime
-				&& Float:get_entvar(iPlayer, var_maxspeed) >= SPEED
+				&& Float:get_entvar(iPlayer, var_maxspeed) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) >= SPEED
 				&& (get_entvar(iPlayer, var_button) & iWallRunButton)
 				&& Float:get_member(iPlayer, m_flVelocityModifier) == 1.0)
 			{
