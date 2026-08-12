@@ -6440,6 +6440,11 @@ player_update_gravity(iPlayer)
 
 player_rush(iPlayer, Float:fRush, Float:fRushTime)
 {
+	// Some other knife (e.g. Blink's sprint/dash) is already driving this player's speed
+	// itself - let it keep control instead of stomping over it and breaking its own tracking.
+	if (CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
+		return
+
 	PlayerF[iPlayer][PlrSlowTime][0] = 0.0
 	PlayerF[iPlayer][PlrSlowTime][1] = 0.0
 	PlayerF[iPlayer][PlrSlowTime][2] = 0.0
