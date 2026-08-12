@@ -305,6 +305,8 @@ enum _:PlayerPropertiesF
 	Float:PlrMinDamage,
 	Float:PlrPowerDamage,
 	Float:PlrPowerDamageDelay,
+	Float:PlrPowerSpeed,
+	Float:PlrPowerSpeedDelay,
 	Float:PlrMaxHP,
 	Float:PlrMaxSpeed,
 	Float:PlrGravity,
@@ -532,6 +534,8 @@ public plugin_natives()
 
 	register_native("kc_player_get_powerdamage", "_21kc_player_get_powerdamage")
 	register_native("kc_player_set_powerdamage", "_21kc_player_set_powerdamage")
+	register_native("kc_player_get_powerspeed", "_21kc_player_get_powerspeed")
+	register_native("kc_player_set_powerspeed", "_21kc_player_set_powerspeed")
 
 	register_native("kc_player_set_abil1_type", "_21kc_player_set_abil1_type")
 
@@ -1162,6 +1166,10 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 
 	SetPlayerGameFlag(iPlayer, PLGF_IS_ALIVE);
 
+	// A knife-specific speed override (sprint, dash, etc.) can't survive a respawn -
+	// reset here once for every knife instead of each knife plugin having to do it itself.
+	ClearPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE);
+
 	new iKnifeId = Player[iPlayer][PlrKnife]
 	if (!is_valid_knife(iKnifeId))
 	{
@@ -1220,6 +1228,9 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 
 	ClearPlayerGameFlag(iPlayer, PLGF_IN_LOCK_POWER_DAMAGE);
 	PlayerF[iPlayer][PlrPowerDamage] = 0.0
+	PlayerF[iPlayer][PlrPowerDamageDelay] = 0.0
+	PlayerF[iPlayer][PlrPowerSpeed] = 0.0
+	PlayerF[iPlayer][PlrPowerSpeedDelay] = 0.0
 	Player[iPlayer][PlrDeathReasonText][0] = EOS
 	Player[iPlayer][PlrDeathReasonApplied] = false
 
@@ -1566,6 +1577,32 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 			PlayerF[iPlayer][PlrPowerDamage] = fNewPowerDamage
 			PlayerF[iPlayer][PlrPowerDamageDelay] += 0.5
+		}
+
+		if (PlayerF[iPlayer][PlrPowerSpeed] != 0.0 && PlayerF[iPlayer][PlrPowerSpeedDelay] <= fGameTime)
+		{
+			new Float:fPowerSpeed = PlayerF[iPlayer][PlrPowerSpeed]
+			new Float:fAddPowerSpeed = fPowerSpeed > 0.0 ? -1.0 : 1.0
+			if (get_entvar(iPlayer, var_waterlevel) >= 2)
+				fAddPowerSpeed *= 3.0
+
+			if (PlayerF[iPlayer][PlrFrozen] > 0.0 || PlayerF[iPlayer][PlrChilled] > 0.0 || Player[iPlayer][PlrBurned])
+				fAddPowerSpeed *= 3.0
+
+			new Float:fNewPowerSpeed = fPowerSpeed + fAddPowerSpeed
+			if (fNewPowerSpeed * fPowerSpeed < 0.0)
+				fNewPowerSpeed = 0.0
+
+			PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
+			PlayerF[iPlayer][PlrPowerSpeedDelay] += 0.5
+
+			// Skip if some other knife-specific effect (e.g. Blink's sprint/dash) is
+			// currently driving maxspeed itself - otherwise this decay tick stomps on it
+			// every 0.5s via the unconditional SetClientMaxspeed inside player_update_maxspeed.
+			if (PlayerF[iPlayer][PlrRushTime] == 0.0 && PlayerF[iPlayer][PlrFrozen] == 0.0
+				&& Player[iPlayer][PlrCaptureType] == CAPTURE_NONE && !Player[iPlayer][PlrLevitation]
+				&& !CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
+				player_update_maxspeed(iPlayer)
 		}
 
 		if (PlayerF[iPlayer][PlrModelAnimTime] > fGameTime)
@@ -1996,7 +2033,10 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 		}
 
 		if (PlayerF[iSubject][PlrPowerDamage] != 0.0)
-			formatex(szChargingText[iLen], charsmax(szChargingText), "^n%L", iPlayer, "RAZOR_POWER_DAMAGE", floatround(PlayerF[iSubject][PlrPowerDamage], floatround_floor))
+			iLen += formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%L", iPlayer, "RAZOR_POWER_DAMAGE", floatround(PlayerF[iSubject][PlrPowerDamage], floatround_floor))
+
+		if (PlayerF[iSubject][PlrPowerSpeed] != 0.0)
+			iLen += formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%L", iPlayer, "RAZOR_POWER_SPEED", floatround(PlayerF[iSubject][PlrPowerSpeed], floatround_floor))
 
 		if (szChargingText[0] && !g_bIsRoundEnded)
 		{
@@ -2518,6 +2558,9 @@ public fw_TraceAttack(iVictim, iAttacker, Float:fDamage, Float:vDir[3], iTraceId
 public RG_CBasePlayer_Killed_Pre(iVictim, iAttacker)
 {
 	accept_dealt_damage(iVictim, iAttacker)
+
+	// Same as on spawn - whatever knife-specific speed override was active dies with the player.
+	ClearPlayerGameFlag(iVictim, PLGF_IN_SPEED_OVERRIDE);
 
 	if (CheckPlayerGameFlag(iVictim, PLGF_IN_FIXED_ANIMATION))
 	{
@@ -4693,6 +4736,10 @@ change_knife_core(iPlayer, iKnifeId, bool:bChangeDelay=true)
 		PlayerF[iPlayer][PlrRushTime] = 0.0
 		player_unlevitation(iPlayer)
 
+		// Whatever knife-specific speed override the previous knife had active (sprint,
+		// dash, etc.) doesn't carry over to the new knife.
+		ClearPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE);
+
 		new Float:fOldKnifeMaxSpeed = player_get_knife_maxspeed(iPlayer)
 
 		set_knife_params(iPlayer, iKnifeId)
@@ -5447,15 +5494,18 @@ validate_levitation_dir(Float:fAngle1, Float:fAngle2)
 Float:player_get_knife_maxspeed(iPlayer)
 {
 	new iKnifeId = Player[iPlayer][PlrKnife]
+	new Float:fMaxSpeed
 
 	if (Player[iPlayer][PlrVisibility] == VIS_CLONE)
 	{
 		new iClone = Player[iPlayer][PlrClone]
 		new iCloneKnifeId = Player[iClone][PlrKnife]
-		return floatmin(KnifeF[iKnifeId][KNF_MAX_SPEED], KnifeF[iCloneKnifeId][KNF_MAX_SPEED])
+		fMaxSpeed = floatmin(KnifeF[iKnifeId][KNF_MAX_SPEED], KnifeF[iCloneKnifeId][KNF_MAX_SPEED])
 	}
+	else
+		fMaxSpeed = KnifeF[iKnifeId][KNF_MAX_SPEED]
 
-	return KnifeF[iKnifeId][KNF_MAX_SPEED]
+	return floatmax(MIN_PLAYER_SPEED, fMaxSpeed + PlayerF[iPlayer][PlrPowerSpeed])
 }
 
 apply_change_knife_maxspeed(iPlayer, Float:fOldKnifeMaxSpeed)
@@ -6842,6 +6892,16 @@ bool:friendly_swap(iPlayer, iTarget)
 		bRes = true
 	}
 
+	if (PlayerF[iTarget][PlrPowerSpeed] < 0.0)
+	{
+		PlayerF[iPlayer][PlrPowerSpeed] += PlayerF[iTarget][PlrPowerSpeed]
+		PlayerF[iPlayer][PlrPowerSpeedDelay] = PlayerF[iTarget][PlrPowerSpeedDelay]
+
+		PlayerF[iTarget][PlrPowerSpeed] = 0.0
+		PlayerF[iTarget][PlrPowerSpeedDelay] = 0.0
+		bRes = true
+	}
+
 	if (Player[iTarget][PlrVision] == VISION_BLIND)
 	{
 		player_blind(iPlayer, 1, PlayerF[iTarget][PlrBlindTime] - fGameTime)
@@ -7409,6 +7469,23 @@ public _21kc_player_set_powerdamage(plugin, num_params)
 public Float:_21kc_player_get_powerdamage(plugin, num_params)
 {
 	return PlayerF[get_param(1)][PlrPowerDamage]
+}
+
+public _21kc_player_set_powerspeed(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	PlayerF[iPlayer][PlrPowerSpeed] = get_param_f(2)
+	PlayerF[iPlayer][PlrPowerSpeedDelay] = get_gametime() + 0.5
+
+	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE) && PlayerF[iPlayer][PlrRushTime] == 0.0
+		&& PlayerF[iPlayer][PlrFrozen] == 0.0 && Player[iPlayer][PlrCaptureType] == CAPTURE_NONE
+		&& !Player[iPlayer][PlrLevitation] && !CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
+		player_update_maxspeed(iPlayer)
+}
+
+public Float:_21kc_player_get_powerspeed(plugin, num_params)
+{
+	return PlayerF[get_param(1)][PlrPowerSpeed]
 }
 
 public _21kc_player_set_abil1_type(plugin, num_params)
@@ -8359,6 +8436,8 @@ public bool:_21kc_player_swap(plugin, num_params)
 
 	float_swap(PlayerF[iPlayer][PlrPowerDamage], PlayerF[iTarget][PlrPowerDamage])
 	float_swap(PlayerF[iPlayer][PlrPowerDamageDelay], PlayerF[iTarget][PlrPowerDamageDelay])
+	float_swap(PlayerF[iPlayer][PlrPowerSpeed], PlayerF[iTarget][PlrPowerSpeed])
+	float_swap(PlayerF[iPlayer][PlrPowerSpeedDelay], PlayerF[iTarget][PlrPowerSpeedDelay])
 
 	if (Player[iPlayer][PlrVision] == VISION_BLIND)
 	{

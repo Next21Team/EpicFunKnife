@@ -92,6 +92,7 @@ enum _:PlayerData
 	bool:PlrIsAlive,
 	PlrSprintPt,
 	bool:PlrInSprint,
+	Float:PlrSprintExpectedSpeed,
 	PlrMultiJumpNum,
 	bool:PlrMultiJumpOnceInAir,
 	Float:PlrCritChance,
@@ -201,6 +202,7 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 				kc_player_set_maxspeed(iPlayer, SPEED)
 
 			Player[iPlayer][PlrRushTime] = 0.0
+			kc_player_unset_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
 		}
 	}
 
@@ -226,10 +228,10 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 	static Float:fSprintAnimTime[MAX_PLAYERS + 1][2]
 	if (Player[iPlayer][PlrInSprint])
 	{
-		if (!player_allow_sprint(iPlayer))
+		if (!player_allow_sprint(iPlayer, Player[iPlayer][PlrSprintExpectedSpeed]))
 		{
-			if (kc_player_get_maxspeed(iPlayer) == SPEED)
-				engfunc(EngFunc_SetClientMaxspeed, iPlayer, SPEED)
+			if (kc_player_get_maxspeed(iPlayer) == Player[iPlayer][PlrSprintExpectedSpeed])
+				engfunc(EngFunc_SetClientMaxspeed, iPlayer, Player[iPlayer][PlrSprintExpectedSpeed])
 
 			if (get_user_weapon(iPlayer) == CSW_KNIFE)
 			{
@@ -252,14 +254,17 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 			Player[iPlayer][PlrInSprint] = false
 			Player[iPlayer][PlrTargetFov] = 90.0
+			kc_player_unset_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
 		}
 
 		set_member(iPlayer, m_flNextAttack, 0.2)
 	}
 	else
 	{
-		if (player_allow_sprint(iPlayer) && Player[iPlayer][PlrSprintPt] >= 20)
+		new Float:fExpectedSpeed = SPEED + kc_player_get_powerspeed(iPlayer)
+		if (player_allow_sprint(iPlayer, fExpectedSpeed) && Player[iPlayer][PlrSprintPt] >= 20)
 		{
+			Player[iPlayer][PlrSprintExpectedSpeed] = fExpectedSpeed
 			engfunc(EngFunc_SetClientMaxspeed, iPlayer, SPRINT_SPEED)
 
 			if (fGameTime - fSprintAnimTime[iPlayer][0] >= 0.5)
@@ -276,6 +281,10 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 			Player[iPlayer][PlrInSprint] = true
 			Player[iPlayer][PlrTargetFov] = 97.5
+			// Tells core's PowerSpeed decay/update logic to leave our maxspeed alone
+			// while sprint is actively driving it - otherwise it gets stomped every
+			// 0.5s by the decay tick for as long as PowerSpeed stays non-zero.
+			kc_player_set_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
 		}
 	}
 
@@ -307,8 +316,11 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 	{
 		if (!(iPlayerFlags & FL_ONGROUND) && !(iOldButtons & IN_JUMP))
 		{
+			// Compensate for a Razor speed theft (negative powerspeed) so it doesn't
+			// count against this threshold - a real slow (frost, chill, etc.) still
+			// lowers var_maxspeed on its own and correctly blocks the double jump.
 			if ((Player[iPlayer][PlrMultiJumpOnceInAir] || Player[iPlayer][PlrMultiJumpNum] < MAX_DOUBLE_JUMPS)
-				&& Float:get_entvar(iPlayer, var_maxspeed) >= 200.0
+				&& Float:get_entvar(iPlayer, var_maxspeed) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) >= 200.0
 			) {
 				Player[iPlayer][PlrMultiJumpNum]++
 
@@ -584,6 +596,7 @@ bool:blink_ability(iPlayer, iTarget)
 	{
 		Player[iPlayer][PlrRushTime] = get_gametime() + 0.9
 		kc_player_set_maxspeed(iPlayer, 400.0)
+		kc_player_set_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
 	}
 
 	if (bIsCrit)
@@ -787,7 +800,7 @@ portal_close(iPortalEnt)
 	set_entvar(iPortalEnt, var_nextthink, fGameTime + 0.3)
 }
 
-bool:player_allow_sprint(iPlayer)
+bool:player_allow_sprint(iPlayer, Float:fExpectedSpeed)
 {
 	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return false
@@ -795,7 +808,12 @@ bool:player_allow_sprint(iPlayer)
 	if (Player[iPlayer][PlrSprintPt] <= 0)
 		return false
 
-	if (kc_player_get_maxspeed(iPlayer) != SPEED)
+	// Compared against a snapshot of SPEED + powerspeed taken when sprint
+	// started/is starting, not a freshly re-read powerspeed - powerspeed decays
+	// every 0.5s in the core independently of sprint, so comparing against a live
+	// value here would desync from our own frozen (PLGF_IN_SPEED_OVERRIDE) bookkeeping
+	// and cut sprint every 0.5s.
+	if (kc_player_get_maxspeed(iPlayer) != fExpectedSpeed)
 		return false
 
 	if (get_user_weapon(iPlayer) != CSW_KNIFE)

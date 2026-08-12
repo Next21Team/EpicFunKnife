@@ -1206,6 +1206,23 @@ native Float:kc_player_get_powerdamage(const iPlayer);
 native kc_player_set_powerdamage(const iPlayer, const Float:fPowerDamage);
 
 /**
+ * Get the player's speed modifier (Razor's stolen-speed pool)
+ *
+ * @param	iPlayer			- Player ID
+ * @return					- Addition speed
+ */
+native Float:kc_player_get_powerspeed(const iPlayer);
+
+/**
+ * Set the player's speed modifier (Razor's stolen-speed pool)
+ *
+ * @param	iPlayer			- Player ID
+ * @param 	fPowerSpeed		- Addition speed
+ * @noreturn
+ */
+native kc_player_set_powerspeed(const iPlayer, const Float:fPowerSpeed);
+
+/**
  * Check if the player is in protection on spawning
  *
  * @param 	iPlayer			- Player ID

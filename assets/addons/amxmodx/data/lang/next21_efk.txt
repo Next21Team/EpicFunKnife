@@ -76,6 +76,7 @@ ABILITY_DISABLED_ON = Primary ability activation is disabled
 ABILITY_DISABLED_OFF = Primary ability activation is enabled
 
 RAZOR_POWER_DAMAGE = Increased damage: %d
+RAZOR_POWER_SPEED = Increased speed: %d
 
 CRIT_CHANCE = Critical chance:
 CRIT_ATTACKER = Critical hit!
@@ -300,6 +301,7 @@ ABILITY_DISABLED_ON = Активация основной способности
 ABILITY_DISABLED_OFF = Активация основной способности включена
 
 RAZOR_POWER_DAMAGE = Увеличенный урон: %d
+RAZOR_POWER_SPEED = Увеличенная скорость: %d
 
 CRIT_CHANCE = Шанс крита:
 CRIT_ATTACKER = Вы нанесли крит!
@@ -524,6 +526,7 @@ ABILITY_DISABLED_ON = La activación de la habilidad primaria está deshabilitad
 ABILITY_DISABLED_OFF = La activación de la habilidad primaria está habilitada
 
 RAZOR_POWER_DAMAGE = Daño aumentado: %d
+RAZOR_POWER_SPEED = Velocidad aumentada: %d
 
 CRIT_CHANCE = Probabilidad de crítico:
 CRIT_ATTACKER = ¡Golpe crítico!
