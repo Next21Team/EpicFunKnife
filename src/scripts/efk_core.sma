@@ -1011,11 +1011,6 @@ public client_putinserver(iPlayer)
 
 	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_AUTHORIZED))
 		load_authorized_client_data(iPlayer)
-
-	// sv_maxspeed only raises the ceiling - actual walking speed is still capped by these
-	// client-side input scalers (default 400 each), so push them up too on every connect.
-	if (!is_user_bot(iPlayer))
-		client_cmd(iPlayer, "cl_forwardspeed 9999; cl_sidespeed 9999; cl_backspeed 9999")
 }
 
 public client_authorized(iPlayer)
