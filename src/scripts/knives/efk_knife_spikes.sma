@@ -281,7 +281,6 @@ public fw_PlayerPreThink(iPlayer)
 	{
 		if (!(flags & FL_ONGROUND) && !(obut & IN_JUMP))
 		{
-			// A Razor speed theft (negative powerspeed) shouldn't block this on its own.
 			if (kc_player_get_maxspeed(iPlayer) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) < SPEED)
 				return HAM_IGNORED
 

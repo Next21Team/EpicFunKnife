@@ -117,7 +117,6 @@ new const CAMERA_MODEL[]			= "models/rpgrocket.mdl"
 #define MIN_GRAVITY					0.000001
 #define MIN_PLAYER_SPEED			0.000001
 
-// A positive powerspeed gain gets this much time before decay can start eating into it again.
 #define POWERSPEED_GAIN_GRACE		3.0
 
 enum _:LevitationFlags(<<=1)
@@ -1169,8 +1168,6 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 
 	SetPlayerGameFlag(iPlayer, PLGF_IS_ALIVE);
 
-	// A knife-specific speed override (sprint, dash, etc.) can't survive a respawn -
-	// reset here once for every knife instead of each knife plugin having to do it itself.
 	ClearPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE);
 
 	new iKnifeId = Player[iPlayer][PlrKnife]
@@ -1599,9 +1596,6 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 			PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
 			PlayerF[iPlayer][PlrPowerSpeedDelay] += 0.5
 
-			// Skip if some other knife-specific effect (e.g. Blink's sprint/dash) is
-			// currently driving maxspeed itself - otherwise this decay tick stomps on it
-			// every 0.5s via the unconditional SetClientMaxspeed inside player_update_maxspeed.
 			if (PlayerF[iPlayer][PlrRushTime] == 0.0 && PlayerF[iPlayer][PlrFrozen] == 0.0
 				&& Player[iPlayer][PlrCaptureType] == CAPTURE_NONE && !Player[iPlayer][PlrLevitation]
 				&& !CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
@@ -2562,7 +2556,6 @@ public RG_CBasePlayer_Killed_Pre(iVictim, iAttacker)
 {
 	accept_dealt_damage(iVictim, iAttacker)
 
-	// Same as on spawn - whatever knife-specific speed override was active dies with the player.
 	ClearPlayerGameFlag(iVictim, PLGF_IN_SPEED_OVERRIDE);
 
 	if (CheckPlayerGameFlag(iVictim, PLGF_IN_FIXED_ANIMATION))
@@ -4739,8 +4732,6 @@ change_knife_core(iPlayer, iKnifeId, bool:bChangeDelay=true)
 		PlayerF[iPlayer][PlrRushTime] = 0.0
 		player_unlevitation(iPlayer)
 
-		// Whatever knife-specific speed override the previous knife had active (sprint,
-		// dash, etc.) doesn't carry over to the new knife.
 		ClearPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE);
 
 		new Float:fOldKnifeMaxSpeed = player_get_knife_maxspeed(iPlayer)
@@ -6435,8 +6426,6 @@ player_update_gravity(iPlayer)
 
 player_rush(iPlayer, Float:fRush, Float:fRushTime)
 {
-	// Some other knife (e.g. Blink's sprint/dash) is already driving this player's speed
-	// itself - let it keep control instead of stomping over it and breaking its own tracking.
 	if (CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
 		return
 
@@ -7486,9 +7475,6 @@ public _21kc_player_set_powerspeed(plugin, num_params)
 	new Float:fNewPowerSpeed = get_param_f(2)
 	PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
 
-	// A gain (value going up while staying positive) resets a 3s grace window before decay
-	// can touch it again - keep topping it up and it won't start dropping. Anything else
-	// (a loss, going negative, a manual decrease) keeps the usual short delay.
 	PlayerF[iPlayer][PlrPowerSpeedDelay] = (fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
 		? get_gametime() + POWERSPEED_GAIN_GRACE
 		: get_gametime() + 0.5

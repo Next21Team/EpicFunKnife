@@ -1238,7 +1238,6 @@ bool:allow_long_jump(iPlayer)
 	if (!(get_entvar(iPlayer, var_flags) & FL_ONGROUND))
 		return false
 
-	// A Razor speed theft (negative powerspeed) shouldn't block this on its own.
 	if (get_entvar(iPlayer, var_maxspeed) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) < SPEED)
 		return false
 

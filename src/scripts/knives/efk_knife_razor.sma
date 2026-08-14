@@ -554,15 +554,10 @@ public sphere_think(iSphereEnt)
 					{
 						kc_player_set_powerspeed(iTarget, kc_player_get_powerspeed(iTarget) - iSpeed)
 
-						// Real Ham_TakeDamage call, always for 0 - this brings back every
-						// natural side effect (pain shock, hit sound, Ham_PlayerTakeDamage_Pre)
-						// without actually touching HP.
 						kc_player_set_death_reason(iTarget, "DEATH_REASON_ENERGY_WAVE")
 						set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
 						ExecuteHamB(Ham_TakeDamage, iTarget, iSphereEnt, iOwner, 0.0, DMG_ENERGYBEAM | DMG_ALWAYSGIB)
 
-						// Ham_PlayerTakeDamage_Pre's own discharge only fires for fDamage >= 1.0,
-						// so with 0 damage we still trigger it explicitly here.
 						if (Player[iTarget][PlrStealingTarget])
 							discharge_stealer(iTarget)
 					}
@@ -849,8 +844,6 @@ public efk_ability2(iPlayer)
 
 public efk_ability3(iPlayer)
 {
-	// Same rule as the ball (E): if you're in the negative (someone stole your speed),
-	// you can't use this ability at all.
 	if (kc_player_get_powerspeed(iPlayer) < 0.0)
 		return PLUGIN_HANDLED
 
@@ -896,8 +889,6 @@ public efk_disenergy(iPlayer)
 
 steal_speed(iPlayer, iTarget, Float:fAdd, Float:fSub)
 {
-	// kc_player_set_powerspeed triggers the actual maxspeed recalc itself -
-	// no separate rush/slow pulse needed here anymore.
 	kc_player_set_powerspeed(iPlayer, kc_player_get_powerspeed(iPlayer) + fAdd)
 	kc_player_set_powerspeed(iTarget, kc_player_get_powerspeed(iTarget) - fSub)
 }
@@ -937,7 +928,6 @@ bool:razor_punch_explosion(iPlayer)
 
 			kc_player_unfreeze(iTarget)
 
-			// Power Punch no longer deals damage - it slows the pushed enemy instead
 			kc_player_slow(iTarget, ABIL3_SLOW_MUL, ABIL3_SLOW_TIME)
 
 			set_member(iTarget, m_flVelocityModifier, 1.0)

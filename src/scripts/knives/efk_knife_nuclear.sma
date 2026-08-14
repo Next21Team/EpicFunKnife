@@ -473,8 +473,6 @@ public efk_ability3(iPlayer)
 
 	kc_player_rush(iPlayer, RUSH_SPEED + kc_player_get_powerspeed(iPlayer), RUSH_TIME)
 
-	// Keep re-adding the live (still decaying) powerspeed on top of the rush base for as
-	// long as the rush lasts, instead of freezing it at the value from the moment of cast.
 	remove_task(iPlayer + TASK_RUSH_SPEED)
 	set_task(0.5, "task_nuclear_rush_update", iPlayer + TASK_RUSH_SPEED, _, _, "a",
 		floatround(RUSH_TIME / 0.5, floatround_ceil))

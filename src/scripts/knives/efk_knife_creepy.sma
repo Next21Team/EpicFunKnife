@@ -674,8 +674,6 @@ coffin_release(const iPlayer, const iWeapon)
 		new Float:fRushTime = fCoffinTime * 2.0
 		kc_player_rush(iPlayer, 300.0 + kc_player_get_powerspeed(iPlayer), fRushTime)
 
-		// Keep re-adding the live (still decaying) powerspeed on top of the rush base for as
-		// long as the rush lasts, instead of freezing it at the value from the moment of cast.
 		remove_task(iPlayer + TASK_RUSH_SPEED)
 		set_task(0.5, "task_creepy_rush_update", iPlayer + TASK_RUSH_SPEED, _, _, "a",
 			floatround(fRushTime / 0.5, floatround_ceil))
@@ -1579,7 +1577,6 @@ bool:allow_long_jump(iPlayer)
 	if (!(get_entvar(iPlayer, var_flags) & FL_ONGROUND) || fm_get_speed(iPlayer) < 100)
 		return false
 
-	// A Razor speed theft (negative powerspeed) shouldn't block this on its own.
 	if (Float:get_entvar(iPlayer, var_maxspeed) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) < SPEED)
 		return false
 
