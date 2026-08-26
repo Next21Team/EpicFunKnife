@@ -311,6 +311,7 @@ enum _:PlayerPropertiesF
 	Float:PlrPowerSpeedDelay,
 	Float:PlrMaxHP,
 	Float:PlrMaxSpeed,
+	Float:PlrDefMaxSpeed,
 	Float:PlrGravity,
 	Float:PlrAbility1Charge,
 	Float:PlrAbility2Charge,
@@ -326,7 +327,7 @@ enum _:PlayerPropertiesF
 	Float:PlrCritChance,
 	Float:PlrKnifeChangeDelay,
 	Float:PlrSlowTime[3],
-	Float:PlrSlowSpeed[3],
+	Float:PlrSlowPower[3],
 	Float:PlrRushTime,
 	Float:PlrRushSpeed,
 	Float:PlrFrozen,
@@ -387,7 +388,10 @@ enum _:PlayerPropertiesStateF
 	Float:StateAbility3Charge,
 	Float:StateAbility4Charge,
 	Float:StateSlowTime[3],
-	Float:StateSlowSpeed[3],
+	Float:StateSlowPower[3],
+	Float:StateRushTime,
+	Float:StateRushSpeed,
+	Float:StatePowerSpeed,
 	Float:StateFrozen,
 	Float:StateChilled,
 	Float:StateSwapTime,
@@ -559,7 +563,7 @@ public plugin_natives()
 	register_native("kc_knife_get_classname", "_21kc_knife_get_classname")
 
 	register_native("kc_player_get_maxspeed", "_21kc_player_get_maxspeed")
-	register_native("kc_player_set_maxspeed", "_21kc_player_set_maxspeed")
+	register_native("kc_player_set_def_maxspeed", "_21kc_player_set_def_maxspeed")
 
 	register_native("kc_player_get_maxhealth", "_21kc_player_get_maxhealth")
 
@@ -1168,8 +1172,6 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 
 	SetPlayerGameFlag(iPlayer, PLGF_IS_ALIVE);
 
-	ClearPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE);
-
 	new iKnifeId = Player[iPlayer][PlrKnife]
 	if (!is_valid_knife(iKnifeId))
 	{
@@ -1245,6 +1247,7 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	player_set_windboost(iPlayer, WINDBOOST_NONE, false)
 
 	PlayerF[iPlayer][PlrMaxSpeed] = KnifeF[iKnifeId][KNF_MAX_SPEED]
+	PlayerF[iPlayer][PlrDefMaxSpeed] = KnifeF[iKnifeId][KNF_MAX_SPEED]
 	engfunc(EngFunc_SetClientMaxspeed, iPlayer, PlayerF[iPlayer][PlrMaxSpeed])
 
 	PlayerF[iPlayer][PlrGravity] = KnifeF[iKnifeId][KNF_GRAVITY]
@@ -1382,9 +1385,14 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 			if (PlayerF[iPlayer][PlrSlowTime][i] > 0.0 && PlayerF[iPlayer][PlrSlowTime][i] <= fGameTime)
 			{
 				PlayerF[iPlayer][PlrSlowTime][i] = 0.0
-				if (PlayerF[iPlayer][PlrFrozen] == 0.0 && Player[iPlayer][PlrCaptureType] == CAPTURE_NONE)
-					player_update_maxspeed(iPlayer)
+				player_update_maxspeed(iPlayer)
 			}
+		}
+
+		if (PlayerF[iPlayer][PlrRushTime] > 0.0 && PlayerF[iPlayer][PlrRushTime] <= fGameTime)
+		{
+			PlayerF[iPlayer][PlrRushTime] = 0.0
+			player_update_maxspeed(iPlayer)
 		}
 
 		if (PlayerF[iPlayer][PlrSpawnProtectionTime] > 0.0 && PlayerF[iPlayer][PlrSpawnProtectionTime] <= fGameTime)
@@ -1395,14 +1403,6 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 		if (PlayerF[iPlayer][PlrPreGameTime] > 0.0 && PlayerF[iPlayer][PlrPreGameTime] <= fGameTime)
 		{
 			PlayerF[iPlayer][PlrPreGameTime] = 0.0
-		}
-
-		if (PlayerF[iPlayer][PlrRushTime] > 0.0 && PlayerF[iPlayer][PlrRushTime] <= fGameTime)
-		{
-			new Float:fKnifeMaxSpeed = player_get_knife_maxspeed(iPlayer)
-			engfunc(EngFunc_SetClientMaxspeed, iPlayer, fKnifeMaxSpeed)
-			PlayerF[iPlayer][PlrMaxSpeed] = fKnifeMaxSpeed
-			PlayerF[iPlayer][PlrRushTime] = 0.0
 		}
 
 		if(PlayerF[iPlayer][PlrReflectionEndTime] != 0.0 && !player_in_reflection(iPlayer))
@@ -1596,10 +1596,7 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 			PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
 			PlayerF[iPlayer][PlrPowerSpeedDelay] += 0.5
 
-			if (PlayerF[iPlayer][PlrRushTime] == 0.0 && PlayerF[iPlayer][PlrFrozen] == 0.0
-				&& Player[iPlayer][PlrCaptureType] == CAPTURE_NONE && !Player[iPlayer][PlrLevitation]
-				&& !CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
-				player_update_maxspeed(iPlayer)
+			player_update_maxspeed(iPlayer)
 		}
 
 		if (PlayerF[iPlayer][PlrModelAnimTime] > fGameTime)
@@ -1905,9 +1902,12 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 			PlayerStateF[iPlayer][0][StateSlowTime][0] = PlayerF[iPlayer][PlrSlowTime][0]
 			PlayerStateF[iPlayer][0][StateSlowTime][1] = PlayerF[iPlayer][PlrSlowTime][1]
 			PlayerStateF[iPlayer][0][StateSlowTime][2] = PlayerF[iPlayer][PlrSlowTime][2]
-			PlayerStateF[iPlayer][0][StateSlowSpeed][0] = PlayerF[iPlayer][PlrSlowSpeed][0]
-			PlayerStateF[iPlayer][0][StateSlowSpeed][1] = PlayerF[iPlayer][PlrSlowSpeed][1]
-			PlayerStateF[iPlayer][0][StateSlowSpeed][2] = PlayerF[iPlayer][PlrSlowSpeed][2]
+			PlayerStateF[iPlayer][0][StateSlowPower][0] = PlayerF[iPlayer][PlrSlowPower][0]
+			PlayerStateF[iPlayer][0][StateSlowPower][1] = PlayerF[iPlayer][PlrSlowPower][1]
+			PlayerStateF[iPlayer][0][StateSlowPower][2] = PlayerF[iPlayer][PlrSlowPower][2]
+			PlayerStateF[iPlayer][0][StateRushTime] = PlayerF[iPlayer][PlrRushTime]
+			PlayerStateF[iPlayer][0][StateRushSpeed] = PlayerF[iPlayer][PlrRushSpeed]
+			PlayerStateF[iPlayer][0][StatePowerSpeed] = PlayerF[iPlayer][PlrPowerSpeed]
 			PlayerStateF[iPlayer][0][StateFrozen] = PlayerF[iPlayer][PlrFrozen]
 			PlayerStateF[iPlayer][0][StateChilled] = PlayerF[iPlayer][PlrChilled]
 			PlayerStateF[iPlayer][0][StateSwapTime] = PlayerF[iPlayer][PlrSwapTime]
@@ -2555,8 +2555,6 @@ public fw_TraceAttack(iVictim, iAttacker, Float:fDamage, Float:vDir[3], iTraceId
 public RG_CBasePlayer_Killed_Pre(iVictim, iAttacker)
 {
 	accept_dealt_damage(iVictim, iAttacker)
-
-	ClearPlayerGameFlag(iVictim, PLGF_IN_SPEED_OVERRIDE);
 
 	if (CheckPlayerGameFlag(iVictim, PLGF_IN_FIXED_ANIMATION))
 	{
@@ -3625,10 +3623,7 @@ public fw_Item_PreFrame(iPlayer)
 		case VIS_SHADOW: player_remove_shadow(iPlayer, true)
 	}
 
-	if (Player[iPlayer][PlrLevitation])
-		engfunc(EngFunc_SetClientMaxspeed, iPlayer, MIN_PLAYER_SPEED)
-	else
-		engfunc(EngFunc_SetClientMaxspeed, iPlayer, PlayerF[iPlayer][PlrMaxSpeed])
+	engfunc(EngFunc_SetClientMaxspeed, iPlayer, PlayerF[iPlayer][PlrMaxSpeed])
 
 	return HAM_IGNORED
 }
@@ -4732,13 +4727,9 @@ change_knife_core(iPlayer, iKnifeId, bool:bChangeDelay=true)
 		PlayerF[iPlayer][PlrRushTime] = 0.0
 		player_unlevitation(iPlayer)
 
-		ClearPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE);
-
-		new Float:fOldKnifeMaxSpeed = player_get_knife_maxspeed(iPlayer)
-
 		set_knife_params(iPlayer, iKnifeId)
 
-		apply_change_knife_maxspeed(iPlayer, fOldKnifeMaxSpeed)
+		player_update_maxspeed(iPlayer)
 		player_update_gravity(iPlayer)
 
 		Player[iPlayer][PlrAbility1Disabled] = false
@@ -4866,6 +4857,7 @@ set_knife_params(iPlayer, iKnifeId)
 	PlayerF[iPlayer][PlrMaxHP] = KnifeF[iKnifeId][KNF_MAX_HEALTH]
 	PlayerF[iPlayer][PlrMaxDamage] = KnifeF[iKnifeId][KNF_MAX_DAMAGE]
 	PlayerF[iPlayer][PlrMinDamage] = KnifeF[iKnifeId][KNF_MIN_DAMAGE]
+	PlayerF[iPlayer][PlrDefMaxSpeed] = KnifeF[iKnifeId][KNF_MAX_SPEED]
 	PlayerF[iPlayer][PlrAbility1MinDist] = KnifeF[iKnifeId][KNF_ABILITY1_MIN_DIST]
 	PlayerF[iPlayer][PlrAbility1MaxDist] = KnifeF[iKnifeId][KNF_ABILITY1_MAX_DIST]
 	Player[iPlayer][PlrAbility1Type] = Knife[iKnifeId][KNF_ABILITY1_TYPE]
@@ -5487,37 +5479,18 @@ validate_levitation_dir(Float:fAngle1, Float:fAngle2)
 
 Float:player_get_knife_maxspeed(iPlayer)
 {
-	new iKnifeId = Player[iPlayer][PlrKnife]
 	new Float:fMaxSpeed
 
 	if (Player[iPlayer][PlrVisibility] == VIS_CLONE)
 	{
 		new iClone = Player[iPlayer][PlrClone]
 		new iCloneKnifeId = Player[iClone][PlrKnife]
-		fMaxSpeed = floatmin(KnifeF[iKnifeId][KNF_MAX_SPEED], KnifeF[iCloneKnifeId][KNF_MAX_SPEED])
+		fMaxSpeed = floatmin(PlayerF[iPlayer][PlrDefMaxSpeed], KnifeF[iCloneKnifeId][KNF_MAX_SPEED])
 	}
 	else
-		fMaxSpeed = KnifeF[iKnifeId][KNF_MAX_SPEED]
+		fMaxSpeed = PlayerF[iPlayer][PlrDefMaxSpeed]
 
 	return floatmax(MIN_PLAYER_SPEED, fMaxSpeed + PlayerF[iPlayer][PlrPowerSpeed])
-}
-
-apply_change_knife_maxspeed(iPlayer, Float:fOldKnifeMaxSpeed)
-{
-	new Float:fDifSpeed = player_get_knife_maxspeed(iPlayer) - fOldKnifeMaxSpeed
-	for (new i, Float:fSlowSpeed; i < 3; i++)
-	{
-		if (PlayerF[iPlayer][PlrSlowTime][i] == 0.0)
-			continue
-
-		fSlowSpeed = PlayerF[iPlayer][PlrSlowSpeed][i] + fDifSpeed
-		if (fSlowSpeed < MIN_PLAYER_SPEED)
-			fSlowSpeed = MIN_PLAYER_SPEED
-		PlayerF[iPlayer][PlrSlowSpeed][i] = fSlowSpeed
-	}
-
-	if (PlayerF[iPlayer][PlrFrozen] == 0.0 && Player[iPlayer][PlrCaptureType] == CAPTURE_NONE)
-		player_update_maxspeed(iPlayer)
 }
 
 player_drop_train(iPlayer)
@@ -6193,10 +6166,9 @@ bool:player_clone(iPlayer, iTarget)
 		send_msg_StatusIcon(true, "dmg_gas", {0, 0, 128}, MSG_ONE, _, iPlayer)
 	}
 
-	new Float:fOldKnifeMaxSpeed = player_get_knife_maxspeed(iPlayer)
 	Player[iPlayer][PlrVisibility] = VIS_CLONE
 	Player[iPlayer][PlrClone] = iTarget
-	apply_change_knife_maxspeed(iPlayer, fOldKnifeMaxSpeed)
+	player_update_maxspeed(iPlayer)
 
 	SetPlayerGameFlag(iPlayer, PLGF_IN_UNABILITY);
 	PlayerF[iPlayer][PlrCloneTimeValue] = get_gametime() + 0.7
@@ -6235,9 +6207,8 @@ player_remove_clone(iPlayer, bool:bBreaked=false)
 
 		ClearPlayerGameFlag(iPlayer, PLGF_IN_UNABILITY);
 
-		new Float:fOldKnifeMaxSpeed = player_get_knife_maxspeed(iPlayer)
 		Player[iPlayer][PlrClone] = 0
-		apply_change_knife_maxspeed(iPlayer, fOldKnifeMaxSpeed)
+		player_update_maxspeed(iPlayer)
 
 		if (g_iSilenceTeam > -1 && g_iSilenceTeam != Player[iPlayer][PlrTeam])
 		{
@@ -6249,9 +6220,8 @@ player_remove_clone(iPlayer, bool:bBreaked=false)
 	else
 	{
 		new iEnemyClone = aEnemies[random(iEnemiesNum)]
-		new Float:fOldKnifeMaxSpeed = player_get_knife_maxspeed(iPlayer)
 		Player[iPlayer][PlrClone] = iEnemyClone
-		apply_change_knife_maxspeed(iPlayer, fOldKnifeMaxSpeed)
+		player_update_maxspeed(iPlayer)
 	}
 }
 
@@ -6365,44 +6335,57 @@ player_slow(iPlayer, Float:fSlow, Float:fSlowTime)
 	if (Player[iPlayer][PlrWindBoostType] == WINDBOOST_POSITIVE)
 		fSlow = floatmin(1.0, fSlow + WIND_SLOW_SUB)
 	else if (Player[iPlayer][PlrWindBoostType] == WINDBOOST_NEGATIVE)
-		fSlow = floatmax(MIN_PLAYER_SPEED, fSlow - WIND_SLOW_SUB)
-
-	new Float:fGameTime = get_gametime(),
-		Float:fSpeed = player_get_knife_maxspeed(iPlayer) * fSlow
+		fSlow = floatmax(0.0001, fSlow - WIND_SLOW_SUB)
 
 	for (new i; i < 3; i++)
 	{
 		if (PlayerF[iPlayer][PlrSlowTime][i] == 0.0)
 		{
-			if (PlayerF[iPlayer][PlrMaxSpeed] > fSpeed)
-			{
-				engfunc(EngFunc_SetClientMaxspeed, iPlayer, fSpeed)
-				PlayerF[iPlayer][PlrMaxSpeed] = fSpeed
-			}
-
-			PlayerF[iPlayer][PlrSlowTime][i] = fSlowTime + fGameTime
-			PlayerF[iPlayer][PlrSlowSpeed][i] = fSpeed
-
+			PlayerF[iPlayer][PlrSlowTime][i] = fSlowTime + get_gametime()
+			PlayerF[iPlayer][PlrSlowPower][i] = fSlow
 			break
 		}
 	}
+
+	player_update_maxspeed(iPlayer)
 }
 
 player_update_maxspeed(iPlayer)
 {
-	new Float:fMinSpeed = player_get_knife_maxspeed(iPlayer)
+	if (Player[iPlayer][PlrLevitation]
+		|| Player[iPlayer][PlrCaptureType] != CAPTURE_NONE
+		|| PlayerF[iPlayer][PlrFrozen] > 0.0)
+	{
+		engfunc(EngFunc_SetClientMaxspeed, iPlayer, MIN_PLAYER_SPEED)
+		PlayerF[iPlayer][PlrMaxSpeed] = MIN_PLAYER_SPEED
+		return
+	}
+
+	if (PlayerF[iPlayer][PlrRushTime] > 0.0)
+	{
+		new Float:fMaxSpeed = floatmax(MIN_PLAYER_SPEED,
+			PlayerF[iPlayer][PlrRushSpeed] + PlayerF[iPlayer][PlrPowerSpeed])
+
+		engfunc(EngFunc_SetClientMaxspeed, iPlayer, fMaxSpeed)
+		PlayerF[iPlayer][PlrMaxSpeed] = fMaxSpeed
+		return
+	}
+
+	new Float:fDefSpeed = player_get_knife_maxspeed(iPlayer)
+	new Float:fMaxSpeed = fDefSpeed
+
 	for (new i, Float:fSlowSpeed; i < 3; i++)
 	{
 		if (PlayerF[iPlayer][PlrSlowTime][i] == 0.0)
 			continue
 
-		fSlowSpeed = PlayerF[iPlayer][PlrSlowSpeed][i]
-		if (fSlowSpeed < fMinSpeed)
-			fMinSpeed = fSlowSpeed
+		fSlowSpeed = floatmax(MIN_PLAYER_SPEED, fDefSpeed * PlayerF[iPlayer][PlrSlowPower][i])
+		if (fSlowSpeed < fMaxSpeed)
+			fMaxSpeed = fSlowSpeed
 	}
 
-	engfunc(EngFunc_SetClientMaxspeed, iPlayer, fMinSpeed)
-	PlayerF[iPlayer][PlrMaxSpeed] = fMinSpeed
+	engfunc(EngFunc_SetClientMaxspeed, iPlayer, fMaxSpeed)
+	PlayerF[iPlayer][PlrMaxSpeed] = fMaxSpeed
 }
 
 player_update_gravity(iPlayer)
@@ -6426,21 +6409,17 @@ player_update_gravity(iPlayer)
 
 player_rush(iPlayer, Float:fRush, Float:fRushTime)
 {
-	if (CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
-		return
-
 	PlayerF[iPlayer][PlrSlowTime][0] = 0.0
 	PlayerF[iPlayer][PlrSlowTime][1] = 0.0
 	PlayerF[iPlayer][PlrSlowTime][2] = 0.0
-	PlayerF[iPlayer][PlrMaxSpeed] = player_get_knife_maxspeed(iPlayer)
 
 	player_uncapture(iPlayer)
 	player_unfreeze(iPlayer)
 	player_unchill(iPlayer)
 
-	engfunc(EngFunc_SetClientMaxspeed, iPlayer, fRush)
 	PlayerF[iPlayer][PlrRushSpeed] = fRush
 	PlayerF[iPlayer][PlrRushTime] = fRushTime + get_gametime()
+	player_update_maxspeed(iPlayer)
 }
 
 player_set_windboost(iPlayer, WindBoostType:iType, bool:bUpdateState=true)
@@ -6472,22 +6451,16 @@ player_set_windboost(iPlayer, WindBoostType:iType, bool:bUpdateState=true)
 
 	Player[iPlayer][PlrWindBoostType] = iType
 
-	new Float:fKnifeSpeed = player_get_knife_maxspeed(iPlayer)
-	for (new i, Float:fSlowSpeed; i < 3; i++)
+	for (new i, Float:fSlowPower; i < 3; i++)
 	{
 		if (PlayerF[iPlayer][PlrSlowTime][i] == 0.0)
 			continue
 
-		fSlowSpeed = floatclamp(PlayerF[iPlayer][PlrSlowSpeed][i] / fKnifeSpeed + fSlowAdd,
-			MIN_PLAYER_SPEED, 1.0)
-		PlayerF[iPlayer][PlrSlowSpeed][i] = fKnifeSpeed * fSlowSpeed
+		fSlowPower = floatclamp(PlayerF[iPlayer][PlrSlowPower][i] + fSlowAdd, 0.0001, 1.0)
+		PlayerF[iPlayer][PlrSlowPower][i] = fSlowPower
 	}
 
-	if (PlayerF[iPlayer][PlrFrozen] == 0.0
-		&& Player[iPlayer][PlrCaptureType] == CAPTURE_NONE
-		&& !Player[iPlayer][PlrLevitation])
-		player_update_maxspeed(iPlayer)
-
+	player_update_maxspeed(iPlayer)
 	player_update_gravity(iPlayer)
 
 	ExecuteForward(forward_update_windboost, _, iPlayer, iType)
@@ -6593,8 +6566,6 @@ bool:player_freeze(iPlayer, Float:fFreezeTime, iAttacker)
 	vVelocity[1] = 0.0
 	set_entvar(iPlayer, var_velocity, vVelocity)
 
-	engfunc(EngFunc_SetClientMaxspeed, iPlayer, MIN_PLAYER_SPEED)
-	PlayerF[iPlayer][PlrMaxSpeed] = MIN_PLAYER_SPEED
 	PlayerF[iPlayer][PlrRushTime] = 0.0
 
 	emit_sound(iPlayer, CHAN_BODY, SOUND_FROST_HIT, 1.0, ATTN_NORM, 0, PITCH_HIGH)
@@ -6639,6 +6610,8 @@ bool:player_freeze(iPlayer, Float:fFreezeTime, iAttacker)
 
 	PlayerF[iPlayer][PlrFrozen] = fFreezeTime + get_gametime()
 	player_unburn(iPlayer)
+
+	player_update_maxspeed(iPlayer)
 
 	ExecuteForward(forward_freeze, _, iPlayer)
 
@@ -6759,7 +6732,7 @@ player_unchill(iPlayer)
 
 		for (i = 0; i < 3; i++)
 		{
-			if (PlayerF[iPlayer][PlrSlowTime][i] > 0.0 && PlayerF[iPlayer][PlrSlowSpeed][i] == player_get_knife_maxspeed(iPlayer) * CHILL_SLOW)
+			if (PlayerF[iPlayer][PlrSlowTime][i] > 0.0 && PlayerF[iPlayer][PlrSlowPower][i] == CHILL_SLOW)
 				PlayerF[iPlayer][PlrSlowTime][i] = 0.1
 		}
 
@@ -6821,7 +6794,6 @@ bool:player_levitation(iPlayer)
 	if (g_bIsRoundEnded)
 		return false
 
-	engfunc(EngFunc_SetClientMaxspeed, iPlayer, MIN_PLAYER_SPEED)
 	set_entvar(iPlayer, var_gravity, MIN_GRAVITY)
 	set_entvar(iPlayer, var_velocity, Float:{0.0, 0.0, 30.0})
 
@@ -6834,6 +6806,8 @@ bool:player_levitation(iPlayer)
 	PlayerF[iPlayer][PlrLevitationDelay][0] = fGameTime + 0.1
 	PlayerF[iPlayer][PlrLevitationRushDelay] = fGameTime + 0.65
 
+	player_update_maxspeed(iPlayer)
+
 	return true
 }
 
@@ -6841,10 +6815,11 @@ player_unlevitation(iPlayer)
 {
 	if (Player[iPlayer][PlrLevitation])
 	{
-		engfunc(EngFunc_SetClientMaxspeed, iPlayer, PlayerF[iPlayer][PlrMaxSpeed])
 		set_entvar(iPlayer, var_gravity, PlayerF[iPlayer][PlrGravity])
 		set_entvar(iPlayer, var_velocity, NULL_VECTOR)
 		Player[iPlayer][PlrLevitation] = 0
+
+		player_update_maxspeed(iPlayer)
 	}
 }
 
@@ -6910,14 +6885,11 @@ bool:friendly_swap(iPlayer, iTarget)
 	{
 		if (PlayerF[iTarget][PlrSlowTime][i] > 0.0)
 		{
-			player_slow(iPlayer, PlayerF[iTarget][PlrSlowSpeed][i] / player_get_knife_maxspeed(iTarget), PlayerF[iTarget][PlrSlowTime][i] - fGameTime)
+			player_slow(iPlayer, PlayerF[iTarget][PlrSlowPower][i], PlayerF[iTarget][PlrSlowTime][i] - fGameTime)
 			PlayerF[iTarget][PlrSlowTime][i] = 0.1
 			bRes = true
 		}
 	}
-
-	if (Player[iTarget][PlrCaptureType] == CAPTURE_NONE)
-		engfunc(EngFunc_SetClientMaxspeed, iTarget, player_get_knife_maxspeed(iTarget))
 
 	if (Player[iTarget][PlrWindBoostType] == WINDBOOST_NEGATIVE)
 	{
@@ -6949,6 +6921,9 @@ bool:friendly_swap(iPlayer, iTarget)
 		player_unchill(iTarget)
 		bRes = true
 	}
+
+	player_update_maxspeed(iPlayer)
+	player_update_maxspeed(iTarget)
 
 	new iEnt = NULLENT
 	while ((iEnt = rg_find_ent_by_class(iEnt, SZ_BEAM)))
@@ -7479,9 +7454,7 @@ public _21kc_player_set_powerspeed(plugin, num_params)
 		? get_gametime() + POWERSPEED_GAIN_GRACE
 		: get_gametime() + 0.5
 
-	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE) && PlayerF[iPlayer][PlrRushTime] == 0.0
-		&& PlayerF[iPlayer][PlrFrozen] == 0.0 && Player[iPlayer][PlrCaptureType] == CAPTURE_NONE
-		&& !Player[iPlayer][PlrLevitation] && !CheckPlayerGameFlag(iPlayer, PLGF_IN_SPEED_OVERRIDE))
+	if (CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE))
 		player_update_maxspeed(iPlayer)
 }
 
@@ -7643,13 +7616,13 @@ public Float:_21kc_player_get_maxspeed(plugin, num_params)
 	return PlayerF[get_param(1)][PlrMaxSpeed]
 }
 
-public _21kc_player_set_maxspeed(plugin, num_params)
+public _21kc_player_set_def_maxspeed(plugin, num_params)
 {
 	new iPlayer = get_param(1)
 	new Float:fSpeed = get_param_f(2)
 
-	engfunc(EngFunc_SetClientMaxspeed, iPlayer, fSpeed)
-	PlayerF[iPlayer][PlrMaxSpeed] = fSpeed
+	PlayerF[iPlayer][PlrDefMaxSpeed] = fSpeed
+	player_update_maxspeed(iPlayer)
 }
 
 public Float:_21kc_player_get_maxhealth(plugin, num_params)
@@ -8254,8 +8227,6 @@ public bool:_21kc_player_set_capture(plugin, num_params)
 
 	set_entvar(iPlayer, var_iuser3, get_entvar(iPlayer, var_iuser3) | PLAYER_PREVENT_DUCK | PLAYER_PREVENT_JUMP)
 
-	engfunc(EngFunc_SetClientMaxspeed, iPlayer, MIN_PLAYER_SPEED)
-	PlayerF[iPlayer][PlrMaxSpeed] = MIN_PLAYER_SPEED
 	PlayerF[iPlayer][PlrRushTime] = 0.0
 
 	PlayerF[iPlayer][PlrCaptured] = fCaptureTime + get_gametime()
@@ -8263,6 +8234,8 @@ public bool:_21kc_player_set_capture(plugin, num_params)
 	get_entvar(iPlayer, var_v_angle, PlayerF[iPlayer][PlrCaptureAngles])
 
 	rg_set_user_footsteps(iPlayer, true)
+
+	player_update_maxspeed(iPlayer)
 
 	new iWeapon = get_member(iPlayer, m_pActiveItem)
 
@@ -8451,11 +8424,10 @@ public bool:_21kc_player_swap(plugin, num_params)
 	{
 		if (PlayerF[iPlayer][PlrSlowTime][i] > 0.0)
 		{
-			player_slow(iTarget, PlayerF[iPlayer][PlrSlowSpeed][i] / player_get_knife_maxspeed(iPlayer), PlayerF[iPlayer][PlrSlowTime][i] - fGameTime)
+			player_slow(iTarget, PlayerF[iPlayer][PlrSlowPower][i], PlayerF[iPlayer][PlrSlowTime][i] - fGameTime)
 			PlayerF[iPlayer][PlrSlowTime][i] = 0.1
 		}
 	}
-	engfunc(EngFunc_SetClientMaxspeed, iPlayer, player_get_knife_maxspeed(iPlayer))
 
 	if (Player[iPlayer][PlrWindBoostType] == WINDBOOST_NEGATIVE)
 	{
@@ -8482,6 +8454,9 @@ public bool:_21kc_player_swap(plugin, num_params)
 		player_chill(iTarget, PlayerF[iPlayer][PlrChilled] - fGameTime, iPlayer)
 		player_unchill(iPlayer)
 	}
+
+	player_update_maxspeed(iTarget)
+	player_update_maxspeed(iPlayer)
 
 	new iBeamEnt = NULLENT
 	while ((iBeamEnt = rg_find_ent_by_class(iBeamEnt, SZ_BEAM)))
@@ -8629,8 +8604,11 @@ public bool:_21kc_player_reburn(plugin, num_params)
 	for (new i = 0; i < 3; i++)
 	{
 		PlayerF[iPlayer][PlrSlowTime][i] = PlayerStateF[iPlayer][3][StateSlowTime][i] ? PlayerStateF[iPlayer][3][StateSlowTime][i] + 4.0 : 0.0
-		PlayerF[iPlayer][PlrSlowSpeed][i] = PlayerStateF[iPlayer][3][StateSlowSpeed][i]
+		PlayerF[iPlayer][PlrSlowPower][i] = PlayerStateF[iPlayer][3][StateSlowPower][i]
 	}
+	PlayerF[iPlayer][PlrRushTime] = PlayerStateF[iPlayer][3][StateRushTime]
+	PlayerF[iPlayer][PlrRushSpeed] = PlayerStateF[iPlayer][3][StateRushSpeed]
+	PlayerF[iPlayer][PlrPowerSpeed] = PlayerStateF[iPlayer][3][StatePowerSpeed]
 
 	for (new i; i < PlayerState[iPlayer][3][StateGlowCount]; i++)
 	{

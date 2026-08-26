@@ -57,7 +57,6 @@ new const SOUND_HOTSPEED[]		= "next21_efk/hot_speed.wav"
 new const SOUND_HEAVYFALL[]		= "next21_efk/heavy_fall.wav"
 
 #define TASK_UNABILITY		32673
-#define TASK_RUSH_SPEED		50000
 
 enum _:PlayerData
 {
@@ -471,26 +470,9 @@ public efk_ability3(iPlayer)
 	engfunc(EngFunc_EmitSound, iPlayer, CHAN_AUTO, SOUND_HOTSPEED, 1.0, ATTN_NORM, 0, PITCH_NORM)
 	set_entvar(iPlayer, var_health, fHealth - RUSH_SELF_DAMAGE)
 
-	kc_player_rush(iPlayer, RUSH_SPEED + kc_player_get_powerspeed(iPlayer), RUSH_TIME)
-
-	remove_task(iPlayer + TASK_RUSH_SPEED)
-	set_task(0.5, "task_nuclear_rush_update", iPlayer + TASK_RUSH_SPEED, _, _, "a",
-		floatround(RUSH_TIME / 0.5, floatround_ceil))
+	kc_player_rush(iPlayer, RUSH_SPEED, RUSH_TIME)
 
 	return PLUGIN_CONTINUE
-}
-
-public task_nuclear_rush_update(iTaskId)
-{
-	new iPlayer = iTaskId - TASK_RUSH_SPEED
-
-	if (!is_user_alive(iPlayer))
-	{
-		remove_task(iTaskId)
-		return
-	}
-
-	kc_player_set_maxspeed(iPlayer, RUSH_SPEED + kc_player_get_powerspeed(iPlayer))
 }
 
 public task_remove_unability(iTaskId)

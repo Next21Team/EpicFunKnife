@@ -161,6 +161,11 @@ stock inverse_matrix(const Float:mIn[][], Float:mOut[3][3])
 			mOut[i][j] = mIn[j][i]
 }
 
+stock bool:is_player_slowed(iPlayer, Float:fDefSpeed)
+{
+	return kc_player_get_maxspeed(iPlayer) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) < fDefSpeed
+}
+
 stock bool:is_wall_between(Float:vStart[3], Float:vEnd[3], iEnt)
 {
 	engfunc(EngFunc_TraceLine, vStart, vEnd, IGNORE_MONSTERS, iEnt, 0)

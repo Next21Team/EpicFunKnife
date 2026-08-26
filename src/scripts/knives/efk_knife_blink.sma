@@ -92,11 +92,9 @@ enum _:PlayerData
 	bool:PlrIsAlive,
 	PlrSprintPt,
 	bool:PlrInSprint,
-	Float:PlrSprintPowerSpeed,
 	PlrMultiJumpNum,
 	bool:PlrMultiJumpOnceInAir,
 	Float:PlrCritChance,
-	Float:PlrRushTime,
 	Float:PlrTargetFov,
 	Float:PlrCurrentFov
 }
@@ -172,7 +170,6 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	if (is_user_alive(iPlayer))
 	{
 		Player[iPlayer][PlrIsAlive] = true
-		Player[iPlayer][PlrRushTime] = 0.0
 		Player[iPlayer][PlrMultiJumpNum] = 0
 		Player[iPlayer][PlrSprintPt] = 100
 
@@ -193,18 +190,6 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 		return HC_CONTINUE
 
 	static Float:fGameTime; fGameTime = get_gametime()
-
-	if (Player[iPlayer][PlrKnife] == g_iKnifeId)
-	{
-		if (0.0 < Player[iPlayer][PlrRushTime] && Player[iPlayer][PlrRushTime] <= fGameTime)
-		{
-			if (kc_player_get_maxspeed(iPlayer) > SPEED)
-				kc_player_set_maxspeed(iPlayer, SPEED)
-
-			Player[iPlayer][PlrRushTime] = 0.0
-			kc_player_unset_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
-		}
-	}
 
 	static Float:fFovUpdateTime[MAX_PLAYERS + 1]
 	if (Player[iPlayer][PlrCurrentFov] != Player[iPlayer][PlrTargetFov])
@@ -228,9 +213,9 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 	static Float:fSprintAnimTime[MAX_PLAYERS + 1][2]
 	if (Player[iPlayer][PlrInSprint])
 	{
-		if (!player_allow_sprint(iPlayer, Player[iPlayer][PlrSprintPowerSpeed]))
+		if (!player_allow_sprint(iPlayer))
 		{
-			engfunc(EngFunc_SetClientMaxspeed, iPlayer, kc_player_get_maxspeed(iPlayer))
+			kc_player_set_def_maxspeed(iPlayer, SPEED)
 
 			if (get_user_weapon(iPlayer) == CSW_KNIFE)
 			{
@@ -253,18 +238,15 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 			Player[iPlayer][PlrInSprint] = false
 			Player[iPlayer][PlrTargetFov] = 90.0
-			kc_player_unset_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
 		}
 
 		set_member(iPlayer, m_flNextAttack, 0.2)
 	}
 	else
 	{
-		new Float:fPowerSpeed = kc_player_get_powerspeed(iPlayer)
-		if (player_allow_sprint(iPlayer, fPowerSpeed) && Player[iPlayer][PlrSprintPt] >= 20)
+		if (player_allow_sprint(iPlayer) && Player[iPlayer][PlrSprintPt] >= 20)
 		{
-			Player[iPlayer][PlrSprintPowerSpeed] = fPowerSpeed
-			engfunc(EngFunc_SetClientMaxspeed, iPlayer, SPRINT_SPEED)
+			kc_player_set_def_maxspeed(iPlayer, SPRINT_SPEED)
 
 			if (fGameTime - fSprintAnimTime[iPlayer][0] >= 0.5)
 			{
@@ -280,7 +262,6 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 			Player[iPlayer][PlrInSprint] = true
 			Player[iPlayer][PlrTargetFov] = 97.5
-			kc_player_set_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
 		}
 	}
 
@@ -313,7 +294,7 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 		if (!(iPlayerFlags & FL_ONGROUND) && !(iOldButtons & IN_JUMP))
 		{
 			if ((Player[iPlayer][PlrMultiJumpOnceInAir] || Player[iPlayer][PlrMultiJumpNum] < MAX_DOUBLE_JUMPS)
-				&& Float:get_entvar(iPlayer, var_maxspeed) - floatmin(kc_player_get_powerspeed(iPlayer), 0.0) >= 200.0
+				&& !is_player_slowed(iPlayer, 200.0)
 			) {
 				Player[iPlayer][PlrMultiJumpNum]++
 
@@ -585,12 +566,8 @@ bool:blink_ability(iPlayer, iTarget)
 
 	kc_player_unfreeze(iPlayer)
 
-	if (kc_player_get_maxspeed(iPlayer) == SPEED)
-	{
-		Player[iPlayer][PlrRushTime] = get_gametime() + 0.9
-		kc_player_set_maxspeed(iPlayer, 400.0)
-		kc_player_set_game_flag(iPlayer, PLGF_IN_SPEED_OVERRIDE)
-	}
+	if (!is_player_slowed(iPlayer, SPEED))
+		kc_player_rush(iPlayer, 400.0, 0.9)
 
 	if (bIsCrit)
 	{
@@ -643,7 +620,6 @@ public efk_ability3(iPlayer)
 public efk_change_knife_core_post(iPlayer, iKnifeId)
 {
 	Player[iPlayer][PlrKnife] = iKnifeId
-	Player[iPlayer][PlrRushTime] = 0.0
 	Player[iPlayer][PlrMultiJumpNum] = 0
 
 	if (g_iKnifeId == iKnifeId)
@@ -793,7 +769,7 @@ portal_close(iPortalEnt)
 	set_entvar(iPortalEnt, var_nextthink, fGameTime + 0.3)
 }
 
-bool:player_allow_sprint(iPlayer, Float:fPowerSpeed)
+bool:player_allow_sprint(iPlayer)
 {
 	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return false
@@ -801,7 +777,7 @@ bool:player_allow_sprint(iPlayer, Float:fPowerSpeed)
 	if (Player[iPlayer][PlrSprintPt] <= 0)
 		return false
 
-	if (kc_player_get_maxspeed(iPlayer) != floatmax(0.000001, SPEED + fPowerSpeed))
+	if (is_player_slowed(iPlayer, SPEED))
 		return false
 
 	if (get_user_weapon(iPlayer) != CSW_KNIFE)

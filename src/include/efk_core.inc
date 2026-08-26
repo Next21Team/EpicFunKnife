@@ -1162,13 +1162,13 @@ native Float:kc_player_get_maxhealth(const iPlayer);
 native Float:kc_player_get_maxspeed(const iPlayer);
 
 /**
- * Set the player's maximum walk speed
+ * Set the player's default maximum walk speed
  *
  * @param 	iPlayer			- Player ID
  * @param 	fSpeed			- Maximum speed
  * @noreturn
  */
-native kc_player_set_maxspeed(const iPlayer, const Float:fSpeed);
+native kc_player_set_def_maxspeed(const iPlayer, const Float:fSpeed);
 
 /**
  * Get player's options
