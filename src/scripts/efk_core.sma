@@ -6754,7 +6754,6 @@ player_uncapture(iPlayer)
 	if (Player[iPlayer][PlrCaptureType] != CAPTURE_NONE)
 	{
 		if (PlayerF[iPlayer][PlrFrozen] == 0.0) {
-			player_update_maxspeed(iPlayer)
 			set_entvar(iPlayer, var_iuser3, get_entvar(iPlayer, var_iuser3) & ~(PLAYER_PREVENT_DUCK | PLAYER_PREVENT_JUMP))
 		}
 
@@ -6775,6 +6774,8 @@ player_uncapture(iPlayer)
 		new iWeapon = get_active_weapon(iPlayer)
 		if (!is_nullent(iWeapon))
 			ExecuteHamB(Ham_Item_Deploy, iWeapon)
+
+		player_update_maxspeed(iPlayer)
 
 		ExecuteForward(forward_uncapture, _, iPlayer)
 	}
