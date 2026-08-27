@@ -115,6 +115,7 @@ enum _:PlayerData
 	Float:PlrStealDelay,
 	Float:PlrCorrectionDelay,
 	Float:PlrStartSpeed,
+	Float:PlrPushSpeed,
 	Float:PlrLastVelocity[3],
 	PlrRazorBeam,
 	PlrSphereEnt
@@ -851,6 +852,17 @@ public efk_ability3(iPlayer)
 
 	Player[iPlayer][PlrInPush] = true
 
+	new Float:fPunchSpeed = kc_player_get_powerspeed(iPlayer) * 0.25
+	if (fPunchSpeed > 0.0)
+	{
+		Player[iPlayer][PlrPushSpeed] = fPunchSpeed
+		kc_player_set_powerspeed(iPlayer, kc_player_get_powerspeed(iPlayer) - fPunchSpeed)
+	}
+	else
+	{
+		Player[iPlayer][PlrPushSpeed] = 0.0
+	}
+
 	new Float:vVelocity[3]
 	velocity_by_aim(iPlayer, ABIL3_FORCE, vVelocity)
 	fix_velocity(vVelocity)
@@ -880,6 +892,12 @@ steal_speed(iPlayer, iTarget, Float:fAdd, Float:fSub)
 
 bool:razor_punch_explosion(iPlayer)
 {
+	if (Player[iPlayer][PlrPushSpeed] == 0.0)
+	{
+		razor_punch_end(iPlayer)
+		return false
+	}
+
 	new iPushedPlayers[MAX_PLAYERS], iPushedPlayersNum, Float:vVec[3]
 
 	get_ahead_origin(iPlayer, Player[iPlayer][PlrLastVelocity], 35.0, vVec)
