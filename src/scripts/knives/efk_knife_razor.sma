@@ -856,7 +856,6 @@ public efk_ability3(iPlayer)
 	if (fPunchSpeed > 0.0)
 	{
 		Player[iPlayer][PlrPushSpeed] = fPunchSpeed
-		kc_player_set_powerspeed(iPlayer, kc_player_get_powerspeed(iPlayer) - fPunchSpeed)
 	}
 	else
 	{
