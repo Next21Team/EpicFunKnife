@@ -115,7 +115,6 @@ enum _:PlayerData
 	Float:PlrStealDelay,
 	Float:PlrCorrectionDelay,
 	Float:PlrStartSpeed,
-	Float:PlrPushSpeed,
 	Float:PlrLastVelocity[3],
 	PlrRazorBeam,
 	PlrSphereEnt
@@ -844,9 +843,6 @@ public efk_ability2(iPlayer)
 
 public efk_ability3(iPlayer)
 {
-	if (kc_player_get_powerspeed(iPlayer) < 0.0)
-		return PLUGIN_HANDLED
-
 	if (!(get_entvar(iPlayer, var_flags) & FL_ONGROUND) && get_entvar(iPlayer, var_movetype) != MOVETYPE_FLY)
 		return PLUGIN_HANDLED
 
@@ -854,17 +850,6 @@ public efk_ability3(iPlayer)
 	kc_player_set_bair(iPlayer, FL_BAIR_CLIMB)
 
 	Player[iPlayer][PlrInPush] = true
-
-	new Float:fPunchSpeed = kc_player_get_powerspeed(iPlayer) * 0.25
-	if (fPunchSpeed > 0.0)
-	{
-		Player[iPlayer][PlrPushSpeed] = fPunchSpeed
-		kc_player_set_powerspeed(iPlayer, kc_player_get_powerspeed(iPlayer) - fPunchSpeed)
-	}
-	else
-	{
-		Player[iPlayer][PlrPushSpeed] = 0.0
-	}
 
 	new Float:vVelocity[3]
 	velocity_by_aim(iPlayer, ABIL3_FORCE, vVelocity)
@@ -895,12 +880,6 @@ steal_speed(iPlayer, iTarget, Float:fAdd, Float:fSub)
 
 bool:razor_punch_explosion(iPlayer)
 {
-	if (Player[iPlayer][PlrPushSpeed] == 0.0)
-	{
-		razor_punch_end(iPlayer)
-		return false
-	}
-
 	new iPushedPlayers[MAX_PLAYERS], iPushedPlayersNum, Float:vVec[3]
 
 	get_ahead_origin(iPlayer, Player[iPlayer][PlrLastVelocity], 35.0, vVec)
@@ -929,6 +908,7 @@ bool:razor_punch_explosion(iPlayer)
 			kc_player_unfreeze(iTarget)
 
 			kc_player_slow(iTarget, ABIL3_SLOW_MUL, ABIL3_SLOW_TIME)
+			steal_speed(iPlayer, iTarget, 20.0, 20.0)
 
 			set_member(iTarget, m_flVelocityModifier, 1.0)
 			set_entvar(iTarget, var_velocity, vVec)
@@ -1020,17 +1000,17 @@ bool:razor_punch_explosion(iPlayer)
 					vTargetVelocity[2] = 0.8
 				}
 
+				send_msg_ScreenShake((1<<14), (1<<14), (1<<14), MSG_ONE, _, iTarget)
+				if (Player[iTarget][PlrTeam] == Player[iPlayer][PlrTeam])
+					continue
+
 				kc_player_unfreeze(iTarget)
 				set_member(iTarget, m_flVelocityModifier, 0.0)
-				send_msg_ScreenShake((1<<14), (1<<14), (1<<14), MSG_ONE, _, iTarget)
 				set_entvar(iTarget, var_flags, get_entvar(iTarget, var_flags) & ~FL_ONGROUND)
 
-				if (Player[iTarget][PlrTeam] != Player[iPlayer][PlrTeam])
-				{
-					xs_vec_mul_scalar(vTargetVelocity, ABIL3_SCREENSHAKE_VELOCITY, vTargetVelocity)
-					set_entvar(iTarget, var_velocity, vTargetVelocity)
-					kc_player_slow(iTarget, ABIL3_SLOW_MUL, ABIL3_SLOW_TIME)
-				}
+				xs_vec_mul_scalar(vTargetVelocity, ABIL3_SCREENSHAKE_VELOCITY, vTargetVelocity)
+				set_entvar(iTarget, var_velocity, vTargetVelocity)
+				kc_player_slow(iTarget, ABIL3_SLOW_MUL, ABIL3_SLOW_TIME)
 			}
 		}
 	}
