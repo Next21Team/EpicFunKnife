@@ -891,12 +891,6 @@ steal_speed(iPlayer, iTarget, Float:fAdd, Float:fSub)
 
 bool:razor_punch_explosion(iPlayer)
 {
-	if (Player[iPlayer][PlrPushSpeed] == 0.0)
-	{
-		razor_punch_end(iPlayer)
-		return false
-	}
-
 	new iPushedPlayers[MAX_PLAYERS], iPushedPlayersNum, Float:vVec[3]
 
 	get_ahead_origin(iPlayer, Player[iPlayer][PlrLastVelocity], 35.0, vVec)
@@ -935,6 +929,11 @@ bool:razor_punch_explosion(iPlayer)
 		xs_vec_mul_scalar(vVec, 0.5, vVec)
 		set_entvar(iPlayer, var_velocity, vVec)
 		emit_sound(iPlayer, CHAN_STATIC, SOUND_PUNCH, VOL_NORM, ATTN_NORM, 0, 90)
+	}
+	else if (Player[iPlayer][PlrPushSpeed] == 0.0)
+	{
+		razor_punch_end(iPlayer)
+		return false
 	}
 	else
 	{
