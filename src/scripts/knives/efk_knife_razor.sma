@@ -1022,7 +1022,7 @@ bool:razor_punch_explosion(iPlayer)
 					continue
 
 				kc_player_unfreeze(iTarget)
-				set_member(iTarget, m_flVelocityModifier, 1.0)
+				set_member(iTarget, m_flVelocityModifier, 0.0)
 				set_entvar(iTarget, var_flags, get_entvar(iTarget, var_flags) & ~FL_ONGROUND)
 
 				xs_vec_mul_scalar(vTargetVelocity, ABIL3_SCREENSHAKE_VELOCITY, vTargetVelocity)
