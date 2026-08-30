@@ -584,6 +584,8 @@ tornado_touch(iTornado, iOther)
 
 	if (iOther <= MaxClients)
 	{
+		new iTornadoOwner = get_entvar(iTornado, var_owner)
+
 		if (Player[iOther][PlrCaptureType] == CAPTURE_WEAK)
 			kc_player_set_capture(iOther, CAPTURE_NONE)
 		kc_player_set_bair(iOther, FL_BAIR_NORMAL | FL_BAIR_TORNADO | FL_BAIR_CLIMB)
@@ -591,13 +593,15 @@ tornado_touch(iTornado, iOther)
 		if (get_entvar(iTornado, var_body) == 1 && !kc_player_in_burn(iOther))
 		{
 			new Float:fTornadoLifeTime = Float:get_entvar(iTornado, var_tornado_endtime) - get_gametime()
-			kc_player_burn(iOther, get_entvar(iTornado, var_owner), floatround(fTornadoLifeTime / 0.2))
+			kc_player_burn(iOther, iTornadoOwner, floatround(fTornadoLifeTime / 0.2))
 		}
 
 		vTornadoVelocity[0] = floatclamp(vTornadoVelocity[0], -TORNADO_H_SPEED_WITH_PLRS, TORNADO_H_SPEED_WITH_PLRS)
 		vTornadoVelocity[1] = floatclamp(vTornadoVelocity[1], -TORNADO_H_SPEED_WITH_PLRS, TORNADO_H_SPEED_WITH_PLRS)
 		vTornadoVelocity[2] = floatclamp(vTornadoVelocity[2], -TORNADO_V_SPEED_WITH_PLRS, TORNADO_V_SPEED_WITH_PLRS)
 		set_entvar(iTornado, var_velocity, vTornadoVelocity)
+
+		kc_player_set_override_attacker(iOther, iTornadoOwner, 4.0)
 	}
 
 	set_entvar(iOther, var_velocity, vVelocity)
