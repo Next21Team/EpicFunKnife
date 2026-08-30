@@ -960,7 +960,13 @@ public ice_clone_touch(iEnt, iOther)
 		if (get_user_team(iOwner) != get_user_team(iOther))
 		{
 			if (kc_player_freeze(iOther, FREEZE_TIME, iOwner))
+			{
 				try_increase_icicles_ammo(iOwner)
+
+				// Double freeze
+				if (get_entvar(iEnt, var_clone_buffed))
+					kc_player_freeze(iOther, FREEZE_TIME, iOwner)
+			}
 
 			ice_clone_remove(iEnt)
 		}
