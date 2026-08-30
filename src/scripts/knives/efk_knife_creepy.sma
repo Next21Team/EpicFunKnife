@@ -1296,7 +1296,8 @@ bool:rebound(iPlayer)
 bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 {
 	new Float:vOrigin[3], Float:vTargetOrigin[3], iTarget = NULLENT, bool:bWasHit, iTeam, iOwner,
-		Float:vAngles[3], Float:vVectors[2][3], Float:vMins[3], Float:vMaxs[3]
+		Float:vAngles[3], Float:vVectors[2][3], Float:vMins[3], Float:vMaxs[3],
+		Array:aReflectedPlayers = ArrayCreate(), iShadowTarget
 
 	get_entvar(iGhost, var_origin, vOrigin)
 	get_entvar(iGhost, var_angles, vAngles)
@@ -1329,8 +1330,10 @@ bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 
 		if (iTarget <= MaxClients)
 		{
+			iShadowTarget = kc_player_get_shadow_target(iTarget)
+
 			if (!g_ePlayerData[iTarget][IS_ALIVE]
-				|| (get_entvar(iTarget, var_solid) == SOLID_NOT && !kc_player_get_shadow_target(iTarget))
+				|| (get_entvar(iTarget, var_solid) == SOLID_NOT && !iShadowTarget)
 				|| iPlayer == iTarget
 			)
 				continue
@@ -1349,28 +1352,16 @@ bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 
 			if (kc_player_in_reflection(iTarget))
 			{
-				kc_player_reflection_done(iTarget, iPlayer)
-				swap(iTarget, iPlayer)
+				ArrayPushCell(aReflectedPlayers, iTarget)
+				ghost_inflict_damage(iPlayer, iGhost, iTarget, fDamage)
+				bWasHit = true
+				continue
 			}
 
-			kc_player_set_death_reason(iTarget, "DEATH_REASON_GHOST")
+			if (is_entity_player(iShadowTarget) && kc_player_in_reflection(iShadowTarget))
+				continue
 
-			if (kc_player_get_shadow_target(iTarget))
-			{
-				new Float:fHealth = Float:get_entvar(iTarget, var_health) - fDamage
-				if (fHealth > 0.0)
-					set_entvar(iTarget, var_health, fHealth)
-				else
-					ExecuteHamB(Ham_Killed, iTarget, iPlayer, 0)
-			}
-			else
-			{
-				new Float:fVelocityModifier = Float:get_member(iTarget, m_flVelocityModifier)
-				set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
-				ExecuteHamB(Ham_TakeDamage, iTarget, iGhost, iPlayer, fDamage, DMG_BULLET | DMG_ALWAYSGIB)
-				set_member(iTarget, m_flVelocityModifier, fVelocityModifier)
-			}
-
+			ghost_inflict_damage(iTarget, iGhost, iPlayer, fDamage)
 			bWasHit = true
 		}
 		else
@@ -1493,7 +1484,39 @@ bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 		}
 	}
 
+	for (new i, iTargetsNum = ArraySize(aReflectedPlayers); i < iTargetsNum; i++)
+	{
+		iTarget = ArrayGetCell(aReflectedPlayers, i)
+		kc_player_reflection_done(iTarget, iPlayer)
+	}
+
+	ArrayDestroy(aReflectedPlayers)
+
 	return bWasHit
+}
+
+ghost_inflict_damage(iVictim, iGhost, iAttacker, Float:fDamage)
+{
+	if (!g_ePlayerData[iVictim][IS_ALIVE])
+		return
+
+	kc_player_set_death_reason(iVictim, "DEATH_REASON_GHOST")
+
+	if (kc_player_get_shadow_target(iVictim))
+	{
+		new Float:fHealth = Float:get_entvar(iVictim, var_health) - fDamage
+		if (fHealth > 0.0)
+			set_entvar(iVictim, var_health, fHealth)
+		else
+			ExecuteHamB(Ham_Killed, iVictim, iAttacker, 0)
+	}
+	else
+	{
+		new Float:fVelocityModifier = Float:get_member(iVictim, m_flVelocityModifier)
+		set_member(iVictim, m_LastHitGroup, HIT_GENERIC)
+		ExecuteHamB(Ham_TakeDamage, iVictim, iGhost, iAttacker, fDamage, DMG_BULLET | DMG_ALWAYSGIB)
+		set_member(iVictim, m_flVelocityModifier, fVelocityModifier)
+	}
 }
 
 ghost_kill(iOwner)
@@ -1563,14 +1586,4 @@ bool:allow_long_jump(iPlayer)
 		return false
 
 	return true
-}
-
-swap(&a, &b)
-{
-	if (a != b)
-	{
-		a ^= b
-		b ^= a
-		a ^= b
-	}
 }
