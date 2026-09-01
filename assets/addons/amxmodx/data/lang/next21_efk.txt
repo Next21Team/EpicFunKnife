@@ -103,6 +103,7 @@ ITEM_HP = 60 HP
 ITEM_HS = Head shots protection
 ITEM_CRITS = Crits protection
 ITEM_CHARGEBOOSTER = Charge booster
+ITEM_RESISTANCE_BOOTS = Resistance Boots
 
 BUY_BUNNY = You bought a bunnyhop. Hold the jump button.
 BUY_REGENERATION = You bought a health regeneration
@@ -117,6 +118,7 @@ BUY_HP = You bought 60 HP
 BUY_HS = You bought head shots protection
 BUY_CRITS = You bought crits protection
 BUY_CHARGEBOOSTER = You bought a charge booster
+BUY_RESISTANCE_BOOTS = You bought the boots of fortitude
 
 REGENERATION = Regeneration
 REGENERATION_CHARGE = You have extended the regeneration to %d percent
@@ -126,6 +128,10 @@ REGENERATION_OFF = Regeneration Off
 
 VAMPIRISM_CHARGE = Vampirism charged up to %d HP
 VAMPIRISM_EXHAUSTED = Vampirism has been exhausted
+
+RESISTANCE_CHARGE = Resistance increased by %d
+RESISTANCE_EXHAUSTED = Resistance exhausted
+PRESENT_RESISTANCE_BOOTS = Resistance Boots
 
 CHARGEBOOSTER_EXHAUSTED = Charge booster has been exhausted
 
@@ -327,6 +333,7 @@ ITEM_HP = 60 HP
 ITEM_HS = Защита от HS
 ITEM_CRITS = Защита от критов
 ITEM_CHARGEBOOSTER = Ускоритель перезарядки
+ITEM_RESISTANCE_BOOTS = Сапоги стойкости
 
 BUY_BUNNY = Вы купили автораспрыг. Зажмите кнопку прыжка.
 BUY_REGENERATION = Вы купили регенерацию здоровья
@@ -341,6 +348,7 @@ BUY_HP = Вы купили 60 HP
 BUY_HS = Вы купили защиту от хэд шотов
 BUY_CRITS = Вы купили защиту от критов
 BUY_CHARGEBOOSTER = Вы купили ускоритель перезарядки
+BUY_RESISTANCE_BOOTS = Вы купили cапоги cтойкости
 
 REGENERATION = Регенерация
 REGENERATION_CHARGE = Вы продлили регенерацию до %d процентов
@@ -350,6 +358,10 @@ REGENERATION_OFF = Регенерация выключена
 
 VAMPIRISM_CHARGE = Вампиризм заряжен до %d HP
 VAMPIRISM_EXHAUSTED = Вампиризм исчерпан
+
+RESISTANCE_CHARGE = Стойкость увеличена на %d
+RESISTANCE_EXHAUSTED = Стойкость исчерпана
+PRESENT_RESISTANCE_BOOTS = Сапоги стойкости
 
 CHARGEBOOSTER_EXHAUSTED = Ускоритель перезарядки израсходован
 
@@ -551,6 +563,7 @@ ITEM_HP = 60 HP
 ITEM_HS = Protección contra disparos a la cabeza
 ITEM_CRITS = Protección contra críticos
 ITEM_CHARGEBOOSTER = Potenciador de carga
+ITEM_RESISTANCE_BOOTS = Botas de resistencia
 
 BUY_BUNNY = Has comprado Bunnyhop. Mantén presionado el botón de salto.
 BUY_REGENERATION = Has comprado regeneración de salud
@@ -565,6 +578,7 @@ BUY_HP = Has comprado 60 HP
 BUY_HS = Has comprado protección contra disparos a la cabeza
 BUY_CRITS = Has comprado protección contra críticos
 BUY_CHARGEBOOSTER = Has comprado un potenciador de carga
+BUY_RESISTANCE_BOOTS = Compraste las botas de la fortaleza
 
 REGENERATION = Regeneración
 REGENERATION_CHARGE = Has aumentado la regeneración al %d por ciento
@@ -574,6 +588,10 @@ REGENERATION_OFF = Regeneración desactivada
 
 VAMPIRISM_CHARGE = El vampirismo se ha cargado hasta %d HP
 VAMPIRISM_EXHAUSTED = El vampirismo se ha agotado
+
+RESISTANCE_CHARGE = Resistencia aumentada en %d
+RESISTANCE_EXHAUSTED = Resistencia agotada
+PRESENT_RESISTANCE_BOOTS = Botas resistentes
 
 CHARGEBOOSTER_EXHAUSTED = El potenciador de carga se ha agotado
 
