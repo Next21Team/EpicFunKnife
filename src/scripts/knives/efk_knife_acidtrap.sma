@@ -511,7 +511,7 @@ public fw_PreThink(iPlayer)
 		button = get_entvar(iPlayer, var_button)
 
 		if (!(button & iWallRunButton) || fGameTime >= Player[iPlayer][PlrWallTime] || (get_entvar(iPlayer, var_flags) & FL_ONGROUND)
-			|| !Player[iPlayer][PlrWallPt] || Float:get_entvar(iPlayer, var_maxspeed) < SPEED)
+			|| !Player[iPlayer][PlrWallPt] || is_player_slowed(iPlayer, SPEED))
 		{
 			Player[iPlayer][PlrKillTrail] = fGameTime + 0.2
 			Player[iPlayer][PlrInWall] = false
@@ -563,7 +563,7 @@ public fw_PreThink(iPlayer)
 		else
 		{
 			if (Player[iPlayer][PlrWallPt] && fGameTime < Player[iPlayer][PlrWallTime] && Player[iPlayer][PlrUnWallTime] <= fGameTime
-				&& Float:get_entvar(iPlayer, var_maxspeed) >= SPEED
+				&& !is_player_slowed(iPlayer, SPEED)
 				&& (get_entvar(iPlayer, var_button) & iWallRunButton)
 				&& Float:get_member(iPlayer, m_flVelocityModifier) == 1.0)
 			{

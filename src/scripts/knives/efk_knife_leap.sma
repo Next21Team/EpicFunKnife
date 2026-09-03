@@ -1238,7 +1238,7 @@ bool:allow_long_jump(iPlayer)
 	if (!(get_entvar(iPlayer, var_flags) & FL_ONGROUND))
 		return false
 
-	if (get_entvar(iPlayer, var_maxspeed) < SPEED)
+	if (is_player_slowed(iPlayer, SPEED))
 		return false
 
 	return true

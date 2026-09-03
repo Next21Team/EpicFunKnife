@@ -281,7 +281,7 @@ public fw_PlayerPreThink(iPlayer)
 	{
 		if (!(flags & FL_ONGROUND) && !(obut & IN_JUMP))
 		{
-			if (kc_player_get_maxspeed(iPlayer) < SPEED)
+			if (is_player_slowed(iPlayer, SPEED))
 				return HAM_IGNORED
 
 			static Float:vOrigin[5][3]
@@ -337,7 +337,7 @@ public fw_PlayerPreThink(iPlayer)
 				PlayerF[iPlayer][StompAttackTime] = fGameTime + 5.0
 				Player[iPlayer][JumpState] = 2
 			}
-			else if (get_entvar(iPlayer, var_maxspeed) >= SPEED && (nbut & IN_DUCK)
+			else if (!is_player_slowed(iPlayer, SPEED) && (nbut & IN_DUCK)
 				&& !Player[iPlayer][JumpState])
 			{
 				send_msg_TE_BEAMFOLLOW(iPlayer, sprSteam, 10, 5, {255, 0, 0}, 192)
