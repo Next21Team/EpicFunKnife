@@ -369,6 +369,20 @@ public fw_PlayerDamage(iVictim, inflictor, attacker, Float:damage, bits)
 				new Float:vPlayerOrigin[3], Float:vEntOrigin[3], Float:vFloorOrigin[3], Float:vAngles[3], iSpikeEnt
 				get_entvar(iVictim, var_origin, vPlayerOrigin)
 
+				iSpikeEnt = rg_create_entity(SZ_INFO_TARGET)
+				if (is_entity(iSpikeEnt))
+				{
+					get_floor_origin(iSpikeEnt, vPlayerOrigin, vFloorOrigin)
+
+					if (engfunc(EngFunc_PointContents, vFloorOrigin) == CONTENTS_EMPTY)
+					{
+						vAngles[1] = 0.0
+						spike_setup(iSpikeEnt, iVictim, vFloorOrigin, vAngles, fGameTime)
+					}
+					else
+						set_entvar(iSpikeEnt, var_flags, FL_KILLME)
+				}
+
 				for (new i; i < MAX_STOMP_CENTER_SPIKES; i++)
 				{
 					iSpikeEnt = rg_create_entity(SZ_INFO_TARGET)
