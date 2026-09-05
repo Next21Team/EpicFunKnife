@@ -11,7 +11,7 @@ new const PLUGIN[] = "EFK: Resistance Boots"
 new const GAME_TAG[] = EFK_GAME_TAG
 
 const ITEM_RESISTANCE = 300
-const ITEM_PRICE = 14000
+const ITEM_PRICE = 10000
 const Float:DAMAGE_RESTORE_PERCENT = 0.40
 
 #define DAMAGE_RESTORE_START_TIME	2.0
@@ -94,6 +94,9 @@ public Ham_Player_TakeDamage_Post(iVictim,iInflictor,iAttacker,Float:fDamage,iDa
 	{
 		return HAM_IGNORED
 	}
+
+	if (kc_player_in_protection(iVictim))
+		return HAM_IGNORED
 
 	new iHeal = floatround(fDamage * DAMAGE_RESTORE_PERCENT, floatround_floor)
 
