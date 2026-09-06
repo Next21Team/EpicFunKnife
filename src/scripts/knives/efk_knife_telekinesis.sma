@@ -36,6 +36,7 @@ new const CLASS_CLAWS_SWING[]	= "next21_claws_swing"
 #define SOUND_TELEKINESIS	"next21_efk/telekinesis.wav"
 
 #define FALLDMGDIVIDER			9.0
+#define ABIL1_SECONDARY_HIT_CHARGE	25.0
 #define DISTANCE_ATTACK_DELAY	1.0
 #define DISTANCE_ATTACK_DAMAGE	15.0
 #define DISTANCE_ATTACK_STEP_LEN		32.0
@@ -82,7 +83,8 @@ enum _:PlayerData
 	PlrKnife,
 	bool:PlrIsAlive,
 	AbilityMode:AbilMode,
-	Float:PlrCritChance
+	Float:PlrCritChance,
+	bool:PlrIsSecondaryAttacking
 }
 
 #define Player[%1][%2]	g_ePlayerData[%1 - 1][%2]
@@ -134,6 +136,8 @@ public plugin_init()
 
 	RegisterHam(Ham_Spawn, "player", "fw_PlayerSpawn", 1)
 	RegisterHam(Ham_Player_PreThink, "player", "fw_PreThink")
+	RegisterHam(Ham_Weapon_PrimaryAttack, "weapon_knife", "fw_PrimaryAttack_Pre")
+	RegisterHam(Ham_Weapon_SecondaryAttack, "weapon_knife", "fw_SecondaryAttack_Pre")
 	RegisterHam(Ham_Weapon_SecondaryAttack, "weapon_knife", "fw_SecondaryAttack", 1)
 	RegisterHam(Ham_TakeDamage, "player", "fw_PlayerDamage")
 	RegisterHam(Ham_Killed, "player", "fw_PlayerKilled")
@@ -184,6 +188,30 @@ public fw_PreThink(iPlayer)
 
 		kc_player_set_abil1_type(iPlayer, ABIL_TARGET_PLAYER)
 	}
+
+	return HAM_IGNORED
+}
+
+public fw_PrimaryAttack_Pre(iWeapon)
+{
+	if (is_nullent(iWeapon))
+		return HAM_IGNORED
+
+	new iPlayer = get_member(iWeapon, m_pPlayer)
+	Player[iPlayer][PlrIsSecondaryAttacking] = false
+
+	return HAM_IGNORED
+}
+
+public fw_SecondaryAttack_Pre(iWeapon)
+{
+	if (is_nullent(iWeapon))
+		return HAM_IGNORED
+
+	new iPlayer = get_member(iWeapon, m_pPlayer)
+
+	if (Player[iPlayer][PlrKnife] == g_iKnifeId)
+		Player[iPlayer][PlrIsSecondaryAttacking] = true
 
 	return HAM_IGNORED
 }
@@ -253,6 +281,23 @@ public fw_PlayerDamage(iVictim, gun, attacker, Float:damage, bits)
 	if (kc_player_in_silence(attacker))
 		return HAM_IGNORED
 
+	if (Player[attacker][PlrIsSecondaryAttacking])
+	{
+		Player[attacker][PlrIsSecondaryAttacking] = false
+
+		if (get_user_team(attacker) != get_user_team(iVictim))
+		{
+			new Float:fNewCharge = floatmin(100.0, kc_player_get_abil1_charge(attacker) + ABIL1_SECONDARY_HIT_CHARGE)
+			kc_player_set_abil1_charge(attacker, fNewCharge)
+
+			if (fNewCharge >= 100.0 && Player[attacker][AbilMode] < MODE_GROUP1_END)
+			{
+				telekinesis_self(attacker)
+				kc_player_set_abil1_charge(attacker, 27.78)
+			}
+		}
+	}
+
 	if (damage < 50.0)
 		return HAM_IGNORED
 
@@ -269,9 +314,6 @@ public fw_PlayerDamage(iVictim, gun, attacker, Float:damage, bits)
 			&& get_user_team(attacker) != get_user_team(ent))
 		{
 			fCurDamage = damage / 3
-
-			if (fCurDamage > 45.0)
-				fCurDamage = 45.0
 
 			kc_player_set_death_reason(ent, "DEATH_REASON_TELEKINESIS")
 			set_member(ent, m_LastHitGroup, HIT_GENERIC)

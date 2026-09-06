@@ -281,7 +281,7 @@ public fw_PlayerPreThink(iPlayer)
 	{
 		if (!(flags & FL_ONGROUND) && !(obut & IN_JUMP))
 		{
-			if (kc_player_get_maxspeed(iPlayer) < SPEED)
+			if (is_player_slowed(iPlayer, SPEED))
 				return HAM_IGNORED
 
 			static Float:vOrigin[5][3]
@@ -337,7 +337,7 @@ public fw_PlayerPreThink(iPlayer)
 				PlayerF[iPlayer][StompAttackTime] = fGameTime + 5.0
 				Player[iPlayer][JumpState] = 2
 			}
-			else if (get_entvar(iPlayer, var_maxspeed) >= SPEED && (nbut & IN_DUCK)
+			else if (!is_player_slowed(iPlayer, SPEED) && (nbut & IN_DUCK)
 				&& !Player[iPlayer][JumpState])
 			{
 				send_msg_TE_BEAMFOLLOW(iPlayer, sprSteam, 10, 5, {255, 0, 0}, 192)
@@ -368,6 +368,20 @@ public fw_PlayerDamage(iVictim, inflictor, attacker, Float:damage, bits)
 			{
 				new Float:vPlayerOrigin[3], Float:vEntOrigin[3], Float:vFloorOrigin[3], Float:vAngles[3], iSpikeEnt
 				get_entvar(iVictim, var_origin, vPlayerOrigin)
+
+				iSpikeEnt = rg_create_entity(SZ_INFO_TARGET)
+				if (is_entity(iSpikeEnt))
+				{
+					get_floor_origin(iSpikeEnt, vPlayerOrigin, vFloorOrigin)
+
+					if (engfunc(EngFunc_PointContents, vFloorOrigin) == CONTENTS_EMPTY)
+					{
+						vAngles[1] = 0.0
+						spike_setup(iSpikeEnt, iVictim, vFloorOrigin, vAngles, fGameTime)
+					}
+					else
+						set_entvar(iSpikeEnt, var_flags, FL_KILLME)
+				}
 
 				for (new i; i < MAX_STOMP_CENTER_SPIKES; i++)
 				{
