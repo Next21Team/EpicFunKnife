@@ -293,7 +293,7 @@ public fw_PlayerDamage(iVictim, gun, attacker, Float:damage, bits)
 			if (fNewCharge >= 100.0 && Player[attacker][AbilMode] < MODE_GROUP1_END)
 			{
 				telekinesis_self(attacker)
-				kc_player_set_abil1_charge(attacker, 0.0)
+				kc_player_set_abil1_charge(attacker, 27.78)
 			}
 		}
 	}
