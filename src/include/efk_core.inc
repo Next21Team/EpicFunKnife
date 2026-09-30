@@ -852,6 +852,16 @@ native kc_player_set_crosshair(const iPlayer, const KnifeCrosshair:iCrosshair);
 native kc_player_set_death_reason(const iPlayer, const szMessage[]);
 
 /**
+ * Append a short hint in parentheses after the ability4 (F) charge display, for this player only.
+ * Pass an empty string to clear it. Displayed as raw text (not localized).
+ *
+ * @param 	iPlayer			- Player ID
+ * @param	szHint			- Hint text (empty = clear)
+ * @noreturn
+ */
+native kc_player_set_ability4_hint(const iPlayer, const szHint[]);
+
+/**
  * Check if the player has any negative effects (blinding, reduced damage, burning, freezing, etc.)
  *
  * @param 	iPlayer			- Player ID
