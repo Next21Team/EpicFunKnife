@@ -284,6 +284,7 @@ enum _:PlayerProperties
 	PlrAbility3NameOverride[LEN_ABILITY_NAME],
 	PlrAbility2NameOverride[LEN_ABILITY_NAME],
 	PlrAbility2HintText[LEN_ABILITY_NAME],
+	PlrAbility4HintText[LEN_ABILITY_NAME],
 	PlrHpBarEnt,
 	PlrBlindEffEnt,
 	PlrCameraEnt,
@@ -679,6 +680,7 @@ public plugin_natives()
 	register_native("kc_player_set_ability2_name", "_21kc_player_set_ability2_name")
 
 	register_native("kc_player_set_ability2_hint", "_21kc_player_set_ability2_hint")
+	register_native("kc_player_set_ability4_hint", "_21kc_player_set_ability4_hint")
 
 	register_native("kc_player_is_influenced", "_21kc_player_is_influenced")
 
@@ -2092,9 +2094,15 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 			}
 
 			if (Knife[iSubjectKnifeId][KNF_ABILITY4_NAME][0] != EOS)
-				formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%s (F) (%dpt)",
+			{
+				iLen += formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%s (F) (%dpt)",
 					Knife[iSubjectKnifeId][KNF_ABILITY4_NAME],
 					floatround(PlayerF[iSubject][PlrAbility4Charge], floatround_floor))
+
+				if (Player[iSubject][PlrAbility4HintText][0] != EOS)
+					formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, " (%s)",
+						Player[iSubject][PlrAbility4HintText])
+			}
 
 			if (szChargingText[0])
 			{
@@ -4910,6 +4918,7 @@ set_knife_params(iPlayer, iKnifeId)
 	Player[iPlayer][PlrAbility3NameOverride][0] = EOS
 	Player[iPlayer][PlrAbility2NameOverride][0] = EOS
 	Player[iPlayer][PlrAbility2HintText][0] = EOS
+	Player[iPlayer][PlrAbility4HintText][0] = EOS
 	Player[iPlayer][PlrKnife] = iKnifeId
 }
 
@@ -8720,6 +8729,12 @@ public _21kc_player_set_ability2_name(plugin, num_params)
 {
 	new iPlayer = get_param(1)
 	get_string(2, Player[iPlayer][PlrAbility2NameOverride], LEN_ABILITY_NAME - 1)
+}
+
+public _21kc_player_set_ability4_hint(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	get_string(2, Player[iPlayer][PlrAbility4HintText], LEN_ABILITY_NAME - 1)
 }
 
 public _21kc_player_set_ability2_hint(plugin, num_params)
