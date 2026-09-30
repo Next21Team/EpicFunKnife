@@ -93,6 +93,8 @@ new const PLUGIN[] = "EFK: Nuclear Knife"
 
 #define HIT_PLAYER_DAMAGE		10.0
 #define HIT_PLAYER_KNOCKBACK	900.0
+#define HAMMER_ZOMBIE_PASS_RADIUS	128.0
+#define HAMMER_ZOMBIE_HIT_COOLDOWN	0.5
 
 #define VIEW_SEQ_STAB	4
 #define VIEW_SEQ_THROW	8
@@ -170,6 +172,9 @@ new
 	g_iKnifeId, g_ePlayerData[MAX_PLAYERS][PlayerData],
 	g_pBallSmokeSpr,
 	g_pKnifePMdl, g_pKnifeVStr, g_pKnifePStr, g_pRockGibsMdl, g_pLightningSpr,
+	Float:g_fHammerZombieHitUntil[2048 + 1],
+	g_iHammerPassZombies[16],
+	g_iHammerPassCount,
 	bool:g_bHammerThrowHit[MAX_PLAYERS + 1][MAX_PLAYERS + 1],
 	bool:g_bHammerReturnHit[MAX_PLAYERS + 1][MAX_PLAYERS + 1],
 	bool:g_bHammerLoopNearPlayed[MAX_PLAYERS + 1][MAX_PLAYERS + 1]
@@ -223,6 +228,7 @@ public plugin_init()
 	kc_knife_set_charge_boost_coeff(g_iKnifeId, 0.25)
 	kc_knife_set_flags(g_iKnifeId, KNFF_ABIL1_TOGGLEABLE | KNFF_BAN_BUNNYHOP)
 
+	register_forward(FM_StartFrame, "fw_StartFrame")
 	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)
 	RegisterHookChain(RG_CBasePlayer_Killed, "RG_CBasePlayer_Killed_Pre")
 	RegisterHookChain(RG_CBasePlayer_TraceAttack, "RG_CBasePlayer_TraceAttack_Pre")
@@ -1050,19 +1056,7 @@ public hammer_touch(iHammerEnt, iOther)
 		}
 		case IMPULSE_ZOMBIE:
 		{
-			if (get_entvar(iOther, var_skin) + 1 != get_user_team(iOwner))
-			{
-				new Float:vVelocity[3]
-				get_entvar(iHammerEnt, var_velocity, vVelocity)
-				xs_vec_normalize(vVelocity, vVelocity)
-				xs_vec_mul_scalar(vVelocity, HIT_PLAYER_KNOCKBACK, vVelocity)
-				vVelocity[2] = 250.0
-				set_entvar(iOther, var_velocity, vVelocity)
-
-				ExecuteHamB(Ham_TakeDamage, iOther, iHammerEnt, iOwner, HIT_PLAYER_DAMAGE, DMG_CLUB)
-				hammer_emit_hit_sound(iHammerEnt)
-			}
-
+			hammer_hit_zombie(iHammerEnt, iOwner, iOther)
 			return HC_CONTINUE
 		}
 	}
@@ -1071,6 +1065,81 @@ public hammer_touch(iHammerEnt, iOther)
 		hammer_hit_world(iHammerEnt, iOwner)
 
 	return HC_CONTINUE
+}
+
+hammer_hit_zombie(iHammerEnt, iOwner, iZombie)
+{
+	if (get_entvar(iZombie, var_skin) + 1 == get_user_team(iOwner))
+		return
+
+	new Float:fGameTime = get_gametime()
+	if (fGameTime < g_fHammerZombieHitUntil[iZombie])
+		return
+
+	g_fHammerZombieHitUntil[iZombie] = fGameTime + HAMMER_ZOMBIE_HIT_COOLDOWN
+
+	new Float:vVelocity[3]
+	get_entvar(iHammerEnt, var_velocity, vVelocity)
+	xs_vec_normalize(vVelocity, vVelocity)
+	xs_vec_mul_scalar(vVelocity, HIT_PLAYER_KNOCKBACK, vVelocity)
+	vVelocity[2] = 250.0
+	set_entvar(iZombie, var_velocity, vVelocity)
+
+	ExecuteHamB(Ham_TakeDamage, iZombie, iHammerEnt, iOwner, HIT_PLAYER_DAMAGE, DMG_CLUB)
+	hammer_emit_hit_sound(iHammerEnt)
+}
+
+hammer_pass_zombies(iHammerEnt, bool:bBypassSolid)
+{
+	new Float:vOrigin[3]
+	get_entvar(iHammerEnt, var_origin, vOrigin)
+
+	new iOwner = get_entvar(iHammerEnt, var_owner)
+	new iZombie = -1
+	while ((iZombie = engfunc(EngFunc_FindEntityInSphere, iZombie, vOrigin, HAMMER_ZOMBIE_PASS_RADIUS)) > 0)
+	{
+		if (get_entvar(iZombie, var_impulse) != IMPULSE_ZOMBIE || (get_entvar(iZombie, var_flags) & FL_KILLME))
+			continue
+
+		if (bBypassSolid)
+		{
+			if (get_entvar(iZombie, var_solid) == SOLID_NOT || g_iHammerPassCount >= sizeof g_iHammerPassZombies)
+				continue
+
+			g_iHammerPassZombies[g_iHammerPassCount++] = iZombie
+			set_entvar(iZombie, var_solid, SOLID_NOT)
+		}
+
+		new Float:vZombieOrigin[3], Float:vMins[3], Float:vMaxs[3]
+		get_entvar(iZombie, var_origin, vZombieOrigin)
+		get_entvar(iZombie, var_mins, vMins)
+		get_entvar(iZombie, var_maxs, vMaxs)
+
+		new bool:bOverlap = true
+		for (new i; i < 3; i++)
+		{
+			if (vOrigin[i] + 16.0 < vZombieOrigin[i] + vMins[i] || vOrigin[i] - 16.0 > vZombieOrigin[i] + vMaxs[i])
+			{
+				bOverlap = false
+				break
+			}
+		}
+
+		if (bOverlap)
+			hammer_hit_zombie(iHammerEnt, iOwner, iZombie)
+	}
+}
+
+public fw_StartFrame()
+{
+	for (new i; i < g_iHammerPassCount; i++)
+	{
+		new iZombie = g_iHammerPassZombies[i]
+		if (is_entity(iZombie) && !(get_entvar(iZombie, var_flags) & FL_KILLME) && get_entvar(iZombie, var_health) > 0.0)
+			set_entvar(iZombie, var_solid, SOLID_BBOX)
+	}
+
+	g_iHammerPassCount = 0
 }
 
 hammer_check_view_hide(iOwner)
@@ -1098,6 +1167,9 @@ public hammer_think(iHammerEnt)
 		set_entvar(iHammerEnt, var_hammer_recall, 0)
 		hammer_start_return(iOwner, iHammerEnt)
 	}
+
+	if (get_entvar(iHammerEnt, var_movetype) != MOVETYPE_NONE)
+		hammer_pass_zombies(iHammerEnt, get_entvar(iHammerEnt, var_movetype) == MOVETYPE_BOUNCEMISSILE)
 
 	if (get_entvar(iHammerEnt, var_movetype) != MOVETYPE_NONE)
 	{
@@ -1412,6 +1484,23 @@ hammer_impact_knockback(iOwner, const Float:vOrigin[3])
 		set_entvar(iTarget, var_flags, get_entvar(iTarget, var_flags) & ~FL_ONGROUND)
 		set_entvar(iTarget, var_velocity, vTargetVelocity)
 		kc_player_slow(iTarget, IMPACT_SLOW_MUL, IMPACT_SLOW_TIME)
+	}
+
+	new iZombie = -1
+	while ((iZombie = engfunc(EngFunc_FindEntityInSphere, iZombie, vOrigin, IMPACT_RADIUS)) > 0)
+	{
+		if (get_entvar(iZombie, var_impulse) != IMPULSE_ZOMBIE || (get_entvar(iZombie, var_flags) & FL_KILLME)
+			|| get_entvar(iZombie, var_skin) + 1 == iTeam)
+			continue
+
+		get_entvar(iZombie, var_origin, vTargetOrigin)
+		xs_vec_sub(vTargetOrigin, vOrigin, vTargetVelocity)
+		xs_vec_normalize(vTargetVelocity, vTargetVelocity)
+		xs_vec_mul_scalar(vTargetVelocity, IMPACT_KNOCKBACK, vTargetVelocity)
+		vTargetVelocity[2] = 250.0
+
+		set_entvar(iZombie, var_flags, get_entvar(iZombie, var_flags) & ~FL_ONGROUND)
+		set_entvar(iZombie, var_velocity, vTargetVelocity)
 	}
 }
 
