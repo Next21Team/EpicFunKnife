@@ -81,8 +81,8 @@ new const PLUGIN[] = "EFK: Nuclear Knife"
 #define HAMMER_PAIR_GLOW_B	0
 #define HAMMER_PAIR_GLOW_AMT	24.0
 
-#define HAMMER_CORRECTION_TRACE_DIST	8192.0
-#define HAMMER_CORRECTION_TURN_RATE	1.5
+#define HAMMER_CORRECTION_GAIN	1.0
+#define HAMMER_CORRECTION_LOOKAHEAD	400.0
 #define HAMMER_ARC_BOW_FACTOR	0.8
 #define HAMMER_ARC_MIN_DURATION	0.15
 
@@ -153,9 +153,9 @@ enum _:PlayerData
 	Float:PlrHammerThrowTime,
 	bool:PlrHammerCarriesPair,
 	Float:PlrHammerPairEndTime,
-	bool:PlrHammerHasCorrectionTarget,
-	Float:PlrHammerCorrectionTarget[3],
-	Float:PlrHammerLastThinkTime,
+	bool:PlrHammerCorrectionActive,
+	Float:PlrHammerCorrectionBaseReal[3],
+	Float:PlrHammerCorrectionBasePseudo[3],
 	bool:PlrHammerArcReturn,
 	Float:PlrHammerArcStart[3],
 	Float:PlrHammerArcPerp[3],
@@ -598,26 +598,34 @@ public fw_HammerCorrection(iPlayer)
 	if (!iHammerEnt || Player[iPlayer][PlrHammerReturning] || !Player[iPlayer][PlrHammerCarriesPair])
 		return PLUGIN_CONTINUE
 
-	new Float:vOrigin[3], Float:vEnd[3]
-	get_entvar(iPlayer, var_origin, vOrigin)
-	get_entvar(iPlayer, var_view_ofs, vEnd)
-	xs_vec_add(vOrigin, vEnd, vOrigin)
+	new Float:vRealAim[3]
+	get_entvar(iPlayer, var_v_angle, vRealAim)
+	xs_vec_copy(vRealAim, Player[iPlayer][PlrHammerCorrectionBaseReal])
 
-	get_entvar(iPlayer, var_v_angle, vEnd)
-	engfunc(EngFunc_MakeVectors, vEnd)
-	global_get(glb_v_forward, vEnd)
-	xs_vec_mul_scalar(vEnd, HAMMER_CORRECTION_TRACE_DIST, vEnd)
-	xs_vec_add(vOrigin, vEnd, vEnd)
+	new Float:vEyeOrigin[3], Float:vViewOfs[3]
+	get_entvar(iPlayer, var_origin, vEyeOrigin)
+	get_entvar(iPlayer, var_view_ofs, vViewOfs)
+	xs_vec_add(vEyeOrigin, vViewOfs, vEyeOrigin)
 
-	new pTrace = create_tr2()
-	engfunc(EngFunc_TraceLine, vOrigin, vEnd, DONT_IGNORE_MONSTERS, iPlayer, pTrace)
-	get_tr2(pTrace, TR_vecEndPos, vEnd)
-	free_tr2(pTrace)
+	new Float:vHammerOrigin[3], Float:vToHammer[3]
+	get_entvar(iHammerEnt, var_origin, vHammerOrigin)
+	xs_vec_sub(vHammerOrigin, vEyeOrigin, vToHammer)
 
-	xs_vec_copy(vEnd, Player[iPlayer][PlrHammerCorrectionTarget])
-	Player[iPlayer][PlrHammerHasCorrectionTarget] = true
+	vector_to_angle(vToHammer, Player[iPlayer][PlrHammerCorrectionBasePseudo])
+
+	Player[iPlayer][PlrHammerCorrectionActive] = true
 
 	return PLUGIN_HANDLED
+}
+
+Float:hammer_angle_diff(Float:fA, Float:fB)
+{
+	new Float:fDiff = fA - fB
+	while (fDiff > 180.0)
+		fDiff -= 360.0
+	while (fDiff < -180.0)
+		fDiff += 360.0
+	return fDiff
 }
 
 public efk_ability2(iPlayer)
@@ -764,8 +772,7 @@ hammer_throw(iPlayer)
 	Player[iPlayer][PlrHammerStuckCoffin] = 0
 	Player[iPlayer][PlrHammerInTornado] = false
 	Player[iPlayer][PlrHammerThrowTime] = get_gametime()
-	Player[iPlayer][PlrHammerHasCorrectionTarget] = false
-	Player[iPlayer][PlrHammerLastThinkTime] = 0.0
+	Player[iPlayer][PlrHammerCorrectionActive] = false
 	Player[iPlayer][PlrHammerArcReturn] = false
 
 	if (Player[iPlayer][PairEndTime] > get_gametime())
@@ -1105,7 +1112,7 @@ hammer_update_pair_glow(iOwner, iHammerEnt)
 	if (fGameTime >= Player[iOwner][PlrHammerPairEndTime])
 	{
 		Player[iOwner][PlrHammerCarriesPair] = false
-		Player[iOwner][PlrHammerHasCorrectionTarget] = false
+		Player[iOwner][PlrHammerCorrectionActive] = false
 		set_entvar(iHammerEnt, var_renderfx, kRenderFxNone)
 		set_entvar(iHammerEnt, var_renderamt, 0.0)
 		return
@@ -1126,58 +1133,55 @@ hammer_update_pair_glow(iOwner, iHammerEnt)
 	set_entvar(iHammerEnt, var_rendercolor, vColor)
 	set_entvar(iHammerEnt, var_renderamt, HAMMER_PAIR_GLOW_AMT * fFraction)
 
-	if (Player[iOwner][PlrHammerHasCorrectionTarget] && !Player[iOwner][PlrHammerReturning]
+	if (Player[iOwner][PlrHammerCorrectionActive] && !Player[iOwner][PlrHammerReturning]
 		&& get_entvar(iHammerEnt, var_movetype) != MOVETYPE_NONE)
 		hammer_apply_correction(iOwner, iHammerEnt)
 }
 
 hammer_apply_correction(iOwner, iHammerEnt)
 {
-	new Float:fGameTime = get_gametime()
-	new Float:fDt = Player[iOwner][PlrHammerLastThinkTime] > 0.0
-		? fGameTime - Player[iOwner][PlrHammerLastThinkTime]
-		: 0.0
-	Player[iOwner][PlrHammerLastThinkTime] = fGameTime
-
-	if (fDt <= 0.0 || fDt > 0.5)
-		return
-
-	new Float:vOrigin[3], Float:vVelocity[3]
-	get_entvar(iHammerEnt, var_origin, vOrigin)
+	new Float:vVelocity[3]
 	get_entvar(iHammerEnt, var_velocity, vVelocity)
 
 	new Float:fSpeed = xs_vec_len(vVelocity)
 	if (fSpeed <= 0.0)
 		return
 
+	new Float:vRealAim[3]
+	get_entvar(iOwner, var_v_angle, vRealAim)
+
+	new Float:vPseudoAim[3]
+	vPseudoAim[0] = Player[iOwner][PlrHammerCorrectionBasePseudo][0]
+		+ hammer_angle_diff(vRealAim[0], Player[iOwner][PlrHammerCorrectionBaseReal][0]) * HAMMER_CORRECTION_GAIN
+	vPseudoAim[1] = Player[iOwner][PlrHammerCorrectionBasePseudo][1]
+		+ hammer_angle_diff(vRealAim[1], Player[iOwner][PlrHammerCorrectionBaseReal][1]) * HAMMER_CORRECTION_GAIN
+	vPseudoAim[2] = 0.0
+
+	if (vPseudoAim[0] > 89.0)
+		vPseudoAim[0] = 89.0
+	else if (vPseudoAim[0] < -89.0)
+		vPseudoAim[0] = -89.0
+
 	new Float:vDir[3]
-	xs_vec_copy(vVelocity, vDir)
-	xs_vec_normalize(vDir, vDir)
+	angle_vector(vPseudoAim, ANGLEVECTOR_FORWARD, vDir)
 
-	new Float:vToTarget[3]
-	xs_vec_sub(Player[iOwner][PlrHammerCorrectionTarget], vOrigin, vToTarget)
+	new Float:vEye[3], Float:vViewOfs[3], Float:vHammerOrigin[3], Float:vFromEye[3]
+	get_entvar(iOwner, var_origin, vEye)
+	get_entvar(iOwner, var_view_ofs, vViewOfs)
+	xs_vec_add(vEye, vViewOfs, vEye)
+	get_entvar(iHammerEnt, var_origin, vHammerOrigin)
+	xs_vec_sub(vHammerOrigin, vEye, vFromEye)
 
-	if (xs_vec_len(vToTarget) < HAMMER_CATCH_RADIUS)
-	{
-		Player[iOwner][PlrHammerHasCorrectionTarget] = false
-		return
-	}
-
-	xs_vec_normalize(vToTarget, vToTarget)
-
-	new Float:fBlend = floatmin(1.0, fDt * HAMMER_CORRECTION_TURN_RATE)
-
-	new Float:vNewDir[3]
-	vNewDir[0] = vDir[0] + (vToTarget[0] - vDir[0]) * fBlend
-	vNewDir[1] = vDir[1] + (vToTarget[1] - vDir[1]) * fBlend
-	vNewDir[2] = vDir[2] + (vToTarget[2] - vDir[2]) * fBlend
-	xs_vec_normalize(vNewDir, vNewDir)
-
-	xs_vec_mul_scalar(vNewDir, fSpeed, vNewDir)
-	set_entvar(iHammerEnt, var_velocity, vNewDir)
+	new Float:vTarget[3], Float:vNewVelocity[3]
+	xs_vec_mul_scalar(vDir, xs_vec_len(vFromEye) + HAMMER_CORRECTION_LOOKAHEAD, vTarget)
+	xs_vec_add(vEye, vTarget, vTarget)
+	xs_vec_sub(vTarget, vHammerOrigin, vNewVelocity)
+	xs_vec_normalize(vNewVelocity, vNewVelocity)
+	xs_vec_mul_scalar(vNewVelocity, fSpeed, vNewVelocity)
+	set_entvar(iHammerEnt, var_velocity, vNewVelocity)
 
 	new Float:vAngles[3]
-	vector_to_angle(vNewDir, vAngles)
+	vector_to_angle(vNewVelocity, vAngles)
 	set_entvar(iHammerEnt, var_angles, vAngles)
 }
 
@@ -1239,7 +1243,8 @@ hammer_check_players_hitbox(iHammerEnt, iOwner)
 	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, 64.0)) > 0)
 	{
 		if (iTarget > MaxClients || iTarget == iOwner || !is_user_alive(iTarget) || get_user_team(iTarget) == iTeam
-			|| get_entvar(iTarget, var_solid) == SOLID_NOT)
+			|| get_entvar(iTarget, var_solid) == SOLID_NOT
+			|| kc_player_in_protection(iTarget))
 			continue
 
 		new Float:vTargetOrigin[3], Float:vTargetMins[3], Float:vTargetMaxs[3]
@@ -1358,6 +1363,50 @@ hammer_emit_hit_sound(iHammerEnt)
 	engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, random(2) ? SOUND_KNIFE_HIT1 : SOUND_KNIFE_HIT2, 1.0, ATTN_NORM, 0, PITCH_NORM)
 }
 
+hammer_impact_knockback(iOwner, const Float:vOrigin[3])
+{
+	new Float:vTargetOrigin[3], Float:vTargetVelocity[3]
+	new iTeam = get_user_team(iOwner)
+
+	new iTarget = 0
+	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, IMPACT_RADIUS)) <= MaxClients)
+	{
+		if (iTarget < 1)
+			break
+
+		if (iTarget == iOwner)
+		{
+			send_msg_ScreenShake((1<<14), (1<<14), (1<<14), MSG_ONE, _, iTarget)
+			continue
+		}
+
+		if (!is_user_alive(iTarget) || kc_player_check_game_flag(iTarget, PLGF_IN_UNABILITY))
+			continue
+
+		send_msg_ScreenShake((1<<14), (1<<14), (1<<14), MSG_ONE, _, iTarget)
+
+		if (get_user_team(iTarget) == iTeam || kc_player_in_protection(iTarget))
+			continue
+
+		if (g_bHammerThrowHit[iOwner][iTarget])
+			continue
+
+		g_bHammerThrowHit[iOwner][iTarget] = true
+
+		get_entvar(iTarget, var_origin, vTargetOrigin)
+		xs_vec_sub(vTargetOrigin, vOrigin, vTargetVelocity)
+		xs_vec_normalize(vTargetVelocity, vTargetVelocity)
+		xs_vec_mul_scalar(vTargetVelocity, IMPACT_KNOCKBACK, vTargetVelocity)
+		vTargetVelocity[2] = 250.0
+
+		kc_player_unfreeze(iTarget)
+		set_member(iTarget, m_flVelocityModifier, 0.0)
+		set_entvar(iTarget, var_flags, get_entvar(iTarget, var_flags) & ~FL_ONGROUND)
+		set_entvar(iTarget, var_velocity, vTargetVelocity)
+		kc_player_slow(iTarget, IMPACT_SLOW_MUL, IMPACT_SLOW_TIME)
+	}
+}
+
 hammer_hit_world(iHammerEnt, iOwner)
 {
 	remove_task(TASK_HAMMER_FLIGHT_TIMEOUT + iOwner)
@@ -1415,46 +1464,7 @@ hammer_hit_world(iHammerEnt, iOwner)
 	draw_lightning_strike(vOrigin)
 	engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_HITWALL, 1.0, ATTN_NORM, 0, PITCH_NORM)
 
-	new Float:vTargetOrigin[3], Float:vTargetVelocity[3]
-	new iTeam = get_user_team(iOwner)
-
-	new iTarget = 0
-	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, IMPACT_RADIUS)) <= MaxClients)
-	{
-		if (iTarget < 1)
-			break
-
-		if (iTarget == iOwner)
-		{
-			send_msg_ScreenShake((1<<14), (1<<14), (1<<14), MSG_ONE, _, iTarget)
-			continue
-		}
-
-		if (!is_user_alive(iTarget) || kc_player_check_game_flag(iTarget, PLGF_IN_UNABILITY))
-			continue
-
-		send_msg_ScreenShake((1<<14), (1<<14), (1<<14), MSG_ONE, _, iTarget)
-
-		if (get_user_team(iTarget) == iTeam)
-			continue
-
-		if (g_bHammerThrowHit[iOwner][iTarget])
-			continue
-
-		g_bHammerThrowHit[iOwner][iTarget] = true
-
-		get_entvar(iTarget, var_origin, vTargetOrigin)
-		xs_vec_sub(vTargetOrigin, vOrigin, vTargetVelocity)
-		xs_vec_normalize(vTargetVelocity, vTargetVelocity)
-		xs_vec_mul_scalar(vTargetVelocity, IMPACT_KNOCKBACK, vTargetVelocity)
-		vTargetVelocity[2] = 250.0
-
-		kc_player_unfreeze(iTarget)
-		set_member(iTarget, m_flVelocityModifier, 0.0)
-		set_entvar(iTarget, var_flags, get_entvar(iTarget, var_flags) & ~FL_ONGROUND)
-		set_entvar(iTarget, var_velocity, vTargetVelocity)
-		kc_player_slow(iTarget, IMPACT_SLOW_MUL, IMPACT_SLOW_TIME)
-	}
+	hammer_impact_knockback(iOwner, vOrigin)
 
 	set_entvar(iHammerEnt, var_velocity, NULL_VECTOR)
 	set_entvar(iHammerEnt, var_avelocity, NULL_VECTOR)
@@ -1523,6 +1533,13 @@ hammer_stick_coffin(iHammerEnt, iOwner, iCoffin)
 	draw_landing_effect(iHammerEnt)
 	draw_rocks(vOrigin)
 	draw_lightning_strike(vOrigin)
+
+	if (get_entvar(iCoffin, var_skin) + 1 == get_user_team(iOwner))
+	{
+		new Float:vCoffinOrigin[3]
+		get_entvar(iCoffin, var_origin, vCoffinOrigin)
+		hammer_impact_knockback(iOwner, vCoffinOrigin)
+	}
 	engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_HITWALL, 1.0, ATTN_NORM, 0, PITCH_NORM)
 
 	set_entvar(iHammerEnt, var_velocity, NULL_VECTOR)
@@ -1589,7 +1606,6 @@ hammer_start_return(iOwner, iHammerEnt)
 	}
 
 	Player[iOwner][PlrHammerReturning] = true
-	Player[iOwner][PlrHammerLastThinkTime] = 0.0
 	kc_player_set_game_flag(iOwner, PLGF_IN_HAMMER_RETURNING)
 
 	remove_task(TASK_HAMMER_FLIGHT_TIMEOUT + iOwner)
@@ -1868,7 +1884,7 @@ hammer_return_complete(iOwner, iHammerEnt)
 		Player[iOwner][PlrHammerCarriesPair] = false
 	}
 
-	Player[iOwner][PlrHammerHasCorrectionTarget] = false
+	Player[iOwner][PlrHammerCorrectionActive] = false
 	Player[iOwner][PlrHammerArcReturn] = false
 
 	if (kc_player_get_capture(iOwner) != CAPTURE_NONE)
@@ -1951,7 +1967,7 @@ hammer_cleanup(iPlayer)
 	Player[iPlayer][PlrHammerRecallBoosted] = false
 	Player[iPlayer][PlrHammerStuckCoffin] = 0
 	Player[iPlayer][PlrHammerCarriesPair] = false
-	Player[iPlayer][PlrHammerHasCorrectionTarget] = false
+	Player[iPlayer][PlrHammerCorrectionActive] = false
 	Player[iPlayer][PlrHammerArcReturn] = false
 
 	kc_player_set_ability3_name(iPlayer, "")
