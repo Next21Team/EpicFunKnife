@@ -47,11 +47,14 @@ new const PLUGIN[] = "EFK: Necro Knife"
 #define MINION_MOVE_COMMAND_RANGE	500.0
 #define MINION_FORMATION_LEASH	150.0
 #define MOVE_WINDUP_TIME	0.3
+#define ATTACK_WINDUP_TIME	0.3
+#define ATTACK_RANGE_TOLERANCE	30.0
+#define ATTACK_ANIM_LOCK_TIME	0.5
 #define MOVE_HIT_IGNORE_TIME	0.5
 #define CENTAUR_FOLLOW_STOP_DISTANCE	100.0
 #define CENTAUR_AGGRESSION_RADIUS	1000.0
-#define MINION_RETURN_SPEED	300.0
-#define ZOMBIE_SPEED		280.0
+#define MINION_RETURN_SPEED	250.0
+#define ZOMBIE_SPEED		250.0
 #define MIN_MINION_SPEED		0.000001
 #define CANNIBALIZE_WINDUP_TIME	0.3
 #define IMPULSE_NECRO_LIFEBAR	30000100
@@ -65,14 +68,14 @@ new const SOUND_KNIFE_STAB[] = "next21_efk/necro_knife_stab.wav"
 new const SOUND_KNIFE_HITWALL[] = "next21_efk/necro_knife_hitwall.wav"
 new const SOUND_KNIFE_SLASH[] = "next21_efk/necro_knife_slash.wav"
 
-new const MODEL_ZOMBIE[] = "models/next21_efk/zombie.mdl"
+new const MODEL_ZOMBIE[] = "models/next21_efk/zombie_v2.mdl"
 new const MODEL_CENTAUR[] = "models/next21_efk/centaur.mdl"
 
 #define SPIT_DAMAGE		20.0
 #define SPIT_LIFETIME	45.0
 
 new const MODEL_SPIT[] = "models/next21_efk/crimson_spore.mdl"
-new const MODEL_MINION_LIFEBAR[] = "sprites/next21_efk/lifebar_water_mod2.spr"
+new const MODEL_MINION_LIFEBAR[] = "sprites/next21_efk/lifebar_necro.spr"
 new const SZ_ENV_SPRITE[] = "env_sprite"
 
 new const SOUND_SOUL[] = "next21_efk/soul_pulse.wav"
@@ -482,7 +485,7 @@ necro_zombie_dash(iPlayer, iSlot)
 
 	new iAimEnt = rg_get_aim_origin(iPlayer, vAimOrigin)
 	new iTarget
-	if (is_entity(iAimEnt) && necro_is_enemy_entity(iPlayer, iAimEnt))
+	if (is_entity_player(iAimEnt) && necro_is_enemy_entity(iPlayer, iAimEnt))
 	{
 		get_entvar(iAimEnt, var_origin, vTargetOrigin)
 		if (get_distance_f(vOrigin, vTargetOrigin) <= MINION_TARGET_RADIUS)
@@ -492,7 +495,24 @@ necro_zombie_dash(iPlayer, iSlot)
 	if (!iTarget)
 	{
 		new iCurrent = Player[iPlayer][PlrNpcAction][iSlot] == NPC_ACTION_TARGET ? Player[iPlayer][PlrNpcActionTarget][iSlot] : 0
-		iTarget = find_necro_target(iPlayer, vOrigin, MINION_TARGET_RADIUS, iCurrent, vTargetOrigin)
+		new Float:fBest = MINION_TARGET_RADIUS, Float:vCandidate[3]
+		for (new i = 1; i <= MaxClients; i++)
+		{
+			if (!necro_is_enemy_entity(iPlayer, i) || kc_player_get_visibility(i) >= VIS_TRANS)
+				continue
+
+			get_entvar(i, var_origin, vCandidate)
+			new Float:fDist = get_distance_f(vOrigin, vCandidate)
+			if (i == iCurrent)
+				fDist = 0.0
+
+			if (fDist <= fBest)
+			{
+				fBest = fDist
+				iTarget = i
+				xs_vec_copy(vCandidate, vTargetOrigin)
+			}
+		}
 	}
 
 	if (!iTarget)
@@ -526,7 +546,7 @@ necro_command_target(iPlayer, iSlot)
 
 	new Float:fAimDistance = get_distance_f(vPlayerOrigin, vAimOrigin)
 
-	new bool:bTargetable = bool:((is_entity_player(iAimEnt) && necro_is_enemy_entity(iPlayer, iAimEnt))
+	new bool:bTargetable = bool:(necro_is_enemy_entity(iPlayer, iAimEnt)
 		|| (is_entity(iAimEnt) && get_entvar(iAimEnt, var_impulse) == IMPULSE_PRESENT
 			&& !(get_entvar(iAimEnt, var_flags) & FL_KILLME)))
 
@@ -825,7 +845,7 @@ minion_create_lifebar(iOwner, iSlot, iMinion)
 	set_entvar(iBar, var_aiment, iMinion)
 	set_entvar(iBar, var_view_ofs, Float:{0.0, 0.0, 48.0})
 	set_entvar(iBar, var_scale, 0.15)
-	set_entvar(iBar, var_effects, EF_NODRAW)
+	set_entvar(iBar, var_effects, 0)
 	set_entvar(iBar, var_rendercolor, Float:{0.0, 255.0, 0.0})
 	set_entvar(iBar, var_rendermode, kRenderNormal)
 	set_entvar(iBar, var_impulse, IMPULSE_NECRO_LIFEBAR)
@@ -850,6 +870,11 @@ public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 
 	if (iImpulse == IMPULSE_ZOMBIE)
 	{
+		new Float:vVariant[3]
+		get_entvar(ent, var_vuser1, vVariant)
+		if (vVariant[0] > 0.5)
+			set_es(es_state, ES_Skin, get_entvar(ent, var_skin) + 2)
+
 		if (ent == Player[host][PlrAimedMinion])
 		{
 			set_es(es_state, ES_RenderMode, kRenderNormal)
@@ -871,7 +896,7 @@ public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 		return FMRES_IGNORED
 	}
 
-	if (!Player[host][PlrIsAlive] || Player[host][PlrTeam] != Player[iOwner][PlrTeam])
+	if (host != iOwner && get_entvar(host, var_iuser2) != iOwner)
 	{
 		set_es(es_state, ES_Effects, EF_NODRAW)
 		return FMRES_IGNORED
@@ -948,7 +973,7 @@ bool:minion_spawn_slot(iOwner, iSlot)
 	if (Player[iOwner][PlrForm] == FORM_CENTAUR)
 		iEnt = create_centaur(vSpawnOrigin, vAngles, 0.0, iOwner)
 	else
-		iEnt = create_zombie(vSpawnOrigin, vAngles, iOwner)
+		iEnt = create_zombie(vSpawnOrigin, vAngles, iOwner, iSlot)
 
 	if (is_nullent(iEnt))
 		return false
@@ -1050,7 +1075,7 @@ necro_spawn_split_zombie(iOwner, iSlot, const Float:vBase[3], Float:vAngles[3], 
 {
 	new Float:vSpawn[3], iZombie = 0
 	if (necro_find_spawn_point(vBase, fYaw, iOwner, vSpawn))
-		iZombie = create_zombie(vSpawn, vAngles, iOwner)
+		iZombie = create_zombie(vSpawn, vAngles, iOwner, iSlot)
 
 	if (!is_nullent(iZombie))
 	{
@@ -1522,7 +1547,7 @@ necro_get_formation_point(iOwner, iSlot, Float:vResult[3])
 	get_entvar(iOwner, var_origin, vOwnerOrigin)
 	get_entvar(iOwner, var_v_angle, vAngles)
 
-	new Float:fYaw = vAngles[1] + 180.0 + (iSlot == 0 ? MINION_SPAWN_ANGLE : -MINION_SPAWN_ANGLE)
+	new Float:fYaw = vAngles[1] + 180.0 + (iSlot == 0 ? -MINION_SPAWN_ANGLE : MINION_SPAWN_ANGLE)
 	vResult[0] = vOwnerOrigin[0] + floatcos(fYaw, degrees) * MINION_SPAWN_DISTANCE
 	vResult[1] = vOwnerOrigin[1] + floatsin(fYaw, degrees) * MINION_SPAWN_DISTANCE
 	vResult[2] = vOwnerOrigin[2]
@@ -1611,7 +1636,7 @@ bool:necro_command_destination(iOwner, iSelfSlot, bool:bCentaur, const Float:vOr
 necro_set_move_animation(iEnt, bool:bCentaur)
 {
 	new iSequence = bCentaur ? 2 : 1
-	if (get_entvar(iEnt, var_sequence) != iSequence)
+	if (get_entvar(iEnt, var_sequence) != iSequence && get_gametime() >= Float:get_entvar(iEnt, var_fuser4))
 	{
 		set_entvar(iEnt, var_animtime, 0.0)
 		set_entvar(iEnt, var_frame, 0.0)
@@ -1750,6 +1775,7 @@ necro_attack_entity(iMinion, iOwner, iTarget, bool:bCentaur)
 
 necro_play_attack_animation(iMinion, bool:bCentaur)
 {
+	set_entvar(iMinion, var_fuser4, get_gametime() + ATTACK_ANIM_LOCK_TIME)
 	set_entvar(iMinion, var_animtime, get_gametime())
 	set_entvar(iMinion, var_frame, 0.0)
 
@@ -1784,7 +1810,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 	new Float:fGameTime = get_gametime(), Float:vOrigin[3], Float:vDestination[3]
 	get_entvar(iMinion, var_origin, vOrigin)
 
-	new Float:fLastDamage = Float:get_entvar(iMinion, var_fuser1)
+	new Float:fLastDamage = Float:get_entvar(iMinion, var_fuser3)
 	if (fLastDamage > 0.0 && fGameTime - fLastDamage >= ZOMBIE_REGEN_DELAY)
 	{
 		new Float:fMaxHealth = bCentaur ? CENTAUR_HEALTH : ZOMBIE_HEALTH
@@ -1796,6 +1822,23 @@ necro_minion_think(iMinion, bool:bCentaur)
 			set_entvar(iMinion, var_health, floatmin(fMaxHealth, fHealth + ZOMBIE_REGEN_RATE * fDt))
 		}
 		set_entvar(iMinion, var_fuser2, fGameTime)
+	}
+
+	new iPendingTarget = get_entvar(iMinion, var_npctarget)
+	if (iPendingTarget)
+	{
+		set_entvar(iMinion, var_npctarget, 0)
+		set_entvar(iMinion, var_nextthink, fGameTime + MINION_ATTACK_INTERVAL - ATTACK_WINDUP_TIME)
+
+		if (!kc_player_in_silence(iOwner) && is_entity(iPendingTarget) && !(get_entvar(iPendingTarget, var_flags) & FL_KILLME)
+			&& !(is_entity_player(iPendingTarget) && !Player[iPendingTarget][PlrIsAlive]))
+		{
+			new Float:vPendingOrigin[3]
+			get_entvar(iPendingTarget, var_origin, vPendingOrigin)
+			if (get_distance_f(vOrigin, vPendingOrigin) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZOMBIE_ATTACK_RANGE) + ATTACK_RANGE_TOLERANCE)
+				necro_attack_entity(iMinion, iOwner, iPendingTarget, bCentaur)
+		}
+		return
 	}
 
 	if (Player[iOwner][PlrLaserPendingAt] > 0.0 || Player[iOwner][PlrLaserIndicateEndAt] > 0.0
@@ -1915,14 +1958,13 @@ necro_minion_think(iMinion, bool:bCentaur)
 			return
 		}
 
-		set_entvar(iMinion, var_npctarget, iTarget)
 		npc_TurnToTarget(iMinion, vOrigin, vDestination)
-		necro_attack_entity(iMinion, iOwner, iTarget, bCentaur)
+		set_entvar(iMinion, var_velocity, NULL_VECTOR)
 		necro_play_attack_animation(iMinion, bCentaur)
+		set_entvar(iMinion, var_npctarget, iTarget)
 		if (iAttackSlot >= 0)
 			Player[iOwner][PlrMinionNextAttackAt][iAttackSlot] = fGameTime + MINION_ATTACK_INTERVAL
-		set_entvar(iMinion, var_npctarget, 0)
-		set_entvar(iMinion, var_nextthink, fGameTime + MINION_ATTACK_INTERVAL)
+		set_entvar(iMinion, var_nextthink, fGameTime + ATTACK_WINDUP_TIME)
 		return
 	}
 
@@ -2073,7 +2115,7 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage)
 
 	if (fDamage < fHealth)
 	{
-		set_entvar(iZombieEnt, var_fuser1, fGameTime)
+		set_entvar(iZombieEnt, var_fuser3, fGameTime)
 
 		engfunc(EngFunc_EmitSound, iZombieEnt, CHAN_AUTO,
 			SOUNDS_ZOMBIE_PAIN[random(sizeof SOUNDS_ZOMBIE_PAIN)],
@@ -2115,7 +2157,7 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage)
 
 zombie_play_idle(iZombieEnt, Float:fNextThink=0.1)
 {
-	if (get_entvar(iZombieEnt, var_sequence) != 0)
+	if (get_entvar(iZombieEnt, var_sequence) != 0 && get_gametime() >= Float:get_entvar(iZombieEnt, var_fuser4))
 	{
 		set_entvar(iZombieEnt, var_animtime, 0.0)
 		set_entvar(iZombieEnt, var_frame, 0.0)
@@ -2223,7 +2265,7 @@ npc_Move(ent, Float:fSpeed)
 	set_entvar(ent, var_velocity, vflVelocity)
 }
 
-create_zombie(Float:vOrigin[3], Float:vAngles[3], iOwner)
+create_zombie(Float:vOrigin[3], Float:vAngles[3], iOwner, iSlot = 0)
 {
 	new iTeam = Player[iOwner][PlrTeam]
 	new iZombieEnt = rg_create_entity(SZ_EXPLOSION)
@@ -2241,6 +2283,9 @@ create_zombie(Float:vOrigin[3], Float:vAngles[3], iOwner)
 	set_entvar(iZombieEnt, var_solid, SOLID_BBOX)
 	set_entvar(iZombieEnt, var_movetype, MOVETYPE_PUSHSTEP)
 	set_entvar(iZombieEnt, var_skin, iTeam - 1)
+	new Float:vVariant[3]
+	vVariant[0] = iSlot == 1 ? 1.0 : 0.0
+	set_entvar(iZombieEnt, var_vuser1, vVariant)
 	set_entvar(iZombieEnt, var_rendermode, kRenderNormal)
 
 	set_entvar(iZombieEnt, var_takedamage, 1.0)
