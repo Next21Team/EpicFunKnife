@@ -611,7 +611,15 @@ public fw_HammerCorrection(iPlayer)
 	get_entvar(iHammerEnt, var_origin, vHammerOrigin)
 	xs_vec_sub(vHammerOrigin, vEyeOrigin, vToHammer)
 
-	vector_to_angle(vToHammer, Player[iPlayer][PlrHammerCorrectionBasePseudo])
+	new Float:fToHammerLen = xs_vec_len(vToHammer)
+	if (fToHammerLen < 1.0)
+		xs_vec_copy(vRealAim, Player[iPlayer][PlrHammerCorrectionBasePseudo])
+	else
+	{
+		Player[iPlayer][PlrHammerCorrectionBasePseudo][0] = -floatasin(vToHammer[2] / fToHammerLen, degrees)
+		Player[iPlayer][PlrHammerCorrectionBasePseudo][1] = floatatan2(vToHammer[1], vToHammer[0], degrees)
+		Player[iPlayer][PlrHammerCorrectionBasePseudo][2] = 0.0
+	}
 
 	Player[iPlayer][PlrHammerCorrectionActive] = true
 
