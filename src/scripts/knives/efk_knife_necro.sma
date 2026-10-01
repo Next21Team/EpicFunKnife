@@ -108,10 +108,29 @@ new const SOUND_SOUL[] = "next21_efk/soul_pulse.wav"
 
 #define CORPSE_HEAL				50.0
 
+#define MINION_CHILL_SPEED_MUL		0.4
+#define MINION_SLOW_SPEED_MUL		0.35
+#define MINION_SLOW_TIME			3.0
+#define MINION_BURN_CYCLES			13
+#define MINION_BURN_TICK			0.2
+#define MINION_BURN_DAMAGE			2.0
+#define MINION_BURN_CRIT_DAMAGE		6.0
+#define MINION_BURN_CRIT_CHANCE		8
+#define MINION_FROZEN_HIT_DAMAGE	20.0
+#define MINION_STATUS_TICK			0.1
+#define TASK_MINION_STATUS			35100
+#define MAX_ENTITIES_NUM			2048
+
 #define SOUL_HEAL_VALUE			15.0
 #define SOUL_HEAL_RADIUS		200.0
 
 new const SZ_EXPLOSION[]		= "env_explosion"
+new const SZ_INFO_TARGET[]		= "info_target"
+
+new const MODEL_ICEBLOCK[]		= "models/next21_efk/ice_block.mdl"
+new const SOUND_FROST_HIT[]		= "next21_efk/frost_hit.wav"
+new const SOUND_ICEBLOCK_CRASH[]	= "next21_efk/ice_block_crash.wav"
+new const SPRITE_FLAME[]		= "sprites/next21_efk/flame.spr"
 
 new const _CLASSNAME_ZOMBIE[]		= CLASSNAME_ZOMBIE
 new const _CLASSNAME_ZOMBIE_SPIT[]	= CLASSNAME_ZOMBIE_SPIT
@@ -186,8 +205,13 @@ enum _:PlayerData
 
 new
 	g_iKnifeId, g_ePlayerData[MAX_PLAYERS][PlayerData],
+	Float:g_fMinionFrozenUntil[MAX_ENTITIES_NUM + 1], Float:g_fMinionChilledUntil[MAX_ENTITIES_NUM + 1],
+	Float:g_fMinionSlowUntil[MAX_ENTITIES_NUM + 1],
+	g_iMinionBurnCycles[MAX_ENTITIES_NUM + 1], g_iMinionBurnAttacker[MAX_ENTITIES_NUM + 1],
+	Float:g_fMinionBurnNextTick[MAX_ENTITIES_NUM + 1], g_iMinionIceBlock[MAX_ENTITIES_NUM + 1],
+	bool:g_bMinionDot,
 	g_pShockwaveSpr, g_pBloodSpr, g_pBloodSpraySpr, g_pGibs[5], g_pKnifePMdl,
-	g_pPointSpr, g_pLaserbeamSpr
+	g_pFlameSpr, g_pPointSpr, g_pLaserbeamSpr
 
 new Float:g_fNpcActionOrigin[MAX_PLAYERS][MAX_MINION_SLOTS][3]
 #define PlrActionOrigin(%1,%2) g_fNpcActionOrigin[%1 - 1][%2]
@@ -213,6 +237,10 @@ public plugin_precache()
 		precache_sound(SOUNDS_ZOMBIE_PAIN[i])
 
 	precache_model(MODEL_ZOMBIE)
+	precache_model(MODEL_ICEBLOCK)
+	precache_sound(SOUND_FROST_HIT)
+	precache_sound(SOUND_ICEBLOCK_CRASH)
+	g_pFlameSpr = precache_model(SPRITE_FLAME)
 	precache_model(MODEL_CENTAUR)
 	precache_model(MODEL_SPIT)
 	precache_model(MODEL_MINION_LIFEBAR)
@@ -270,6 +298,8 @@ public plugin_init()
 
 	RegisterHam(Ham_TakeDamage, SZ_EXPLOSION, "npc_TakeDamage")
 	RegisterHam(Ham_Classify, SZ_EXPLOSION, "npc_Classify")
+
+	set_task(MINION_STATUS_TICK, "necro_status_tick", TASK_MINION_STATUS, _, _, "b")
 }
 
 public client_putinserver(iPlayer)
@@ -468,7 +498,7 @@ necro_zombie_dash(iPlayer, iSlot)
 		return
 
 	new iMinion = Player[iPlayer][PlrMinionEnt][iSlot]
-	if (!iMinion || !is_entity(iMinion) || (get_entvar(iMinion, var_flags) & FL_KILLME))
+	if (!iMinion || !is_entity(iMinion) || (get_entvar(iMinion, var_flags) & FL_KILLME) || necro_minion_is_frozen(iMinion))
 		return
 
 	new Float:fGameTime = get_gametime()
@@ -644,12 +674,17 @@ Float:necro_get_aggression_radius(iOwner)
 	return fRadius
 }
 
-Float:necro_get_move_speed(bool:bReturning=false)
+Float:necro_get_move_speed(iMinion, bool:bReturning=false)
 {
-	if (bReturning)
-		return MINION_RETURN_SPEED
+	new Float:fSpeed = bReturning ? MINION_RETURN_SPEED : ZOMBIE_SPEED
+	new Float:fMul = 1.0
+	if (necro_minion_is_chilled(iMinion))
+		fMul = MINION_CHILL_SPEED_MUL
+	if (g_fMinionSlowUntil[iMinion] > get_gametime())
+		fMul = floatmin(fMul, MINION_SLOW_SPEED_MUL)
+	fSpeed *= fMul
 
-	return ZOMBIE_SPEED
+	return fSpeed
 }
 
 bool:necro_find_minion_slot(iEnt, &iOwner, &iSlot)
@@ -1365,7 +1400,7 @@ necro_centaur_laser(iPlayer)
 {
 	new iCentaur = Player[iPlayer][PlrMinionEnt][MINION_SLOT_CENTAUR]
 	new Float:fGameTime = get_gametime()
-	if (!iCentaur || !is_entity(iCentaur) || (get_entvar(iCentaur, var_flags) & FL_KILLME)
+	if (!iCentaur || !is_entity(iCentaur) || (get_entvar(iCentaur, var_flags) & FL_KILLME) || necro_minion_is_frozen(iCentaur)
 		|| Player[iPlayer][PlrLaserLockTime] > fGameTime
 		|| Player[iPlayer][PlrLaserPendingAt] > 0.0 || Player[iPlayer][PlrLaserIndicateEndAt] > 0.0
 		|| Player[iPlayer][PlrZombieCharge][MINION_SLOT_CENTAUR] < 100.0)
@@ -1804,6 +1839,17 @@ necro_minion_think(iMinion, bool:bCentaur)
 	new Float:fGameTime = get_gametime(), Float:vOrigin[3], Float:vDestination[3]
 	get_entvar(iMinion, var_origin, vOrigin)
 
+	if (necro_minion_is_frozen(iMinion))
+	{
+		new Float:vFrozenVelocity[3]
+		get_entvar(iMinion, var_velocity, vFrozenVelocity)
+		vFrozenVelocity[0] = 0.0
+		vFrozenVelocity[1] = 0.0
+		set_entvar(iMinion, var_velocity, vFrozenVelocity)
+		set_entvar(iMinion, var_nextthink, fGameTime + MINION_STATUS_TICK)
+		return
+	}
+
 	new Float:fLastDamage = Float:get_entvar(iMinion, var_fuser3)
 	if (fLastDamage > 0.0 && fGameTime - fLastDamage >= ZOMBIE_REGEN_DELAY)
 	{
@@ -1989,7 +2035,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 	}
 
 	npc_TurnToTarget(iMinion, vOrigin, vDestination)
-	npc_Move(iMinion, necro_get_move_speed(bReturning))
+	npc_Move(iMinion, necro_get_move_speed(iMinion, bReturning))
 	necro_set_move_animation(iMinion, bCentaur)
 	set_entvar(iMinion, var_nextthink, fGameTime + 0.1)
 }
@@ -2055,7 +2101,7 @@ public necro_centaur_think(iCentaurEnt)
 	necro_minion_think(iCentaurEnt, true)
 }
 
-public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage)
+public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits)
 {
 	if (get_entvar(iZombieEnt, var_impulse) != IMPULSE_ZOMBIE)
 		return HAM_IGNORED
@@ -2107,6 +2153,41 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage)
 	new Float:fHealth = Float:get_entvar(iZombieEnt, var_health)
 	get_entvar(iZombieEnt, var_origin, vOrigin)
 
+	new bool:bDamageChanged
+	if (!g_bMinionDot && (iDmgBits & DMG_NPC_SLOW))
+		necro_minion_slow(iZombieEnt)
+
+	if (g_bMinionDot)
+	{
+		if (fDamage < fHealth)
+		{
+			set_entvar(iZombieEnt, var_health, fHealth - fDamage)
+			set_entvar(iZombieEnt, var_fuser3, fGameTime)
+			return HAM_SUPERCEDE
+		}
+	}
+	else if (iDmgBits & DMG_SLOWFREEZE)
+	{
+		necro_minion_chill(iZombieEnt)
+		return HAM_SUPERCEDE
+	}
+	else if (iDmgBits & DMG_BURN)
+	{
+		necro_minion_burn(iZombieEnt, iAttacker)
+		return HAM_SUPERCEDE
+	}
+	else if (iDmgBits & DMG_FREEZE)
+	{
+		if (necro_minion_freeze(iZombieEnt))
+		{
+			fDamage += MINION_FROZEN_HIT_DAMAGE
+			SetHamParamFloat(4, fDamage)
+			bDamageChanged = true
+		}
+		else if (fDamage <= 0.0)
+			return HAM_SUPERCEDE
+	}
+
 	if (fDamage < fHealth)
 	{
 		set_entvar(iZombieEnt, var_fuser3, fGameTime)
@@ -2146,7 +2227,7 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage)
 		return HAM_SUPERCEDE
 	}
 
-	return HAM_IGNORED
+	return bDamageChanged ? HAM_OVERRIDE : HAM_IGNORED
 }
 
 zombie_play_idle(iZombieEnt, Float:fNextThink=0.1)
@@ -2158,6 +2239,243 @@ zombie_play_idle(iZombieEnt, Float:fNextThink=0.1)
 		set_entvar(iZombieEnt, var_sequence, 0)
 	}
 	set_entvar(iZombieEnt, var_nextthink, get_gametime() + fNextThink)
+}
+
+bool:necro_minion_is_frozen(iMinion)
+{
+	return bool:(g_fMinionFrozenUntil[iMinion] > get_gametime())
+}
+
+bool:necro_minion_is_chilled(iMinion)
+{
+	return bool:(g_fMinionChilledUntil[iMinion] > get_gametime())
+}
+
+necro_minion_update_glow(iMinion)
+{
+	if (necro_minion_is_frozen(iMinion) || necro_minion_is_chilled(iMinion))
+	{
+		set_entvar(iMinion, var_rendermode, kRenderNormal)
+		set_entvar(iMinion, var_renderfx, kRenderFxGlowShell)
+		set_entvar(iMinion, var_rendercolor, Float:{0.0, 180.0, 215.0})
+		set_entvar(iMinion, var_renderamt, 16.0)
+	}
+	else if (g_iMinionBurnCycles[iMinion])
+	{
+		set_entvar(iMinion, var_rendermode, kRenderNormal)
+		set_entvar(iMinion, var_renderfx, kRenderFxGlowShell)
+		set_entvar(iMinion, var_rendercolor, Float:{255.0, 110.0, 0.0})
+		set_entvar(iMinion, var_renderamt, 16.0)
+	}
+	else
+		set_entvar(iMinion, var_renderfx, kRenderFxNone)
+}
+
+necro_minion_remove_iceblock(iMinion, bool:bShatter)
+{
+	new iBlock = g_iMinionIceBlock[iMinion]
+	g_iMinionIceBlock[iMinion] = 0
+	if (!iBlock || !is_entity(iBlock))
+		return
+
+	if (bShatter)
+	{
+		new Float:vOrigin[3]
+		get_entvar(iBlock, var_origin, vOrigin)
+		send_msg_TE_IMPLOSION(vOrigin, 64, 10, 3)
+		send_msg_TE_SPARKS(vOrigin)
+		engfunc(EngFunc_EmitSound, iBlock, CHAN_BODY, SOUND_ICEBLOCK_CRASH, 1.0, ATTN_NORM, 0, PITCH_LOW)
+	}
+
+	rg_remove_entity(iBlock)
+}
+
+necro_minion_reset_status(iMinion)
+{
+	necro_minion_remove_iceblock(iMinion, false)
+	g_fMinionFrozenUntil[iMinion] = 0.0
+	g_fMinionChilledUntil[iMinion] = 0.0
+	g_fMinionSlowUntil[iMinion] = 0.0
+	g_iMinionBurnCycles[iMinion] = 0
+	g_iMinionBurnAttacker[iMinion] = 0
+	g_fMinionBurnNextTick[iMinion] = 0.0
+}
+
+necro_minion_slow(iMinion)
+{
+	if (g_fMinionFrozenUntil[iMinion] > get_gametime())
+		necro_minion_unfreeze(iMinion)
+
+	g_fMinionSlowUntil[iMinion] = get_gametime() + MINION_SLOW_TIME
+}
+
+bool:necro_minion_freeze(iMinion)
+{
+	if (necro_minion_is_frozen(iMinion))
+		return true
+
+	new Float:fGameTime = get_gametime()
+
+	g_iMinionBurnCycles[iMinion] = 0
+	g_fMinionChilledUntil[iMinion] = 0.0
+	g_fMinionFrozenUntil[iMinion] = fGameTime + FREEZE_TIME
+
+	new Float:vVelocity[3], Float:vOrigin[3], Float:vAngles[3]
+	get_entvar(iMinion, var_velocity, vVelocity)
+	vVelocity[0] = 0.0
+	vVelocity[1] = 0.0
+	set_entvar(iMinion, var_velocity, vVelocity)
+	set_entvar(iMinion, var_npctarget, 0)
+	set_entvar(iMinion, var_framerate, 0.0)
+	set_entvar(iMinion, var_nextthink, fGameTime + MINION_STATUS_TICK)
+
+	engfunc(EngFunc_EmitSound, iMinion, CHAN_BODY, SOUND_FROST_HIT, 1.0, ATTN_NORM, 0, PITCH_HIGH)
+
+	new iBlock = rg_create_entity(SZ_INFO_TARGET)
+	if (!is_nullent(iBlock))
+	{
+		engfunc(EngFunc_SetModel, iBlock, MODEL_ICEBLOCK)
+		set_entvar(iBlock, var_animtime, fGameTime)
+		set_entvar(iBlock, var_frame, 0.0)
+		set_entvar(iBlock, var_framerate, 0.7)
+		set_entvar(iBlock, var_sequence, 0)
+		set_entvar(iBlock, var_rendermode, kRenderNormal)
+		set_entvar(iBlock, var_renderfx, kRenderFxGlowShell)
+		set_entvar(iBlock, var_rendercolor, Float:{0.0, 180.0, 215.0})
+		set_entvar(iBlock, var_renderamt, 16.0)
+
+		vAngles[1] = random_float(0.0, 359.9)
+		set_entvar(iBlock, var_angles, vAngles)
+		get_entvar(iMinion, var_origin, vOrigin)
+		vOrigin[2] += 18.0
+		engfunc(EngFunc_SetOrigin, iBlock, vOrigin)
+		set_entvar(iBlock, var_origin, vOrigin)
+		engfunc(EngFunc_SetSize, iBlock, Float:{-8.0, -8.0, -4.0}, Float:{8.0, 8.0, 4.0})
+		set_entvar(iBlock, var_owner, iMinion)
+
+		SetThink(iBlock, "necro_iceblock_think")
+		set_entvar(iBlock, var_nextthink, fGameTime + 0.2)
+		g_iMinionIceBlock[iMinion] = iBlock
+	}
+
+	necro_minion_update_glow(iMinion)
+	return false
+}
+
+necro_minion_unfreeze(iMinion)
+{
+	g_fMinionFrozenUntil[iMinion] = 0.0
+	necro_minion_remove_iceblock(iMinion, true)
+	set_entvar(iMinion, var_framerate, 1.0)
+	set_entvar(iMinion, var_nextthink, get_gametime() + MINION_STATUS_TICK)
+	g_fMinionChilledUntil[iMinion] = get_gametime() + CHILL_TIME
+	necro_minion_update_glow(iMinion)
+}
+
+necro_minion_chill(iMinion)
+{
+	if (necro_minion_is_frozen(iMinion) || necro_minion_is_chilled(iMinion))
+		return
+
+	g_iMinionBurnCycles[iMinion] = 0
+	g_fMinionChilledUntil[iMinion] = get_gametime() + CHILL_TIME
+	engfunc(EngFunc_EmitSound, iMinion, CHAN_BODY, SOUND_FROST_HIT, 1.0, ATTN_NORM, 0, PITCH_LOW)
+	necro_minion_update_glow(iMinion)
+}
+
+necro_minion_burn(iMinion, iAttacker)
+{
+	if (get_entvar(iMinion, var_flags) & FL_INWATER)
+		return
+
+	if (!g_iMinionBurnCycles[iMinion])
+	{
+		if (g_fMinionFrozenUntil[iMinion] > 0.0)
+		{
+			necro_minion_remove_iceblock(iMinion, true)
+			set_entvar(iMinion, var_framerate, 1.0)
+		}
+
+		g_fMinionFrozenUntil[iMinion] = 0.0
+		g_fMinionChilledUntil[iMinion] = 0.0
+		g_fMinionBurnNextTick[iMinion] = get_gametime()
+	}
+
+	g_iMinionBurnCycles[iMinion] = max(g_iMinionBurnCycles[iMinion], MINION_BURN_CYCLES)
+	g_iMinionBurnAttacker[iMinion] = iAttacker
+	necro_minion_update_glow(iMinion)
+}
+
+public necro_iceblock_think(iBlock)
+{
+	if (is_nullent(iBlock))
+		return
+
+	new iMinion = get_entvar(iBlock, var_owner)
+	if (!is_entity(iMinion) || (get_entvar(iMinion, var_flags) & FL_KILLME) || g_iMinionIceBlock[iMinion] != iBlock)
+	{
+		new Float:vOrigin[3]
+		get_entvar(iBlock, var_origin, vOrigin)
+		send_msg_TE_IMPLOSION(vOrigin, 64, 10, 3)
+		send_msg_TE_SPARKS(vOrigin)
+		rg_remove_entity(iBlock)
+		return
+	}
+
+	set_entvar(iBlock, var_nextthink, get_gametime() + 0.2)
+}
+
+public necro_status_tick()
+{
+	new Float:fGameTime = get_gametime()
+	new iMinion = NULLENT
+	while ((iMinion = rg_find_ent_by_class(iMinion, _CLASSNAME_ZOMBIE)))
+	{
+		if (get_entvar(iMinion, var_impulse) != IMPULSE_ZOMBIE || (get_entvar(iMinion, var_flags) & FL_KILLME))
+			continue
+
+		if (g_fMinionFrozenUntil[iMinion] > 0.0 && g_fMinionFrozenUntil[iMinion] <= fGameTime)
+			necro_minion_unfreeze(iMinion)
+
+		if (g_fMinionChilledUntil[iMinion] > 0.0 && g_fMinionChilledUntil[iMinion] <= fGameTime)
+		{
+			g_fMinionChilledUntil[iMinion] = 0.0
+			necro_minion_update_glow(iMinion)
+		}
+
+		if (!g_iMinionBurnCycles[iMinion])
+			continue
+
+		if (get_entvar(iMinion, var_flags) & FL_INWATER)
+		{
+			g_iMinionBurnCycles[iMinion] = 0
+			necro_minion_update_glow(iMinion)
+			continue
+		}
+
+		if (g_fMinionBurnNextTick[iMinion] > fGameTime)
+			continue
+
+		g_fMinionBurnNextTick[iMinion] = fGameTime + MINION_BURN_TICK
+
+		new bool:bCrit = bool:(random_num(0, 100) <= MINION_BURN_CRIT_CHANCE)
+		new Float:vOrigin[3]
+		get_entvar(iMinion, var_origin, vOrigin)
+		vOrigin[0] += random_float(-5.0, 5.0)
+		vOrigin[1] += random_float(-5.0, 5.0)
+		vOrigin[2] += random_float(0.0, 20.0)
+		send_msg_TE_SPRITE(vOrigin, g_pFlameSpr, bCrit ? 30 : random_num(5, 10), 200)
+
+		g_iMinionBurnCycles[iMinion]--
+		new iAttacker = g_iMinionBurnAttacker[iMinion]
+		if (!g_iMinionBurnCycles[iMinion])
+			necro_minion_update_glow(iMinion)
+
+		g_bMinionDot = true
+		ExecuteHamB(Ham_TakeDamage, iMinion, 0, is_entity_player(iAttacker) ? iAttacker : 0,
+			bCrit ? MINION_BURN_CRIT_DAMAGE : MINION_BURN_DAMAGE, DMG_BURN)
+		g_bMinionDot = false
+	}
 }
 
 public npc_Classify(const iEnt)
@@ -2266,6 +2584,8 @@ create_zombie(Float:vOrigin[3], Float:vAngles[3], iOwner, iSlot = 0)
 	if (is_nullent(iZombieEnt))
 		return NULLENT
 
+	necro_minion_reset_status(iZombieEnt)
+
 	engfunc(EngFunc_SetOrigin, iZombieEnt, vOrigin)
 	engfunc(EngFunc_SetModel, iZombieEnt, MODEL_ZOMBIE)
 	engfunc(EngFunc_SetSize, iZombieEnt, Float:{-18.0, -18.0, 0.0}, Float:{18.0, 18.0, 20.0})
@@ -2325,6 +2645,8 @@ create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner)
 	new iCentaurEnt = rg_create_entity(SZ_EXPLOSION)
 	if (is_nullent(iCentaurEnt))
 		return NULLENT
+
+	necro_minion_reset_status(iCentaurEnt)
 
 	new iTeam = Player[iOwner][PlrTeam]
 
