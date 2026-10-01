@@ -870,6 +870,14 @@ public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 		if (vVariant[0] > 0.5)
 			set_es(es_state, ES_Skin, get_entvar(ent, var_skin) + 2)
 
+		if (necro_is_minion_target(host, ent))
+		{
+			set_es(es_state, ES_RenderMode, kRenderNormal)
+			set_es(es_state, ES_RenderFx, kRenderFxGlowShell)
+			set_es(es_state, ES_RenderColor, Float:{255.0, 0.0, 0.0})
+			set_es(es_state, ES_RenderAmt, 16.0)
+		}
+
 		return FMRES_IGNORED
 	}
 
