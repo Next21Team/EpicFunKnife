@@ -483,7 +483,7 @@ public RG_CBasePlayer_PostThink_Pre(iPlayer)
 
 necro_use_ultimate(iPlayer, iSlot)
 {
-	if (kc_player_in_silence(iPlayer) || kc_player_in_darkness(iPlayer) || kc_player_get_capture(iPlayer) != CAPTURE_NONE)
+	if (kc_player_in_silence(iPlayer) || kc_player_in_darkness(iPlayer))
 		return
 
 	if (Player[iPlayer][PlrForm] == FORM_CENTAUR)
@@ -717,7 +717,7 @@ necro_tick(iPlayer, Float:fGameTime)
 
 	if (Player[iPlayer][PlrLaserPendingAt] > 0.0)
 	{
-		if (kc_player_in_silence(iPlayer) || kc_player_in_darkness(iPlayer) || kc_player_get_capture(iPlayer) != CAPTURE_NONE)
+		if (kc_player_in_silence(iPlayer) || kc_player_in_darkness(iPlayer))
 		{
 			Player[iPlayer][PlrLaserPendingAt] = 0.0
 			Player[iPlayer][PlrLaserLockTime] = 0.0
@@ -1018,8 +1018,7 @@ bool:necro_order_merge(iOwner)
 {
 	if (!Player[iOwner][PlrIsAlive] || Player[iOwner][PlrKnife] != g_iKnifeId
 		|| Player[iOwner][PlrForm] != FORM_ZOMBIES || !necro_form_complete(iOwner)
-		|| kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner)
-		|| kc_player_get_capture(iOwner) != CAPTURE_NONE)
+		|| kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner))
 		return false
 
 	if (get_gametime() - Player[iOwner][PlrLastFormSwitch] < FORM_SWITCH_COOLDOWN)
@@ -1036,8 +1035,7 @@ bool:necro_order_merge(iOwner)
 
 bool:necro_finish_cannibalize(iOwner)
 {
-	if (kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner)
-		|| kc_player_get_capture(iOwner) != CAPTURE_NONE)
+	if (kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner))
 		return false
 
 	new iZombieA = Player[iOwner][PlrMinionEnt][0]
@@ -1120,8 +1118,7 @@ necro_spawn_split_zombie(iOwner, iSlot, const Float:vBase[3], Float:vAngles[3], 
 bool:necro_finish_split(iOwner)
 {
 	if (!Player[iOwner][PlrIsAlive] || Player[iOwner][PlrKnife] != g_iKnifeId
-		|| kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner)
-		|| kc_player_get_capture(iOwner) != CAPTURE_NONE)
+		|| kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner))
 		return false
 
 	if (get_gametime() - Player[iOwner][PlrLastFormSwitch] < FORM_SWITCH_COOLDOWN)
@@ -2040,6 +2037,41 @@ necro_minion_think(iMinion, bool:bCentaur)
 	set_entvar(iMinion, var_nextthink, fGameTime + 0.1)
 }
 
+bool:necro_player_stuck(iPlayer)
+{
+	return bool:(Player[iPlayer][PlrIsAlive] && (kc_player_in_freeze(iPlayer) || kc_player_get_capture(iPlayer) == CAPTURE_NORMAL))
+}
+
+necro_free_player(iPlayer)
+{
+	if (kc_player_in_freeze(iPlayer))
+		kc_player_unfreeze(iPlayer)
+
+	if (kc_player_get_capture(iPlayer) == CAPTURE_NORMAL)
+		kc_player_set_capture(iPlayer, CAPTURE_NONE)
+}
+
+necro_find_stuck_ally(iOwner, const Float:vOrigin[3], Float:fRange, iIgnore, Float:vTargetOrigin[3])
+{
+	new iTarget, Float:fBestDistance = fRange, Float:fDistance, Float:vCandidateOrigin[3]
+	for (new i = 1; i <= MaxClients; i++)
+	{
+		if (i == iIgnore || !Player[i][PlrIsAlive] || Player[i][PlrTeam] != Player[iOwner][PlrTeam] || !necro_player_stuck(i))
+			continue
+
+		get_entvar(i, var_origin, vCandidateOrigin)
+		fDistance = get_distance_f(vOrigin, vCandidateOrigin)
+		if (fDistance <= fBestDistance)
+		{
+			fBestDistance = fDistance
+			iTarget = i
+			xs_vec_copy(vCandidateOrigin, vTargetOrigin)
+		}
+	}
+
+	return iTarget
+}
+
 bool:necro_move_mode_attack(iMinion, iOwner, iSlot, bool:bCentaur, const Float:vOrigin[3], bool:bReturning)
 {
 	new Float:fGameTime = get_gametime()
@@ -2057,7 +2089,14 @@ bool:necro_move_mode_attack(iMinion, iOwner, iSlot, bool:bCentaur, const Float:v
 
 		Player[iOwner][PlrMoveWindupTarget][iSlot] = 0
 
-		if (necro_is_enemy_entity(iOwner, iWindupTarget))
+		if (is_entity_player(iWindupTarget) && Player[iWindupTarget][PlrTeam] == Player[iOwner][PlrTeam])
+		{
+			new Float:vAllyOrigin[3]
+			get_entvar(iWindupTarget, var_origin, vAllyOrigin)
+			if (necro_player_stuck(iWindupTarget) && get_distance_f(vOrigin, vAllyOrigin) <= fRange)
+				necro_free_player(iWindupTarget)
+		}
+		else if (necro_is_enemy_entity(iOwner, iWindupTarget))
 		{
 			new Float:vWindupOrigin[3]
 			get_entvar(iWindupTarget, var_origin, vWindupOrigin)
@@ -2075,7 +2114,11 @@ bool:necro_move_mode_attack(iMinion, iOwner, iSlot, bool:bCentaur, const Float:v
 
 	new iIgnore = Player[iOwner][PlrMoveIgnoreUntil][iSlot] > fGameTime ? Player[iOwner][PlrMoveIgnoreTarget][iSlot] : 0
 	new Float:vEnemyOrigin[3]
-	new iEnemy = find_necro_target(iOwner, vOrigin, fRange, 0, vEnemyOrigin, iIgnore)
+	new iEnemy = necro_find_stuck_ally(iOwner, vOrigin, fRange, iIgnore, vEnemyOrigin)
+
+	if (!iEnemy)
+		iEnemy = find_necro_target(iOwner, vOrigin, fRange, 0, vEnemyOrigin, iIgnore)
+
 	if (!iEnemy)
 		return false
 
