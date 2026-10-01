@@ -406,15 +406,12 @@ public RG_CBasePlayer_ImpulseCommands_Pre(iPlayer)
 	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return HC_CONTINUE
 
-	if (get_entvar(iPlayer, var_button) & IN_RELOAD)
-	{
-		if (Player[iPlayer][PlrForm] == FORM_ZOMBIES)
-			necro_order_merge(iPlayer)
-		else
-			necro_finish_split(iPlayer)
+	if (Player[iPlayer][PlrForm] == FORM_ZOMBIES)
+		necro_order_merge(iPlayer)
+	else
+		necro_finish_split(iPlayer)
 
-		set_entvar(iPlayer, var_impulse, 0)
-	}
+	set_entvar(iPlayer, var_impulse, 0)
 
 	return HC_CONTINUE
 }
@@ -439,16 +436,15 @@ public RG_CBasePlayer_PostThink_Pre(iPlayer)
 
 	for (new iSlot; iSlot < MAX_MINION_SLOTS; iSlot++)
 	{
-		if (Player[iPlayer][PlrForm] == FORM_CENTAUR && iSlot == 1)
-			continue
+		new iMinionSlot = Player[iPlayer][PlrForm] == FORM_CENTAUR ? MINION_SLOT_CENTAUR : iSlot
 
 		if (iReleased & iSlotKeys[iSlot])
 		{
 			if (!bKeyUsed[iPlayer][iSlot] && fGameTime - fKeyDownAt[iPlayer][iSlot] <= FOLLOW_TAP_TIME)
 			{
-				Player[iPlayer][PlrNpcAction][iSlot] = NPC_ACTION_FOLLOW
-				Player[iPlayer][PlrNpcActionTarget][iSlot] = 0
-				Player[iPlayer][PlrMinionWalking][iSlot] = true
+				Player[iPlayer][PlrNpcAction][iMinionSlot] = NPC_ACTION_FOLLOW
+				Player[iPlayer][PlrNpcActionTarget][iMinionSlot] = 0
+				Player[iPlayer][PlrMinionWalking][iMinionSlot] = true
 			}
 			continue
 		}
@@ -469,12 +465,12 @@ public RG_CBasePlayer_PostThink_Pre(iPlayer)
 		if (bLmb)
 		{
 			bKeyUsed[iPlayer][iSlot] = true
-			necro_command_target(iPlayer, iSlot)
+			necro_command_target(iPlayer, iMinionSlot)
 		}
 		else if (bRmb)
 		{
 			bKeyUsed[iPlayer][iSlot] = true
-			necro_use_ultimate(iPlayer, iSlot)
+			necro_use_ultimate(iPlayer, iMinionSlot)
 		}
 	}
 
@@ -1269,69 +1265,47 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 	if (iKnifeId != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
-	static szMessage[192], szLabel[32], szAction[64], szValue[48]
+	static szMessage[192], szLabel[32], szAction[64]
 	static iLen
 	szMessage[0] = 0
 	iLen = 0
 
-	if (Player[iSubject][PlrSouls])
-		iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%L", iPlayer, "NECRO_SOUL_HEAL_HINT",
-			floatround(SOUL_HEAL_VALUE * Player[iSubject][PlrSouls]))
-
-	if (Player[iSubject][PlrForm] == FORM_CENTAUR)
-	{
-		formatex(szLabel, charsmax(szLabel), "%L", iPlayer, "NECRO_CENTAUR")
-		new iEnt = Player[iSubject][PlrMinionEnt][MINION_SLOT_CENTAUR]
-		if (iEnt && is_entity(iEnt) && !(get_entvar(iEnt, var_flags) & FL_KILLME))
-		{
-			formatex(szValue, charsmax(szValue), "%L", iPlayer, "NECRO_HP", floatround(Float:get_entvar(iEnt, var_health), floatround_floor))
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%s%s: [%s | %d%%]", iLen ? "^n" : "", szLabel, szValue,
-				floatround(Player[iSubject][PlrZombieCharge][MINION_SLOT_CENTAUR], floatround_floor))
-		}
-		else
-		{
-			formatex(szValue, charsmax(szValue), "%L", iPlayer, "NECRO_RESPAWN", necro_respawn_percent(iSubject, MINION_SLOT_CENTAUR))
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%s%s: [%s]", iLen ? "^n" : "", szLabel, szValue)
-		}
-	}
-	else
-	{
-		formatex(szLabel, charsmax(szLabel), "%L", iPlayer, "NECRO_ZOMBIES")
-		iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%s%s: ", iLen ? "^n" : "", szLabel)
-		for (new i; i < MAX_MINION_SLOTS; i++)
-		{
-			new iEnt = Player[iSubject][PlrMinionEnt][i]
-			if (i)
-				iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, " | ")
-
-			if (iEnt && is_entity(iEnt) && !(get_entvar(iEnt, var_flags) & FL_KILLME))
-			{
-				formatex(szValue, charsmax(szValue), "%L", iPlayer, "NECRO_HP", floatround(Float:get_entvar(iEnt, var_health), floatround_floor))
-				iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "[%s | %d%%]", szValue,
-					floatround(Player[iSubject][PlrZombieCharge][i], floatround_floor))
-			}
-			else
-			{
-				formatex(szValue, charsmax(szValue), "%L", iPlayer, "NECRO_RESPAWN", necro_respawn_percent(iSubject, i))
-				iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "[%s]", szValue)
-			}
-		}
-	}
-
 	new Float:fMergeElapsed = get_gametime() - Player[iSubject][PlrLastFormSwitch]
 	new iMergeCharge = clamp(floatround(fMergeElapsed * 100.0 / FORM_SWITCH_COOLDOWN), 0, 100)
-	new szMergeKey[24]
-	if (Player[iSubject][PlrForm] == FORM_CENTAUR)
-		copy(szMergeKey, charsmax(szMergeKey), "NECRO_SPLIT")
-	else
-		copy(szMergeKey, charsmax(szMergeKey), "NECRO_MERGE")
-	formatex(szValue, charsmax(szValue), "%L", iPlayer, szMergeKey, iMergeCharge)
-	iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s", szValue)
+	iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%L: %L (%dpt)", iPlayer, "NECRO_MODE",
+		iPlayer, Player[iSubject][PlrForm] == FORM_CENTAUR ? "NECRO_CENTAUR" : "NECRO_ZOMBIES", iMergeCharge)
+
+	new bool:bCentaurForm = bool:(Player[iSubject][PlrForm] == FORM_CENTAUR)
+	new iSlots = bCentaurForm ? 1 : MAX_MINION_SLOTS
+
+	formatex(szLabel, charsmax(szLabel), "%L", iPlayer, bCentaurForm ? "NECRO_CENTAUR" : "NECRO_ZOMBIES")
+	iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s: ", szLabel)
+	for (new i; i < iSlots; i++)
+	{
+		new iEnt = Player[iSubject][PlrMinionEnt][i]
+		if (i)
+			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, " | ")
+
+		if (iEnt && is_entity(iEnt) && !(get_entvar(iEnt, var_flags) & FL_KILLME))
+			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%L", iPlayer, "NECRO_HP",
+				floatround(Float:get_entvar(iEnt, var_health), floatround_floor))
+		else
+			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%L", iPlayer, "NECRO_RESPAWN", necro_respawn_percent(iSubject, i))
+	}
+
+	iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%L: ", iPlayer, "NECRO_CHARGE")
+	for (new i; i < iSlots; i++)
+	{
+		if (i)
+			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, " | ")
+
+		iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%d%%", floatround(Player[iSubject][PlrZombieCharge][i], floatround_floor))
+	}
 
 	for (new i; i < MAX_MINION_SLOTS; i++)
 	{
 		if (Player[iSubject][PlrForm] == FORM_CENTAUR && i == 1)
-			continue
+			break
 
 		szAction[0] = 0
 		switch (Player[iSubject][PlrNpcAction][i])
@@ -1341,7 +1315,8 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 			case NPC_ACTION_FOLLOW: formatex(szAction, charsmax(szAction), "%L", iPlayer, "NPC_ACTION_FOLLOW")
 		}
 		if (szAction[0])
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s: %s", i == 0 ? "E" : "R", szAction)
+			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s: %s",
+				Player[iSubject][PlrForm] == FORM_CENTAUR ? "E/R" : (i == 0 ? "E" : "R"), szAction)
 	}
 
 	if (szMessage[0])
