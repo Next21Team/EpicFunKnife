@@ -228,6 +228,7 @@ enum _:BlockAirFlags(<<=1)
 #define IMPULSE_KUNAI				30000037
 #define IMPULSE_BLIND_EFFECT		30000038
 #define IMPULSE_HAMMER				30000039
+#define IMPULSE_NINJA_SHADOW		30000040
 
 #define MAX_PLAYER_MONEY			55000
 #define MAX_PLAYER_HEALTH			180.0
@@ -254,6 +255,8 @@ enum _:BlockAirFlags(<<=1)
 
 #define FREEZE_TIME					3.5
 #define CHILL_TIME					3.0
+
+#define DMG_NPC_SLOW				DMG_SLOWBURN
 
 #define FALL_DAMAGE					0.9
 #define FALL_EASING					0.4

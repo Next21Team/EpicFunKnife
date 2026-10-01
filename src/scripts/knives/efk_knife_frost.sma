@@ -914,6 +914,19 @@ public ice_clone_think(iCloneEnt)
 		try_increase_icicles_ammo(iOwner)
 	}
 
+	iTarget = NULLENT
+	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, FROST_RADIUS)))
+	{
+		if (iTarget <= MaxClients || !(get_entvar(iTarget, var_flags) & FL_MONSTER) || get_entvar(iTarget, var_skin) + 1 == iTeam)
+			continue
+
+		new Float:vMonsterOrigin[3]
+		get_entvar(iTarget, var_origin, vMonsterOrigin)
+
+		ExecuteHamB(Ham_TakeDamage, iTarget, iCloneEnt, iOwner, 0.0,
+			calc_freeze_level_by_distance(get_distance_f(vMonsterOrigin, vOrigin), FROST_RADIUS) == 2 ? DMG_FREEZE : DMG_SLOWFREEZE)
+	}
+
 	if (get_entvar(iCloneEnt, var_clone_buffed) && is_user_alive(iOwner))
 	{
 		new Float:vViewOfs[3], Float:vAimOrigin[3], Float:vAimAngles[3]
@@ -960,14 +973,17 @@ public ice_clone_touch(iEnt, iOther)
 		if (get_user_team(iOwner) != get_user_team(iOther))
 		{
 			if (kc_player_freeze(iOther, FREEZE_TIME, iOwner))
-			{
 				try_increase_icicles_ammo(iOwner)
 
-				// Double freeze
-				if (get_entvar(iEnt, var_clone_buffed))
-					kc_player_freeze(iOther, FREEZE_TIME, iOwner)
-			}
-
+			ice_clone_remove(iEnt)
+		}
+	}
+	else if (iOther > MaxClients && is_entity(iOther) && (get_entvar(iOther, var_flags) & FL_MONSTER))
+	{
+		new iOwner = get_entvar(iEnt, var_owner)
+		if (get_user_team(iOwner) != get_entvar(iOther, var_skin) + 1)
+		{
+			ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iOwner, 0.0, DMG_FREEZE)
 			ice_clone_remove(iEnt)
 		}
 	}
