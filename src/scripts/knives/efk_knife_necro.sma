@@ -76,6 +76,7 @@ new const MODEL_CENTAUR[] = "models/next21_efk/centaur.mdl"
 
 new const MODEL_SPIT[] = "models/next21_efk/crimson_spore.mdl"
 new const MODEL_MINION_LIFEBAR[] = "sprites/next21_efk/lifebar_necro.spr"
+new const MODEL_MINION_LIFEBAR_B[] = "sprites/next21_efk/lifebar_necro2.spr"
 new const SZ_ENV_SPRITE[] = "env_sprite"
 
 new const SOUND_SOUL[] = "next21_efk/soul_pulse.wav"
@@ -191,7 +192,7 @@ enum _:PlayerData
 new
 	g_iKnifeId, g_ePlayerData[MAX_PLAYERS][PlayerData],
 	g_pShockwaveSpr, g_pBloodSpr, g_pBloodSpraySpr, g_pGibs[5], g_pKnifePMdl,
-	g_pMinionLifebar, g_pPointSpr, g_pLaserbeamSpr
+	g_pPointSpr, g_pLaserbeamSpr
 
 new Float:g_fNpcActionOrigin[MAX_PLAYERS][MAX_MINION_SLOTS][3]
 #define PlrActionOrigin(%1,%2) g_fNpcActionOrigin[%1 - 1][%2]
@@ -219,7 +220,8 @@ public plugin_precache()
 	precache_model(MODEL_ZOMBIE)
 	precache_model(MODEL_CENTAUR)
 	precache_model(MODEL_SPIT)
-	g_pMinionLifebar = precache_model(MODEL_MINION_LIFEBAR)
+	precache_model(MODEL_MINION_LIFEBAR)
+	precache_model(MODEL_MINION_LIFEBAR_B)
 
 	precache_sound(SOUND_SOUL)
 
@@ -840,7 +842,7 @@ minion_create_lifebar(iOwner, iSlot, iMinion)
 	if (is_nullent(iBar))
 		return
 
-	engfunc(EngFunc_SetModel, iBar, MODEL_MINION_LIFEBAR)
+	engfunc(EngFunc_SetModel, iBar, iSlot == 1 ? MODEL_MINION_LIFEBAR_B : MODEL_MINION_LIFEBAR)
 	set_entvar(iBar, var_movetype, MOVETYPE_FOLLOW)
 	set_entvar(iBar, var_aiment, iMinion)
 	set_entvar(iBar, var_view_ofs, Float:{0.0, 0.0, 48.0})
@@ -902,7 +904,7 @@ public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 		return FMRES_IGNORED
 	}
 
-	set_es(es_state, ES_ModelIndex, g_pMinionLifebar)
+	set_es(es_state, ES_ModelIndex, get_entvar(ent, var_modelindex))
 	set_es(es_state, ES_Effects, get_es(es_state, ES_Effects) & ~EF_NODRAW)
 	set_es(es_state, ES_RenderColor, Float:{0.0, 255.0, 0.0})
 	return FMRES_IGNORED
