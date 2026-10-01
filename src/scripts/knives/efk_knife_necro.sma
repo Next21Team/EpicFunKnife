@@ -55,7 +55,6 @@ new const PLUGIN[] = "EFK: Necro Knife"
 #define CENTAUR_AGGRESSION_RADIUS	1000.0
 #define MINION_RETURN_SPEED	250.0
 #define ZOMBIE_SPEED		250.0
-#define MIN_MINION_SPEED		0.000001
 #define CANNIBALIZE_WINDUP_TIME	0.3
 #define IMPULSE_NECRO_LIFEBAR	30000100
 
@@ -116,7 +115,6 @@ new const SZ_EXPLOSION[]		= "env_explosion"
 
 new const _CLASSNAME_ZOMBIE[]		= CLASSNAME_ZOMBIE
 new const _CLASSNAME_ZOMBIE_SPIT[]	= CLASSNAME_ZOMBIE_SPIT
-new const _CLASSNAME_CORPSE[]		= CLASSNAME_CORPSE
 
 new const SOUNDS_CRIT[][] =
 {
@@ -171,14 +169,11 @@ enum _:PlayerData
 	PlrMinionBarEnt[MAX_MINION_SLOTS],
 	Float:PlrMinionRespawnAt[MAX_MINION_SLOTS],
 	Float:PlrMinionNextAttackAt[MAX_MINION_SLOTS],
-	Float:PlrMinionNormalSpeed,
 	Float:PlrLastFormSwitch,
 	Float:PlrLaserLockTime,
 	Float:PlrLaserPendingAt,
 	Float:PlrLaserIndicateEndAt,
 	Float:PlrLaserLockedEnd[3],
-	PlrAimedMinion,
-	Float:PlrSpitNextAt,
 	Float:PlrZombieCharge[MAX_MINION_SLOTS],
 	Float:PlrMinionJumpUntil[MAX_MINION_SLOTS],
 	Float:PlrChargeLastTick,
@@ -295,9 +290,7 @@ public client_putinserver(iPlayer)
 	Player[iPlayer][PlrLaserPendingAt] = 0.0
 	Player[iPlayer][PlrLaserLockTime] = 0.0
 	Player[iPlayer][PlrLaserIndicateEndAt] = 0.0
-	Player[iPlayer][PlrMinionNormalSpeed] = SPEED
 	Player[iPlayer][PlrLastFormSwitch] = 0.0
-	Player[iPlayer][PlrSpitNextAt] = 0.0
 	Player[iPlayer][PlrMergeAt] = 0.0
 	Player[iPlayer][PlrMergeOrdered] = false
 }
@@ -596,7 +589,6 @@ public fw_PlayerKilled(iVictim, iAttacker)
 		Player[iVictim][PlrLaserPendingAt] = 0.0
 		Player[iVictim][PlrLaserLockTime] = 0.0
 		Player[iVictim][PlrLaserIndicateEndAt] = 0.0
-		Player[iVictim][PlrSpitNextAt] = 0.0
 		Player[iVictim][PlrMergeOrdered] = false
 		Player[iVictim][PlrMergeAt] = 0.0
 		necro_reset_npc_actions(iVictim)
@@ -645,14 +637,6 @@ necro_register_kill(iOwner)
 	}
 }
 
-necro_update_owner_speed(iPlayer)
-{
-	if (kc_player_in_freeze(iPlayer) || kc_player_get_capture(iPlayer) != CAPTURE_NONE)
-		return
-
-	Player[iPlayer][PlrMinionNormalSpeed] = floatmax(MIN_MINION_SPEED, kc_player_get_maxspeed(iPlayer))
-}
-
 Float:necro_get_aggression_radius(iOwner)
 {
 	new Float:fRadius = Player[iOwner][PlrForm] == FORM_CENTAUR
@@ -660,7 +644,7 @@ Float:necro_get_aggression_radius(iOwner)
 	return fRadius
 }
 
-Float:necro_get_move_speed(iOwner, bool:bReturning=false, bool:bCentaur=false)
+Float:necro_get_move_speed(bool:bReturning=false)
 {
 	if (bReturning)
 		return MINION_RETURN_SPEED
@@ -680,24 +664,6 @@ bool:necro_find_minion_slot(iEnt, &iOwner, &iSlot)
 	}
 
 	return false
-}
-
-necro_update_aimed_minion(iPlayer)
-{
-	if (Player[iPlayer][PlrForm] != FORM_ZOMBIES || !Player[iPlayer][PlrIsAlive])
-	{
-		Player[iPlayer][PlrAimedMinion] = 0
-		return
-	}
-
-	new Float:vAimOrigin[3]
-	new iAimEnt = rg_get_aim_origin(iPlayer, vAimOrigin)
-
-	if (is_entity(iAimEnt) && get_entvar(iAimEnt, var_impulse) == IMPULSE_ZOMBIE
-		&& get_entvar(iAimEnt, var_npcowner) == iPlayer)
-		Player[iPlayer][PlrAimedMinion] = iAimEnt
-	else
-		Player[iPlayer][PlrAimedMinion] = 0
 }
 
 necro_tick(iPlayer, Float:fGameTime)
@@ -740,8 +706,6 @@ necro_tick(iPlayer, Float:fGameTime)
 		Player[iPlayer][PlrLaserLockTime] = fGameTime + 1.0
 	}
 
-	necro_update_owner_speed(iPlayer)
-	necro_update_aimed_minion(iPlayer)
 
 	new Float:fChargeDt = Player[iPlayer][PlrChargeLastTick] > 0.0 ? floatmin(fGameTime - Player[iPlayer][PlrChargeLastTick], 0.5) : 0.0
 	Player[iPlayer][PlrChargeLastTick] = fGameTime
@@ -863,10 +827,39 @@ minion_remove_lifebar(iOwner, iSlot)
 	Player[iOwner][PlrMinionBarEnt][iSlot] = 0
 }
 
+bool:necro_is_minion_target(iHost, iTarget)
+{
+	new iOwner = is_user_alive(iHost) ? iHost : get_entvar(iHost, var_iuser2)
+	if (!is_entity_player(iOwner) || iOwner == iTarget || Player[iOwner][PlrKnife] != g_iKnifeId)
+		return false
+
+	for (new i; i < MAX_MINION_SLOTS; i++)
+	{
+		new iMinion = Player[iOwner][PlrMinionEnt][i]
+		if (Player[iOwner][PlrNpcAction][i] == NPC_ACTION_TARGET && Player[iOwner][PlrNpcActionTarget][i] == iTarget
+			&& iMinion && is_entity(iMinion) && !(get_entvar(iMinion, var_flags) & FL_KILLME))
+			return true
+	}
+
+	return false
+}
+
 public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 {
 	if (is_nullent(ent))
 		return FMRES_IGNORED
+
+	if (player)
+	{
+		if (necro_is_minion_target(host, ent))
+		{
+			set_es(es_state, ES_RenderMode, kRenderNormal)
+			set_es(es_state, ES_RenderFx, kRenderFxGlowShell)
+			set_es(es_state, ES_RenderColor, Float:{255.0, 0.0, 0.0})
+			set_es(es_state, ES_RenderAmt, 16.0)
+		}
+		return FMRES_IGNORED
+	}
 
 	new iImpulse = get_entvar(ent, var_impulse)
 
@@ -877,13 +870,6 @@ public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 		if (vVariant[0] > 0.5)
 			set_es(es_state, ES_Skin, get_entvar(ent, var_skin) + 2)
 
-		if (ent == Player[host][PlrAimedMinion])
-		{
-			set_es(es_state, ES_RenderMode, kRenderNormal)
-			set_es(es_state, ES_RenderFx, kRenderFxGlowShell)
-			set_es(es_state, ES_RenderColor, Float:{0.0, 255.0, 0.0})
-			set_es(es_state, ES_RenderAmt, 16.0)
-		}
 		return FMRES_IGNORED
 	}
 
@@ -1035,7 +1021,6 @@ bool:necro_finish_cannibalize(iOwner)
 	ExecuteHamB(Ham_TakeDamage, iZombieB, 0, iZombieB, 9000.0, DMG_BLAST)
 
 	arrayset(Player[iOwner][PlrMinionRespawnAt], 0.0, MAX_MINION_SLOTS)
-	Player[iOwner][PlrAimedMinion] = 0
 	Player[iOwner][PlrLaserPendingAt] = 0.0
 	Player[iOwner][PlrLaserLockTime] = 0.0
 
@@ -1118,7 +1103,6 @@ bool:necro_finish_split(iOwner)
 	ExecuteHamB(Ham_TakeDamage, iCentaur, 0, iCentaur, 9000.0, DMG_BLAST)
 
 	arrayset(Player[iOwner][PlrMinionRespawnAt], 0.0, MAX_MINION_SLOTS)
-	Player[iOwner][PlrAimedMinion] = 0
 	Player[iOwner][PlrLaserPendingAt] = 0.0
 	Player[iOwner][PlrLaserLockTime] = 0.0
 
@@ -1997,7 +1981,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 	}
 
 	npc_TurnToTarget(iMinion, vOrigin, vDestination)
-	npc_Move(iMinion, necro_get_move_speed(iOwner, bReturning, bCentaur))
+	npc_Move(iMinion, necro_get_move_speed(bReturning))
 	necro_set_move_animation(iMinion, bCentaur)
 	set_entvar(iMinion, var_nextthink, fGameTime + 0.1)
 }
