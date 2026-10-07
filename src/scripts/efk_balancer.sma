@@ -1,5 +1,4 @@
 #include <amxmodx>
-#include <hamsandwich>
 #include <reapi>
 #include <efk_statsx>
 #include <efk_const>
@@ -12,7 +11,7 @@ new const GAME_TAG[] = EFK_GAME_TAG
 
 
 new bool:g_bUserConnected[MAX_PLAYERS + 1]
-new g_iUserNewTeam[MAX_PLAYERS + 1]
+new TeamName:g_iUserNewTeam[MAX_PLAYERS + 1]
 new bool:g_bIsRoundStart
 
 
@@ -23,19 +22,19 @@ public plugin_init()
 	register_event("HLTV", "event_round_new", "a", "1=0", "2=0")
 	register_logevent("event_round_start", 2, "1=Round_Start")
 
-	RegisterHam(Ham_Spawn, "player", "fw_PlayerSpawn")
+	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Pre")
 }
 
-public client_putinserver(id)
+public client_putinserver(iPlayer)
 {
-	g_iUserNewTeam[id] = 0
-	g_bUserConnected[id] = true
+	g_iUserNewTeam[iPlayer] = TEAM_UNASSIGNED
+	g_bUserConnected[iPlayer] = true
 }
 
-public client_disconnected(id)
+public client_disconnected(iPlayer)
 {
-	g_iUserNewTeam[id] = 0
-	g_bUserConnected[id] = false
+	g_iUserNewTeam[iPlayer] = TEAM_UNASSIGNED
+	g_bUserConnected[iPlayer] = false
 }
 
 public event_round_new()
@@ -49,59 +48,40 @@ public event_round_start()
 	g_bIsRoundStart = true
 }
 
-public fw_PlayerSpawn(id)
+public RG_CBasePlayer_Spawn_Pre(iPlayer)
 {
-	if (g_iUserNewTeam[id])
+	if (g_iUserNewTeam[iPlayer] != TEAM_UNASSIGNED)
 	{
-		if (g_iUserNewTeam[id] == 1 && get_member(id, m_iTeam) != 1)
-		{
-			rg_switch_team(id)
-			client_print_color(id, print_team_red, "^4[%s] ^1%L", GAME_TAG, id, "AUTO_BALANCE_TEAM_T")
-			client_print(id, print_center, "%L", id, "AUTO_BALANCE_TEAM_CHANGED")
-		}
-		else if (get_member(id, m_iTeam) != 2)
-		{
-			rg_switch_team(id)
-			client_print_color(id, print_team_blue, "^4[%s] ^1%L", GAME_TAG, id, "AUTO_BALANCE_TEAM_CT")
-			client_print(id, print_center, "%L", id, "AUTO_BALANCE_TEAM_CHANGED")
-		}
-		g_iUserNewTeam[id] = 0
+		if (player_switch_team(iPlayer, g_iUserNewTeam[iPlayer]))
+			client_print(iPlayer, print_center, "%L", iPlayer, "AUTO_BALANCE_TEAM_CHANGED")
 
-		return HAM_IGNORED
+		g_iUserNewTeam[iPlayer] = TEAM_UNASSIGNED
+
+		return HC_CONTINUE
 	}
 
 	if (g_bIsRoundStart)
 	{
-		new pnum[2], iTeam[MAX_PLAYERS + 1]
-		for (new i = 1; i <= MaxClients; i++)
+		new iBalance
+		for (new i = 1, TeamName:iTeam; i <= MaxClients; i++)
 		{
 			if (!g_bUserConnected[i])
 				continue
 
-			iTeam[i] = get_member(i, m_iTeam)
-
-			if (iTeam[i] == 1)
-				pnum[0]++
-			else if (iTeam[i] == 2)
-				pnum[1]++
+			iTeam = get_member(i, m_iTeam)
+			if (iTeam == TEAM_TERRORIST)
+				iBalance--
+			else if (iTeam == TEAM_CT)
+				iBalance++
 		}
 
-		if (abs(pnum[0] - pnum[1]) / 2 > 0)
-		{
-			if (pnum[0] > pnum[1] && iTeam[id] == 1)
-			{
-				rg_switch_team(id)
-				client_print_color(id, print_team_blue, "^4[%s] ^1%L", GAME_TAG, id, "AUTO_BALANCE_TEAM_CT")
-			}
-			else if (pnum[0] < pnum[1] && iTeam[id] == 2)
-			{
-				rg_switch_team(id)
-				client_print_color(id, print_team_red, "^4[%s] ^1%L", GAME_TAG, id, "AUTO_BALANCE_TEAM_T")
-			}
-		}
+		if (iBalance <= -2)
+			player_switch_team(iPlayer, TEAM_CT)
+		else if (iBalance >= 2)
+			player_switch_team(iPlayer, TEAM_TERRORIST)
 	}
 
-	return HAM_IGNORED
+	return HC_CONTINUE
 }
 
 #define MAGIC_VAR		10
@@ -158,8 +138,8 @@ balance_players()
 
 		if (iPair[0] && iPair[1] && fMinDiff < fTeamDiff)
 		{
-			g_iUserNewTeam[iPair[0]] = 2
-			g_iUserNewTeam[iPair[1]] = 1
+			g_iUserNewTeam[iPair[0]] = TEAM_CT
+			g_iUserNewTeam[iPair[1]] = TEAM_TERRORIST
 		}
 	}
 	else if (iTotalPlayersNum == 3)
@@ -188,10 +168,32 @@ balance_players()
 				iPlayer = aPlayers[iMaxSkillerTeam][i]
 				if (iPlayer != iMaxSkiller)
 				{
-					g_iUserNewTeam[iPlayer] = iMaxSkillerTeam == 0 ? 2 : 1
+					g_iUserNewTeam[iPlayer] = iMaxSkillerTeam == 0 ? TEAM_CT : TEAM_TERRORIST
 					return
 				}
 			}
 		}
 	}
+}
+
+bool:player_switch_team(iPlayer, TeamName:iTeam)
+{
+	new TeamName:iCurrTeam = get_member(iPlayer, m_iTeam)
+	if (iCurrTeam == TEAM_UNASSIGNED || iCurrTeam == TEAM_SPECTATOR || iCurrTeam == iTeam)
+		return false
+
+	rg_switch_team(iPlayer)
+
+	if (iTeam == TEAM_TERRORIST)
+	{
+		client_print_color(iPlayer, print_team_red, "^4[%s] ^1%L",
+			GAME_TAG, iPlayer, "AUTO_BALANCE_TEAM_TE")
+	}
+	else
+	{
+		client_print_color(iPlayer, print_team_blue, "^4[%s] ^1%L",
+			GAME_TAG, iPlayer, "AUTO_BALANCE_TEAM_CT")
+	}
+
+	return true
 }

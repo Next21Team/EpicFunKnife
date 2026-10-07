@@ -220,7 +220,7 @@ DM_CHAT_COMMON_TE_SCORE = Red team leads by %d points
 DM_CHAT_COMMON_CT_SCORE = Blue team leads by %d points
 DM_CHAT_COMMON_DEF_SCORE = Команды равны по очкам
 
-AUTO_BALANCE_TEAM_T = You moved to the ^3red ^1team
+AUTO_BALANCE_TEAM_TE = You moved to the ^3red ^1team
 AUTO_BALANCE_TEAM_CT = You moved to the ^3blue ^1team
 AUTO_BALANCE_TEAM_CHANGED = You moved to the opposite team
 
@@ -448,7 +448,7 @@ DM_CHAT_COMMON_TE_SCORE = Красная команда лидирует на %d
 DM_CHAT_COMMON_CT_SCORE = Синяя команда лидирует на %d очк.
 DM_CHAT_COMMON_DEF_SCORE = Команды равны по очкам
 
-AUTO_BALANCE_TEAM_T = Вы перемещены в ^3красную ^1команду
+AUTO_BALANCE_TEAM_TE = Вы перемещены в ^3красную ^1команду
 AUTO_BALANCE_TEAM_CT = Вы перемещены в ^3синюю ^1команду
 AUTO_BALANCE_TEAM_CHANGED = Вы перемещены в другую команду
 
@@ -676,7 +676,7 @@ DM_CHAT_COMMON_TE_SCORE = El equipo rojo lidera por %d puntos
 DM_CHAT_COMMON_CT_SCORE = El equipo azul lidera por %d puntos
 DM_CHAT_COMMON_DEF_SCORE = Los equipos están empatados en puntos
 
-AUTO_BALANCE_TEAM_T = Has sido movido al equipo ^3rojo
+AUTO_BALANCE_TEAM_TE = Has sido movido al equipo ^3rojo
 AUTO_BALANCE_TEAM_CT = Has sido movido al equipo ^3azul
 AUTO_BALANCE_TEAM_CHANGED = Has sido movido al equipo contrario
 
