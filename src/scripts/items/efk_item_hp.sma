@@ -170,5 +170,5 @@ give_health(iPlayer, iValue)
 	if (is_user_alive(iPlayer) && kc_player_get_vision(iPlayer) != VISION_BLIND && !kc_player_in_freeze(iPlayer) && !kc_player_in_chill(iPlayer))
 		send_msg_ScreenFade((1<<12), (1<<8), (1<<4), {0, 255, 0}, 25, MSG_ONE, _, iPlayer)
 
-	set_entvar(iPlayer, var_health, Float:get_entvar(iPlayer, var_health) + float(iValue))
+	set_entvar(iPlayer, var_health, floatmin(Float:get_entvar(iPlayer, var_health) + float(iValue), MAX_PLAYER_HEALTH))
 }
