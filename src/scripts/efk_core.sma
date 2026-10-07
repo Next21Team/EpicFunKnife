@@ -3793,7 +3793,7 @@ public RG_ResetSequenceInfo_Pre(const iPlayer)
 			get_member(iPlayer, m_LastHitGroup) == HITGROUP_HEAD)
 		{
 			if (get_entvar(iPlayer, var_flags) & FL_DUCKING)
-				set_entvar(iPlayer, var_sequence, PLAYER_SEQ_DEATH_UNHEAD_CROUCH)
+				set_entvar(iPlayer, var_sequence, PLAYER_SEQ_DEATH_CROUCH)
 			else
 				set_entvar(iPlayer, var_sequence, PLAYER_SEQ_DEATH_UNHEAD)
 			set_entvar(iPlayer, var_body, DEATH_ANIM_UNHEAD_BODY)
