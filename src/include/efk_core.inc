@@ -201,6 +201,16 @@ forward efk_indirect_assist(iVictim, iAttacker, iAssistant);
 forward efk_player_change_team(iPlayer, iTeam);
 
 /**
+ * Called after the player is blinded
+ *
+ * @param 	iPlayer			- Player ID
+ * @param 	iMode			- 0 - smooth screen fade, 1 - instant screen fade
+ * @param 	fBlindTime		- Blind time
+ * @noreturn
+ */
+forward efk_blind(iPlayer, iMode, Float:fBlindTime);
+
+/**
  * Called after the player's blindness is removed
  *
  * @param 	iPlayer			- Player ID

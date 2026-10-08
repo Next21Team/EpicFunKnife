@@ -468,7 +468,7 @@ forward_crosshair_draw_pre,
 forward_abil2_pre, forward_abil2_post, forward_abil3_pre, forward_abil3_post, forward_abil4_pre, forward_abil4_post,
 forward_charge_draw_pre, forward_player_knife_killed, forward_player_death, forward_player_change_team, forward_status_draw,
 forward_invisible, forward_indirect_assist, forward_player_heal,
-forward_unblind, forward_unchill, forward_unburn, forward_reburn, forward_uninvisible, forward_unshadow, forward_unclone,
+forward_blind, forward_unblind, forward_unchill, forward_unburn, forward_reburn, forward_uninvisible, forward_unshadow, forward_unclone,
 forward_calculate_render_colors, forward_player_reset_render,
 forward_freeze, forward_unfreeze,
 forward_capture, forward_uncapture, forward_swap, forward_undarkness, forward_update_windboost,
@@ -809,6 +809,7 @@ public plugin_init()
 	forward_player_heal = CreateMultiForward("efk_player_heal", ET_IGNORE, FP_CELL, FP_CELL, FP_CELL)
 	forward_player_change_team = CreateMultiForward("efk_player_change_team", ET_IGNORE, FP_CELL, FP_CELL)
 	forward_indirect_assist = CreateMultiForward("efk_indirect_assist", ET_IGNORE, FP_CELL, FP_CELL, FP_CELL)
+	forward_blind = CreateMultiForward("efk_blind", ET_IGNORE, FP_CELL, FP_CELL, FP_FLOAT)
 	forward_unblind = CreateMultiForward("efk_unblind", ET_IGNORE, FP_CELL, FP_CELL)
 	forward_invisible = CreateMultiForward("efk_invisible", ET_IGNORE, FP_CELL)
 	forward_uninvisible = CreateMultiForward("efk_uninvisible", ET_IGNORE, FP_CELL)
@@ -5716,6 +5717,8 @@ bool:player_blind(iPlayer, iMode, Float:fBlindTime)
 		PlayerF[iPlayer][PlrScreenFadeTime] = fGameTime  + 0.8
 
 		create_blind_effect(iPlayer)
+
+		ExecuteForward(forward_blind, _, iPlayer, iMode, fBlindTime)
 	}
 	else
 	{

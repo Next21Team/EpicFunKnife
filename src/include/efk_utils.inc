@@ -766,3 +766,118 @@ stock trans_vector(const Float:vIn[], const Float:mTr[][], Float:vOut[])
 	vOut[1] = mTr[1][0] * x + mTr[1][1] * y + mTr[1][2] * z
 	vOut[2] = mTr[2][0] * x + mTr[2][1] * y + mTr[2][2] * z
 }
+
+stock bool:is_player_blocking(Float:vOrigin[3], Float:vTarget[3], iOwner, iSkip)
+{
+    new Float:vDir[3]
+    xs_vec_sub(vTarget, vOrigin, vDir)
+    new Float:fLength = vector_length(vDir)
+
+    if (fLength <= 0.0)
+        return false
+
+    xs_vec_mul_scalar(vDir, 1.0 / fLength, vDir)
+
+    for (new i = 1; i <= MaxClients; i++)
+    {
+        if (i == iOwner || i == iSkip)
+            continue
+
+        if (!is_user_alive(i))
+            continue
+
+        new Float:vPos[3], Float:vViewOfs[3]
+        get_entvar(i, var_origin, vPos)
+        get_entvar(i, var_view_ofs, vViewOfs)
+        xs_vec_add(vPos, vViewOfs, vPos)
+
+        new Float:vToPlayer[3]
+        xs_vec_sub(vPos, vOrigin, vToPlayer)
+
+        new Float:fProj = xs_vec_dot(vToPlayer, vDir)
+
+        if (fProj <= 0.0 || fProj >= fLength - 1.0)
+            continue
+
+        new Float:vClosest[3]
+        vClosest[0] = vOrigin[0] + vDir[0] * fProj
+        vClosest[1] = vOrigin[1] + vDir[1] * fProj
+        vClosest[2] = vOrigin[2] + vDir[2] * fProj
+
+        new Float:vPerp[3]
+        xs_vec_sub(vPos, vClosest, vPerp)
+
+        if (vector_length(vPerp) <= 20.0)
+            return true
+    }
+
+    return false
+}
+
+stock find_player_in_view(iPlayer, Float:fAngle = 50.0, Float:fDistance = 800.0, iIgnore = 0)
+{
+    new iAimPlayer, iBody
+    new Float:fAimDistance = get_user_aiming(iPlayer, iAimPlayer, iBody, floatround(fDistance))
+
+    if (iAimPlayer > 0 &&
+        iAimPlayer != iPlayer &&
+        iAimPlayer != iIgnore &&
+        is_user_alive(iAimPlayer) &&
+        fAimDistance <= fDistance)
+    {
+        return iAimPlayer
+    }
+
+    new Float:vOrigin[3], Float:vViewOfs[3], Float:vForward[3]
+    new Float:vTarget[3], Float:vTargetViewOfs[3], Float:vDir[3]
+
+    get_entvar(iPlayer, var_origin, vOrigin)
+    get_entvar(iPlayer, var_view_ofs, vViewOfs)
+
+    xs_vec_add(vOrigin, vViewOfs, vOrigin)
+
+    velocity_by_aim(iPlayer, 1, vForward)
+    xs_vec_normalize(vForward, vForward)
+
+    new iBestPlayer
+    new Float:fBestDot = floatcos(fAngle, degrees)
+
+    for (new i = 1; i <= MaxClients; i++)
+    {
+        if (i == iPlayer || i == iIgnore)
+            continue
+
+        if (!is_user_alive(i))
+            continue
+
+        get_entvar(i, var_origin, vTarget)
+        get_entvar(i, var_view_ofs, vTargetViewOfs)
+
+        xs_vec_add(vTarget, vTargetViewOfs, vTarget)
+
+        if (is_wall_between(vOrigin, vTarget, iPlayer))
+            continue
+
+        xs_vec_sub(vTarget, vOrigin, vDir)
+
+        new Float:fLength = vector_length(vDir)
+
+        if (fLength <= 0.0 || fLength > fDistance)
+            continue
+
+        xs_vec_mul_scalar(vDir, 1.0 / fLength, vDir)
+
+        new Float:fDot = xs_vec_dot(vForward, vDir)
+
+        if (fDot > fBestDot)
+        {
+            if (is_player_blocking(vOrigin, vTarget, iPlayer, i))
+                continue
+
+            fBestDot = fDot
+            iBestPlayer = i
+        }
+    }
+
+    return iBestPlayer
+}
