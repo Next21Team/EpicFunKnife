@@ -2350,6 +2350,10 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 			Player[iDamagedOwner][PlrMinionNextAttackAt][iDamagedSlot] = 0.0
 			Player[iDamagedOwner][PlrZombieCharge][iDamagedSlot] = 0.0
 			Player[iDamagedOwner][PlrMinionJumpUntil][iDamagedSlot] = 0.0
+			Player[iDamagedOwner][PlrJumpPrevAction][iDamagedSlot] = -1
+			Player[iDamagedOwner][PlrNpcAction][iDamagedSlot] = NPC_ACTION_FOLLOW
+			Player[iDamagedOwner][PlrNpcActionTarget][iDamagedSlot] = 0
+			Player[iDamagedOwner][PlrMinionWalking][iDamagedSlot] = false
 			Player[iDamagedOwner][PlrMinionRespawnAt][iDamagedSlot] = fGameTime + MINION_RESPAWN_TIME
 		}
 
