@@ -7,6 +7,8 @@
 #include <efk_core>
 #include <efk_utils>
 
+native bool:floating_damage_show(iAttacker, iVictim, Float:fDamage)
+
 new const PLUGIN[] = "EFK: Necro Knife"
 
 #define KNIFE_CLASSNAME "weapon_next21_necro"
@@ -293,7 +295,7 @@ new
 	g_iMinionBurnCycles[MAX_ENTITIES_NUM + 1], g_iMinionBurnAttacker[MAX_ENTITIES_NUM + 1],
 	Float:g_fMinionBurnNextTick[MAX_ENTITIES_NUM + 1], g_iMinionIceBlock[MAX_ENTITIES_NUM + 1],
 	Float:g_fMinionNextMoveVoice[MAX_ENTITIES_NUM + 1],
-	bool:g_bMinionDot,
+	bool:g_bMinionDot, bool:g_bFloatingDamage,
 	g_pShockwaveSpr, g_pBloodSpr, g_pBloodSpraySpr, g_pGibs[5], g_pKnifePMdl,
 	g_pFlameSpr, g_pPointSpr, g_pLaserbeamSpr
 
@@ -357,6 +359,8 @@ public plugin_precache()
 public plugin_init()
 {
 	register_plugin(PLUGIN, EFK_VERSION, "Next21 Team")
+
+	g_bFloatingDamage = bool:LibraryExists("floating_damage", LibType_Library)
 
 	g_iKnifeId = kc_register_knife(KNIFE_CLASSNAME, KNIFE_MENUDESC, KNIFE_CHATDESC,
 		engfunc(EngFunc_AllocString, MODEL_V_KNIFE), engfunc(EngFunc_AllocString, MODEL_P_KNIFE),
@@ -2303,6 +2307,7 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 		{
 			set_entvar(iZombieEnt, var_health, fHealth - fDamage)
 			set_entvar(iZombieEnt, var_fuser3, fGameTime)
+			necro_show_damage(iAttacker, iOwner, iZombieEnt, fDamage)
 			return HAM_SUPERCEDE
 		}
 	}
@@ -2331,11 +2336,13 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 	if (fDamage < fHealth)
 	{
 		set_entvar(iZombieEnt, var_fuser3, fGameTime)
+		necro_show_damage(iAttacker, iOwner, iZombieEnt, fDamage)
 
 		send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, 5)
 	}
 	else
 	{
+		necro_show_damage(iAttacker, iOwner, iZombieEnt, fHealth)
 
 		if (is_entity_player(iAttacker))
 		{
@@ -2370,6 +2377,14 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 	return bDamageChanged ? HAM_OVERRIDE : HAM_IGNORED
 }
 
+necro_show_damage(iAttacker, iOwner, iMinion, Float:fDamage)
+{
+	if (!g_bFloatingDamage || !is_entity_player(iAttacker) || !Player[iAttacker][PlrIsAlive]
+		|| Player[iAttacker][PlrTeam] == Player[iOwner][PlrTeam])
+		return
+
+	floating_damage_show(iAttacker, iMinion, fDamage)
+}
 
 zombie_play_idle(iZombieEnt, Float:fNextThink=0.1)
 {
