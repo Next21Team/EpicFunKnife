@@ -17,7 +17,11 @@ enum _:PlayerGameFlags(<<=1)
 	PLGF_IS_DISABLED_INVENTORY,
 	PLGF_IS_AUTHORIZED,
 	PLGF_IN_LOCK_POWER_SPEED,
-	PLGF_IN_MARKED_VISIBILITY
+	PLGF_IN_MARKED_VISIBILITY,
+	PLGF_IN_POWERSPEED_DRIVE,
+	PLGF_IN_HAMMER_THROWN,
+	PLGF_IN_HAMMER_RETURNING,
+	PLGF_IN_ITEM_ANIMATION
 };
 
 enum _:KnifeFlags(<<=1)
@@ -223,6 +227,8 @@ enum _:BlockAirFlags(<<=1)
 #define IMPULSE_THUNDER_STRIKE_BEAM	30000036
 #define IMPULSE_KUNAI				30000037
 #define IMPULSE_BLIND_EFFECT		30000038
+#define IMPULSE_HAMMER				30000039
+#define IMPULSE_NINJA_SHADOW		30000040
 
 #define MAX_PLAYER_MONEY			55000
 #define MAX_PLAYER_HEALTH			180.0
@@ -249,6 +255,8 @@ enum _:BlockAirFlags(<<=1)
 
 #define FREEZE_TIME					3.5
 #define CHILL_TIME					3.0
+
+#define DMG_NPC_SLOW				DMG_SLOWBURN
 
 #define FALL_DAMAGE					0.9
 #define FALL_EASING					0.4
@@ -289,6 +297,8 @@ enum _:BlockAirFlags(<<=1)
 #define var_npcspawntime		var_fuser1
 
 #define var_dueltarget			var_iuser1
+
+#define var_hammer_recall		var_iuser1
 
 #define MODEL_PLAYER_ANIMATIONS 	"models/next21_efk/player_animations5.mdl"
 

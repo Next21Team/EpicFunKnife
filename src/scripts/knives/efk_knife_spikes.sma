@@ -80,6 +80,8 @@ new const SZ_INFO_TARGET[] = "info_target"
 
 #define var_spike_lifetime	var_fuser1
 
+new Float:g_fSpikeMonsterDamagedTime[2048 + 1]
+
 enum _:ViewSeq
 {
 	VIEW_SEQ_STAB = 4
@@ -690,7 +692,33 @@ public spike_touch(iEnt, iOther)
 			if (Player[iAttacker][Team] == get_entvar(iOther, var_skin) + 1)
 				return
 
-			ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iAttacker, 60.0, DMG_BLAST)
+			new Float:fGameTime = get_gametime()
+			if (g_fSpikeMonsterDamagedTime[iOther] > fGameTime)
+				return
+
+			if (iSeq == SPIKE_SEQ_UP)
+			{
+				new Float:fDamage = random_float(SPIKES_START_MINDAMAGE, SPIKES_START_MAXDAMAGE)
+				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iAttacker, fDamage, DMG_CLUB | DMG_NPC_SLOW)
+
+				if (is_entity(iOther) && !(get_entvar(iOther, var_flags) & FL_KILLME))
+				{
+					new Float:vVelocity[3]
+					get_entvar(iOther, var_velocity, vVelocity)
+					vVelocity[2] = (get_entvar(iOther, var_flags) & FL_ONGROUND) ? 800.0 : 500.0
+					set_entvar(iOther, var_velocity, vVelocity)
+					set_entvar(iOther, var_flags, get_entvar(iOther, var_flags) & ~FL_ONGROUND)
+				}
+
+				g_fSpikeMonsterDamagedTime[iOther] = fGameTime + 0.3
+			}
+			else
+			{
+				new Float:fDamage = random_float(SPIKES_MINDAMAGE, SPIKES_MAXDAMAGE)
+				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iAttacker, fDamage, DMG_CLUB)
+
+				g_fSpikeMonsterDamagedTime[iOther] = fGameTime + 0.5
+			}
 		}
 	}
 }

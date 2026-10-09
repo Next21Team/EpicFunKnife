@@ -281,6 +281,9 @@ enum _:PlayerProperties
 	PlrAttacker,
 	PlrDeathReasonText[LEN_DEATH_REASON],
 	bool:PlrDeathReasonApplied,
+	PlrAbility3NameOverride[LEN_ABILITY_NAME],
+	PlrAbility2NameOverride[LEN_ABILITY_NAME],
+	PlrAbility2HintText[LEN_ABILITY_NAME],
 	PlrHpBarEnt,
 	PlrBlindEffEnt,
 	PlrCameraEnt,
@@ -671,6 +674,11 @@ public plugin_natives()
 	register_native("kc_player_try_crit", "_21kc_player_try_crit")
 
 	register_native("kc_player_set_death_reason", "_21kc_player_set_death_reason")
+
+	register_native("kc_player_set_ability3_name", "_21kc_player_set_ability3_name")
+	register_native("kc_player_set_ability2_name", "_21kc_player_set_ability2_name")
+
+	register_native("kc_player_set_ability2_hint", "_21kc_player_set_ability2_hint")
 
 	register_native("kc_player_is_influenced", "_21kc_player_is_influenced")
 
@@ -1272,6 +1280,7 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	ClearPlayerGameFlag(iPlayer, PLGF_IN_FIXED_ANIMATION);
 	ClearPlayerGameFlag(iPlayer, PLGF_IS_DISABLED_CHARGE);
 	ClearPlayerGameFlag(iPlayer, PLGF_IS_DISABLED_INVENTORY);
+	ClearPlayerGameFlag(iPlayer, PLGF_IN_ITEM_ANIMATION);
 
 	new i = NULLENT
 	while ((i = rg_find_ent_by_class(i, SZ_BEAM)))
@@ -1461,13 +1470,13 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 						}
 
 						Player[iPlayer][PlrGlowCount]--
-
-						if (!Player[iPlayer][PlrGlowCount])
-							player_reset_render(iPlayer)
-						else
-							player_calculate_render_colors(iPlayer)
 					}
 				}
+
+				if (Player[iPlayer][PlrGlowCount])
+					player_calculate_render_colors(iPlayer)
+				else
+					player_reset_render(iPlayer)
 			}
 			case VIS_SHADOW:
 			{
@@ -2017,8 +2026,9 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 		{
 			if (PlayerF[iSubject][PlrAbility1Charge] < 100.0)
 			{
-				iLen += formatex(szChargingText[iLen], charsmax(szChargingText), "^n%L", iPlayer, "ABILITY_CHARGING",
-					floatround((100.0 - PlayerF[iSubject][PlrAbility1Charge]) / KnifeF[iSubjectKnifeId][KNF_ABILITY1_CHARGE], floatround_ceil))
+				if (KnifeF[iSubjectKnifeId][KNF_ABILITY1_CHARGE] > 0.0)
+					iLen += formatex(szChargingText[iLen], charsmax(szChargingText), "^n%L", iPlayer, "ABILITY_CHARGING",
+						floatround((100.0 - PlayerF[iSubject][PlrAbility1Charge]) / KnifeF[iSubjectKnifeId][KNF_ABILITY1_CHARGE], floatround_ceil))
 				fOldCharge[iSubject] = PlayerF[iSubject][PlrAbility1Charge]
 			}
 			else if (fOldCharge[iSubject] < 100.0)
@@ -2052,17 +2062,37 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 			iLen = 0
 
 			if (Knife[iSubjectKnifeId][KNF_ABILITY2_NAME][0] != EOS)
-				iLen = formatex(szChargingText, charsmax(szChargingText), "%s (E) (%dpt)",
-					Knife[iSubjectKnifeId][KNF_ABILITY2_NAME],
-					floatround(PlayerF[iSubject][PlrAbility2Charge], floatround_floor))
+			{
+				if (Player[iSubject][PlrAbility2NameOverride][0] != EOS)
+				{
+					iLen = formatex(szChargingText, charsmax(szChargingText), "%s (E)",
+						Player[iSubject][PlrAbility2NameOverride])
+				}
+				else
+				{
+					iLen = formatex(szChargingText, charsmax(szChargingText), "%s (E) (%dpt)",
+						Knife[iSubjectKnifeId][KNF_ABILITY2_NAME],
+						floatround(PlayerF[iSubject][PlrAbility2Charge], floatround_floor))
+
+					if (Player[iSubject][PlrAbility2HintText][0] != EOS)
+						iLen += formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, " (%s)",
+							Player[iSubject][PlrAbility2HintText])
+				}
+			}
 
 			if (Knife[iSubjectKnifeId][KNF_ABILITY3_NAME][0] != EOS)
-				iLen += formatex(szChargingText[iLen], charsmax(szChargingText), "^n%s (R) (%dpt)",
-					Knife[iSubjectKnifeId][KNF_ABILITY3_NAME],
-					floatround(PlayerF[iSubject][PlrAbility3Charge], floatround_floor))
+			{
+				if (Player[iSubject][PlrAbility3NameOverride][0] != EOS)
+					iLen += formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%s (R)",
+						Player[iSubject][PlrAbility3NameOverride])
+				else
+					iLen += formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%s (R) (%dpt)",
+						Knife[iSubjectKnifeId][KNF_ABILITY3_NAME],
+						floatround(PlayerF[iSubject][PlrAbility3Charge], floatround_floor))
+			}
 
 			if (Knife[iSubjectKnifeId][KNF_ABILITY4_NAME][0] != EOS)
-				formatex(szChargingText[iLen], charsmax(szChargingText), "^n%s (F) (%dpt)",
+				formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%s (F) (%dpt)",
 					Knife[iSubjectKnifeId][KNF_ABILITY4_NAME],
 					floatround(PlayerF[iSubject][PlrAbility4Charge], floatround_floor))
 
@@ -2672,6 +2702,7 @@ public RG_CBasePlayer_Killed_Post(iVictim, iAttacker, iFlags)
 	ClearPlayerGameFlag(iVictim, PLGF_IN_UNABILITY);
 	ClearPlayerGameFlag(iVictim, PLGF_IS_DISABLED_CHARGE);
 	ClearPlayerGameFlag(iVictim, PLGF_IS_DISABLED_INVENTORY);
+	ClearPlayerGameFlag(iVictim, PLGF_IN_ITEM_ANIMATION);
 
 	player_unburn(iVictim)
 	player_unfreeze(iVictim)
@@ -4876,6 +4907,9 @@ set_knife_params(iPlayer, iKnifeId)
 		set_pdata_string(i, 492 * 4, ANIM_EXTENSIONS[Knife[iKnifeId][KNF_ANIM_EXT]], -1, 5 * 4)
 	}
 
+	Player[iPlayer][PlrAbility3NameOverride][0] = EOS
+	Player[iPlayer][PlrAbility2NameOverride][0] = EOS
+	Player[iPlayer][PlrAbility2HintText][0] = EOS
 	Player[iPlayer][PlrKnife] = iKnifeId
 }
 
@@ -7454,7 +7488,8 @@ public _21kc_player_set_powerspeed(plugin, num_params)
 	new Float:fNewPowerSpeed = get_param_f(2)
 
 	PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
-	PlayerF[iPlayer][PlrPowerSpeedDelay] = (fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
+	PlayerF[iPlayer][PlrPowerSpeedDelay] = (!CheckPlayerGameFlag(iPlayer, PLGF_IN_POWERSPEED_DRIVE)
+			&& fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
 		? get_gametime() + POWERSPEED_GAIN_GRACE
 		: get_gametime() + 0.5
 
@@ -8673,6 +8708,24 @@ public _21kc_player_set_death_reason(plugin, num_params)
 	new iPlayer = get_param(1)
 	if (!Player[iPlayer][PlrDeathReasonApplied])
 		get_string(2, Player[iPlayer][PlrDeathReasonText], LEN_DEATH_REASON - 1)
+}
+
+public _21kc_player_set_ability3_name(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	get_string(2, Player[iPlayer][PlrAbility3NameOverride], LEN_ABILITY_NAME - 1)
+}
+
+public _21kc_player_set_ability2_name(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	get_string(2, Player[iPlayer][PlrAbility2NameOverride], LEN_ABILITY_NAME - 1)
+}
+
+public _21kc_player_set_ability2_hint(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	get_string(2, Player[iPlayer][PlrAbility2HintText], LEN_ABILITY_NAME - 1)
 }
 
 public VisibilityType:_21kc_player_get_visibility(plugin, num_params)

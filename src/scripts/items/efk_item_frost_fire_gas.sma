@@ -745,6 +745,9 @@ public gas_touch(iGasEnt, iOtherEnt)
 
 public ItemGiveCode:efk_give_ffnade_item(iPlayer, iSenderImpulse)
 {
+	if (iSenderImpulse != IMPULSE_PRESENT && kc_player_check_game_flag(iPlayer, PLGF_IN_HAMMER_THROWN))
+		return ITEM_NOT_AVAILABLE
+
 	if (!Player[iPlayer][PlrIsAlive])
 	{
 		Player[iPlayer][PlrNextSpawn][0]++
@@ -773,6 +776,9 @@ public ItemGiveCode:efk_give_ffnade_item(iPlayer, iSenderImpulse)
 
 public ItemGiveCode:efk_give_gasnade_item(iPlayer, iSenderImpulse)
 {
+	if (iSenderImpulse != IMPULSE_PRESENT && kc_player_check_game_flag(iPlayer, PLGF_IN_HAMMER_THROWN))
+		return ITEM_NOT_AVAILABLE
+
 	if (!Player[iPlayer][PlrIsAlive])
 	{
 		Player[iPlayer][PlrNextSpawn][1]++
@@ -923,6 +929,18 @@ frost_explode(iEnt)
 		else
 			kc_player_chill(iTarget, CHILL_TIME, iOwner)
 	}
+
+	iTarget = NULLENT
+	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, FROST_RADIUS)))
+	{
+		if (iTarget <= MaxClients || !(get_entvar(iTarget, var_flags) & FL_MONSTER)
+			|| get_entvar(iTarget, var_skin) + 1 == Player[iOwner][PlrTeam])
+			continue
+
+		get_entvar(iTarget, var_origin, vOrigin2)
+		ExecuteHamB(Ham_TakeDamage, iTarget, iEnt, iOwner, 0.0,
+			random_num(1, 100) <= floatround(radius_calucation(vOrigin2, vOrigin)) ? DMG_FREEZE : DMG_SLOWFREEZE)
+	}
 }
 
 fire_explode(iEnt)
@@ -959,6 +977,8 @@ fire_explode(iEnt)
 			kc_player_burn(iTarget, iOwner, BURN_CYCLES)
 		else if (get_entvar(iTarget, var_impulse) == IMPULSE_TORNADO && Player[iOwner][PlrTeam] == get_entvar(iTarget, var_team))
 			tornado_burn(iTarget)
+		else if ((get_entvar(iTarget, var_flags) & FL_MONSTER) && get_entvar(iTarget, var_skin) + 1 != Player[iOwner][PlrTeam])
+			ExecuteHamB(Ham_TakeDamage, iTarget, iEnt, iOwner, 0.0, DMG_BURN)
 	}
 }
 

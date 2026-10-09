@@ -75,6 +75,7 @@ public event_CurWeapon(iPlayer)
 	if (g_fStimpakTime[iPlayer] > 0.0)
 	{
 		g_fStimpakTime[iPlayer] = 0.0
+		kc_player_unset_game_flag(iPlayer, PLGF_IN_ITEM_ANIMATION)
 		client_print(iPlayer, print_center, "%L", iPlayer, "ITEM_CASHBACK")
 		rg_add_account(iPlayer, ITEM_PRICE)
 	}
@@ -87,6 +88,7 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 		if (!is_user_alive(iPlayer))
 		{
 			g_fStimpakTime[iPlayer] = 0.0
+			kc_player_unset_game_flag(iPlayer, PLGF_IN_ITEM_ANIMATION)
 			client_print(iPlayer, print_center, "%L", iPlayer, "ITEM_CASHBACK")
 			rg_add_account(iPlayer, ITEM_PRICE)
 			return HC_CONTINUE
@@ -100,6 +102,7 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 			give_health(iPlayer, ITEM_HP_VALUE)
 			g_fStimpakTime[iPlayer] = 0.0
+			kc_player_unset_game_flag(iPlayer, PLGF_IN_ITEM_ANIMATION)
 		}
 	}
 
@@ -136,6 +139,9 @@ public ItemGiveCode:efk_give_item(iPlayer, iSenderImpulse)
 	if (Float:get_member(iPlayer, m_flNextAttack) > 0.0)
 		return ITEM_NOT_AVAILABLE
 
+	if (kc_player_check_game_flag(iPlayer, PLGF_IN_HAMMER_RETURNING))
+		return ITEM_NOT_AVAILABLE
+
 	if (kc_player_get_capture(iPlayer) != CAPTURE_NONE)
 		return ITEM_NOT_AVAILABLE
 
@@ -145,6 +151,7 @@ public ItemGiveCode:efk_give_item(iPlayer, iSenderImpulse)
 
 	set_pev(iPlayer, pev_viewmodel, g_pVModel)
 	kc_player_set_view_anim(iPlayer, VIEW_SEQ_USE)
+	kc_player_set_game_flag(iPlayer, PLGF_IN_ITEM_ANIMATION)
 
 	if (get_member(iPlayer, m_iFOV) != 90)
 	{

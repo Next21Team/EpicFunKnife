@@ -159,6 +159,9 @@ public RG_CBasePlayer_ThrowGrenade_Post(const iPlayer, const iWeapon, Float:vSrc
 
 public ItemGiveCode:efk_give_item(iPlayer, iSenderImpulse)
 {
+	if (iSenderImpulse != IMPULSE_PRESENT && kc_player_check_game_flag(iPlayer, PLGF_IN_HAMMER_THROWN))
+		return ITEM_NOT_AVAILABLE
+
 	if (!is_user_alive(iPlayer))
 	{
 		g_iNextSpawnGive[iPlayer]++
