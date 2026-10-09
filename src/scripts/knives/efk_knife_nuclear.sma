@@ -415,9 +415,13 @@ public fw_Player_Damage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 			if (kc_player_get_vision(iVictim) != VISION_BLIND && !kc_player_in_freeze(iVictim) && !kc_player_in_chill(iVictim))
 				send_msg_ScreenFade((1<<12), (1<<8), (1<<4), {0, 255, 0}, 35, MSG_ONE, _, iVictim)
 
-			ExecuteHamB(Ham_TakeDamage, iInflictor, iVictim, iVictim, 1337.0, iFlags)
+			new Float:fReflect = (fPair - fGameTime) / UNABILITY_TIME * START_PAIR
+			new iDamage = min(floatround(fDamage * fReflect), 75)
+			ExecuteHamB(Ham_TakeDamage, iInflictor, iVictim, iVictim, iDamage + 0.0, iFlags)
 
-			return HAM_SUPERCEDE
+			client_print(iVictim, print_center, "%L %d", iVictim, "DAMAGE_REFLECTED", iDamage)
+
+			return HAM_IGNORED
 		}
 		case IMPULSE_ZOMBIE_SPIT:
 			return HAM_SUPERCEDE
