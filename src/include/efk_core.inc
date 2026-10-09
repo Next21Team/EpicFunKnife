@@ -886,6 +886,15 @@ native kc_player_disenergy(const iPlayer);
 native bool:kc_player_in_darkness(const iPlayer);
 
 /**
+ * Check if the player is alive and sees enemy health through the Health monitoring item
+ * (item active, inventory not disabled, not blinded by Darkness)
+ *
+ * @param 	iPlayer			- Player ID
+ * @return 					- true/false
+ */
+native bool:kc_player_has_hpscan(const iPlayer);
+
+/**
  * Set the player's best knife.
  * The knife will be given to the player automatically upon connecting.
  * The player must be at least level 1

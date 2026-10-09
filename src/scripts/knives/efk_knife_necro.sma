@@ -50,6 +50,10 @@ new const PLUGIN[] = "EFK: Necro Knife"
 #define ATTACK_WINDUP_TIME	0.3
 #define ATTACK_RANGE_TOLERANCE	30.0
 #define ATTACK_ANIM_LOCK_TIME	0.5
+#define CENTAUR_SPIT_HEIGHT	18.0
+#define ZOMBIE_HULL_RADIUS	12.0
+#define CENTAUR_SPIT_FORWARD	30.0
+#define MINION_BLOOD_COLOR	195
 #define MOVE_HIT_IGNORE_TIME	0.5
 #define CENTAUR_FOLLOW_STOP_DISTANCE	100.0
 #define CENTAUR_AGGRESSION_RADIUS	1000.0
@@ -67,8 +71,8 @@ new const SOUND_KNIFE_STAB[] = "next21_efk/necro_knife_stab.wav"
 new const SOUND_KNIFE_HITWALL[] = "next21_efk/necro_knife_hitwall.wav"
 new const SOUND_KNIFE_SLASH[] = "next21_efk/necro_knife_slash.wav"
 
-new const MODEL_ZOMBIE[] = "models/next21_efk/zombie_v2.mdl"
-new const MODEL_CENTAUR[] = "models/next21_efk/centaur.mdl"
+new const MODEL_ZOMBIE[] = "models/next21_efk/zergling.mdl"
+new const MODEL_CENTAUR[] = "models/next21_efk/roach.mdl"
 
 #define SPIT_DAMAGE		20.0
 #define SPIT_LIFETIME	45.0
@@ -142,20 +146,98 @@ new const SOUNDS_CRIT[][] =
 	"next21_efk/frash_explosion03.wav"
 }
 
-new const SOUNDS_ZOMBIE_ATTACK[][] =
+new const SOUNDS_ZERGLING_YES[][] =
 {
-	"next21_efk/zombie_attack01.wav",
-	"next21_efk/zombie_attack02.wav",
-	"next21_efk/zombie_attack03.wav",
-	"next21_efk/zombie_attack04.wav"
+	"next21_efk/ling/zergling_yes0.wav",
+	"next21_efk/ling/zergling_yes1.wav",
+	"next21_efk/ling/zergling_yes2.wav",
+	"next21_efk/ling/zergling_yes3.wav",
+	"next21_efk/ling/zergling_yes4.wav",
+	"next21_efk/ling/zergling_yes5.wav",
+	"next21_efk/ling/zergling_yes6.wav"
 }
 
-new const SOUNDS_ZOMBIE_PAIN[][] =
+new const SOUNDS_ZERGLING_ATTACK[][] =
 {
-	"next21_efk/zombie_pain01.wav",
-	"next21_efk/zombie_pain02.wav",
-	"next21_efk/zombie_pain03.wav",
-	"next21_efk/zombie_pain04.wav"
+	"next21_efk/ling/zergling_attack0.wav",
+	"next21_efk/ling/zergling_attack1.wav",
+	"next21_efk/ling/zergling_attack2.wav",
+	"next21_efk/ling/zergling_attack3.wav",
+	"next21_efk/ling/zergling_attack4.wav"
+}
+
+new const SOUNDS_ZERGLING_DEATH[][] =
+{
+	"next21_efk/ling/zergling_death0.wav",
+	"next21_efk/ling/zergling_death1.wav",
+	"next21_efk/ling/zergling_death2.wav",
+	"next21_efk/ling/zergling_death3.wav",
+	"next21_efk/ling/zergling_death4.wav"
+}
+
+new const SOUNDS_ZERGLING_MOVE[][] =
+{
+	"next21_efk/ling/zzergling_move2li.wav",
+	"next21_efk/ling/zzergling_move2lj.wav",
+	"next21_efk/ling/zzergling_move2lk.wav"
+}
+
+new const Float:ZERGLING_MOVE_VOICE_DELAY[] = {0.62, 0.56, 0.6}
+new const Float:ROACH_MOVE_VOICE_DELAY[] = {0.22, 0.16, 0.2}
+
+new const SOUNDS_ZERGLING_HIT[][] =
+{
+	"next21_efk/ling/zerg_attackimpactsmallpiercing0.wav",
+	"next21_efk/ling/zerg_attackimpactsmallpiercing1.wav",
+	"next21_efk/ling/zerg_attackimpactsmallpiercing2.wav"
+}
+
+new const SOUND_MINION_SWING[] = "next21_efk/ling/swing_lv3.wav"
+
+new const SOUNDS_ROACH_YES[][] =
+{
+	"next21_efk/roach/roach_yes0.wav",
+	"next21_efk/roach/roach_yes1.wav",
+	"next21_efk/roach/roach_yes2.wav",
+	"next21_efk/roach/roach_yes3.wav",
+	"next21_efk/roach/roach_yes4.wav"
+}
+
+new const SOUNDS_ROACH_ATTACK[][] =
+{
+	"next21_efk/roach/roach_attack0.wav",
+	"next21_efk/roach/roach_attack1.wav",
+	"next21_efk/roach/roach_attack2.wav",
+	"next21_efk/roach/roach_attack3.wav"
+}
+
+new const SOUNDS_ROACH_DEATH[][] =
+{
+	"next21_efk/roach/roach_death0.wav",
+	"next21_efk/roach/roach_death1.wav",
+	"next21_efk/roach/roach_death2.wav",
+	"next21_efk/roach/roach_death3.wav"
+}
+
+new const SOUNDS_ROACH_HIT[][] =
+{
+	"next21_efk/roach/roach_attackimpactmelee1.wav",
+	"next21_efk/roach/roach_attackimpactmelee2.wav",
+	"next21_efk/roach/roach_attackimpactmelee3.wav"
+}
+
+new const SOUNDS_ROACH_LAUNCH[][] =
+{
+	"next21_efk/roach/roach_attacklaunchranged2.wav",
+	"next21_efk/roach/roach_attacklaunchranged3.wav",
+	"next21_efk/roach/roach_attacklaunchranged4.wav"
+}
+
+new const SOUNDS_ROACH_SPIT_IMPACT[][] =
+{
+	"next21_efk/roach/roach_attackimpactranged1.wav",
+	"next21_efk/roach/roach_attackimpactranged2.wav",
+	"next21_efk/roach/roach_attackimpactranged3.wav"
 }
 
 enum NecroForm
@@ -195,6 +277,7 @@ enum _:PlayerData
 	Float:PlrLaserLockedEnd[3],
 	Float:PlrZombieCharge[MAX_MINION_SLOTS],
 	Float:PlrMinionJumpUntil[MAX_MINION_SLOTS],
+	PlrJumpPrevAction[MAX_MINION_SLOTS],
 	Float:PlrChargeLastTick,
 	Float:PlrMergeAt,
 	bool:PlrMergeOrdered,
@@ -209,6 +292,7 @@ new
 	Float:g_fMinionSlowUntil[MAX_ENTITIES_NUM + 1],
 	g_iMinionBurnCycles[MAX_ENTITIES_NUM + 1], g_iMinionBurnAttacker[MAX_ENTITIES_NUM + 1],
 	Float:g_fMinionBurnNextTick[MAX_ENTITIES_NUM + 1], g_iMinionIceBlock[MAX_ENTITIES_NUM + 1],
+	Float:g_fMinionNextMoveVoice[MAX_ENTITIES_NUM + 1],
 	bool:g_bMinionDot,
 	g_pShockwaveSpr, g_pBloodSpr, g_pBloodSpraySpr, g_pGibs[5], g_pKnifePMdl,
 	g_pFlameSpr, g_pPointSpr, g_pLaserbeamSpr
@@ -230,11 +314,18 @@ public plugin_precache()
 	for (new i; i < sizeof SOUNDS_CRIT; i++)
 		precache_sound(SOUNDS_CRIT[i])
 
-	for (new i; i < sizeof SOUNDS_ZOMBIE_ATTACK; i++)
-		precache_sound(SOUNDS_ZOMBIE_ATTACK[i])
-
-	for (new i; i < sizeof SOUNDS_ZOMBIE_PAIN; i++)
-		precache_sound(SOUNDS_ZOMBIE_PAIN[i])
+	necro_precache_sounds(SOUNDS_ZERGLING_YES, sizeof SOUNDS_ZERGLING_YES)
+	necro_precache_sounds(SOUNDS_ZERGLING_ATTACK, sizeof SOUNDS_ZERGLING_ATTACK)
+	necro_precache_sounds(SOUNDS_ZERGLING_DEATH, sizeof SOUNDS_ZERGLING_DEATH)
+	necro_precache_sounds(SOUNDS_ZERGLING_MOVE, sizeof SOUNDS_ZERGLING_MOVE)
+	necro_precache_sounds(SOUNDS_ZERGLING_HIT, sizeof SOUNDS_ZERGLING_HIT)
+	necro_precache_sounds(SOUNDS_ROACH_YES, sizeof SOUNDS_ROACH_YES)
+	necro_precache_sounds(SOUNDS_ROACH_ATTACK, sizeof SOUNDS_ROACH_ATTACK)
+	necro_precache_sounds(SOUNDS_ROACH_DEATH, sizeof SOUNDS_ROACH_DEATH)
+	necro_precache_sounds(SOUNDS_ROACH_HIT, sizeof SOUNDS_ROACH_HIT)
+	necro_precache_sounds(SOUNDS_ROACH_LAUNCH, sizeof SOUNDS_ROACH_LAUNCH)
+	necro_precache_sounds(SOUNDS_ROACH_SPIT_IMPACT, sizeof SOUNDS_ROACH_SPIT_IMPACT)
+	precache_sound(SOUND_MINION_SWING)
 
 	precache_model(MODEL_ZOMBIE)
 	precache_model(MODEL_ICEBLOCK)
@@ -316,6 +407,7 @@ public client_putinserver(iPlayer)
 	arrayset(Player[iPlayer][PlrMinionNextAttackAt], 0.0, MAX_MINION_SLOTS)
 	arrayset(Player[iPlayer][PlrZombieCharge], 0.0, MAX_MINION_SLOTS)
 	arrayset(Player[iPlayer][PlrMinionJumpUntil], 0.0, MAX_MINION_SLOTS)
+	arrayset(Player[iPlayer][PlrJumpPrevAction], -1, MAX_MINION_SLOTS)
 	Player[iPlayer][PlrChargeLastTick] = 0.0
 	Player[iPlayer][PlrLaserPendingAt] = 0.0
 	Player[iPlayer][PlrLaserLockTime] = 0.0
@@ -335,6 +427,7 @@ necro_reset_npc_actions(iOwner)
 		Player[iOwner][PlrMoveWindupTarget][i] = 0
 		Player[iOwner][PlrZombieCharge][i] = 0.0
 		Player[iOwner][PlrMinionJumpUntil][i] = 0.0
+		Player[iOwner][PlrJumpPrevAction][i] = -1
 		Player[iOwner][PlrMoveIgnoreTarget][i] = 0
 		Player[iOwner][PlrMoveIgnoreUntil][i] = 0.0
 	}
@@ -477,6 +570,19 @@ public RG_CBasePlayer_PostThink_Pre(iPlayer)
 	return HC_CONTINUE
 }
 
+necro_restore_after_jump(iOwner, iSlot, iJumpTarget)
+{
+	new iPrevAction = Player[iOwner][PlrJumpPrevAction][iSlot]
+	Player[iOwner][PlrJumpPrevAction][iSlot] = -1
+
+	if (iPrevAction < 0 || Player[iOwner][PlrNpcAction][iSlot] != NPC_ACTION_TARGET
+		|| Player[iOwner][PlrNpcActionTarget][iSlot] != iJumpTarget)
+		return
+
+	Player[iOwner][PlrNpcAction][iSlot] = NpcAction:iPrevAction
+	Player[iOwner][PlrNpcActionTarget][iSlot] = 0
+}
+
 necro_use_ultimate(iPlayer, iSlot)
 {
 	if (kc_player_in_silence(iPlayer) || kc_player_in_darkness(iPlayer))
@@ -506,7 +612,7 @@ necro_zombie_dash(iPlayer, iSlot)
 
 	new iAimEnt = rg_get_aim_origin(iPlayer, vAimOrigin)
 	new iTarget
-	if (is_entity_player(iAimEnt) && necro_is_enemy_entity(iPlayer, iAimEnt))
+	if (necro_is_enemy_entity(iPlayer, iAimEnt) && !(get_entvar(iAimEnt, var_flags) & FL_KILLME))
 	{
 		get_entvar(iAimEnt, var_origin, vTargetOrigin)
 		if (get_distance_f(vOrigin, vTargetOrigin) <= MINION_TARGET_RADIUS)
@@ -534,6 +640,25 @@ necro_zombie_dash(iPlayer, iSlot)
 				xs_vec_copy(vCandidate, vTargetOrigin)
 			}
 		}
+
+		new iEnemyMinion = NULLENT
+		while ((iEnemyMinion = rg_find_ent_by_class(iEnemyMinion, _CLASSNAME_ZOMBIE)))
+		{
+			if (!necro_is_enemy_entity(iPlayer, iEnemyMinion) || (get_entvar(iEnemyMinion, var_flags) & FL_KILLME))
+				continue
+
+			get_entvar(iEnemyMinion, var_origin, vCandidate)
+			new Float:fDist = get_distance_f(vOrigin, vCandidate)
+			if (iEnemyMinion == iCurrent)
+				fDist = 0.0
+
+			if (fDist <= fBest)
+			{
+				fBest = fDist
+				iTarget = iEnemyMinion
+				xs_vec_copy(vCandidate, vTargetOrigin)
+			}
+		}
 	}
 
 	if (!iTarget)
@@ -551,12 +676,14 @@ necro_zombie_dash(iPlayer, iSlot)
 	set_entvar(iMinion, var_velocity, vVelocity)
 	set_entvar(iMinion, var_flags, get_entvar(iMinion, var_flags) & ~FL_ONGROUND)
 
+	Player[iPlayer][PlrJumpPrevAction][iSlot] = Player[iPlayer][PlrNpcAction][iSlot] == NPC_ACTION_TARGET
+		? -1 : _:Player[iPlayer][PlrNpcAction][iSlot]
 	Player[iPlayer][PlrNpcAction][iSlot] = NPC_ACTION_TARGET
 	Player[iPlayer][PlrNpcActionTarget][iSlot] = iTarget
 	Player[iPlayer][PlrMinionJumpUntil][iSlot] = fGameTime + ZOMBIE_JUMP_MAX_TIME
 	Player[iPlayer][PlrZombieCharge][iSlot] = 0.0
 
-	engfunc(EngFunc_EmitSound, iMinion, CHAN_AUTO, SOUNDS_ZOMBIE_ATTACK[random(sizeof SOUNDS_ZOMBIE_ATTACK)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+	necro_voice_attack(iMinion)
 }
 
 necro_command_target(iPlayer, iSlot)
@@ -576,6 +703,7 @@ necro_command_target(iPlayer, iSlot)
 		if (fAimDistance > MINION_TARGET_RADIUS)
 			return
 
+		Player[iPlayer][PlrJumpPrevAction][iSlot] = -1
 		Player[iPlayer][PlrNpcAction][iSlot] = NPC_ACTION_TARGET
 		Player[iPlayer][PlrNpcActionTarget][iSlot] = iAimEnt
 	}
@@ -593,6 +721,15 @@ necro_command_target(iPlayer, iSlot)
 	xs_vec_copy(vAimOrigin, vSpriteOrigin)
 	vSpriteOrigin[2] += 30.0
 	send_msg_TE_SPRITE(vSpriteOrigin, g_pPointSpr, 8, 100, MSG_ONE, _, iPlayer)
+
+	new iMinion = Player[iPlayer][PlrMinionEnt][iSlot]
+	if (iMinion && is_entity(iMinion) && !(get_entvar(iMinion, var_flags) & FL_KILLME))
+	{
+		if (bTargetable)
+			necro_voice_attack(iMinion)
+		else
+			necro_voice_yes(iMinion)
+	}
 }
 
 public fw_PlayerKilled(iVictim, iAttacker)
@@ -923,7 +1060,8 @@ public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 		return FMRES_IGNORED
 	}
 
-	if (host != iOwner && get_entvar(host, var_iuser2) != iOwner)
+	if (host != iOwner && get_entvar(host, var_iuser2) != iOwner
+		&& !(Player[host][PlrTeam] != Player[iOwner][PlrTeam] && kc_player_has_hpscan(host)))
 	{
 		set_es(es_state, ES_Effects, EF_NODRAW)
 		return FMRES_IGNORED
@@ -1224,9 +1362,9 @@ public spit_touch(iSpitEnt, iOther)
 
 	new Float:vOrigin[3]
 	get_entvar(iSpitEnt, var_origin, vOrigin)
-	send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, 70, 5)
+	send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, 5)
 	engfunc(EngFunc_EmitSound, iSpitEnt, CHAN_AUTO,
-		SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+		SOUNDS_ROACH_SPIT_IMPACT[random(sizeof SOUNDS_ROACH_SPIT_IMPACT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
 	rg_remove_entity(iSpitEnt)
 }
 
@@ -1235,10 +1373,10 @@ spit_kill(iSpitEnt, bool:bStabbed=false)
 	new Float:vOrigin[3]
 	get_entvar(iSpitEnt, var_origin, vOrigin)
 
-	send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, 70, 5)
+	send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, 5)
 
 	engfunc(EngFunc_EmitSound, iSpitEnt, CHAN_AUTO,
-		SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)],
+		SOUNDS_ROACH_SPIT_IMPACT[random(sizeof SOUNDS_ROACH_SPIT_IMPACT)],
 		1.0, ATTN_NORM, 0,
 		bStabbed ? random_num(90, 95) : PITCH_NORM
 	)
@@ -1278,34 +1416,13 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 	new bool:bCentaurForm = bool:(Player[iSubject][PlrForm] == FORM_CENTAUR)
 	new iSlots = bCentaurForm ? 1 : MAX_MINION_SLOTS
 
-	formatex(szLabel, charsmax(szLabel), "%L", iPlayer, bCentaurForm ? "NECRO_CENTAUR" : "NECRO_ZOMBIES")
-	iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s: ", szLabel)
 	for (new i; i < iSlots; i++)
 	{
 		new iEnt = Player[iSubject][PlrMinionEnt][i]
-		if (i)
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, " | ")
-
 		if (iEnt && is_entity(iEnt) && !(get_entvar(iEnt, var_flags) & FL_KILLME))
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%L", iPlayer, "NECRO_HP",
-				floatround(Float:get_entvar(iEnt, var_health), floatround_floor))
+			formatex(szLabel, charsmax(szLabel), "%L", iPlayer, "NECRO_HP", floatround(Float:get_entvar(iEnt, var_health), floatround_floor))
 		else
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%L", iPlayer, "NECRO_RESPAWN", necro_respawn_percent(iSubject, i))
-	}
-
-	iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%L: ", iPlayer, "NECRO_CHARGE")
-	for (new i; i < iSlots; i++)
-	{
-		if (i)
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, " | ")
-
-		iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%d%%", floatround(Player[iSubject][PlrZombieCharge][i], floatround_floor))
-	}
-
-	for (new i; i < MAX_MINION_SLOTS; i++)
-	{
-		if (Player[iSubject][PlrForm] == FORM_CENTAUR && i == 1)
-			break
+			formatex(szLabel, charsmax(szLabel), "%L", iPlayer, "NECRO_RESPAWN", necro_respawn_percent(iSubject, i))
 
 		szAction[0] = 0
 		switch (Player[iSubject][PlrNpcAction][i])
@@ -1314,9 +1431,11 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 			case NPC_ACTION_TARGET: formatex(szAction, charsmax(szAction), "%L", iPlayer, "NPC_ACTION_TARGET")
 			case NPC_ACTION_FOLLOW: formatex(szAction, charsmax(szAction), "%L", iPlayer, "NPC_ACTION_FOLLOW")
 		}
-		if (szAction[0])
-			iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s: %s",
-				Player[iSubject][PlrForm] == FORM_CENTAUR ? "E/R" : (i == 0 ? "E" : "R"), szAction)
+
+		iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s [%s] (%dpt)%s%s",
+			bCentaurForm ? "E/R" : (i == 0 ? "E" : "R"), szLabel,
+			floatround(Player[iSubject][PlrZombieCharge][i], floatround_floor),
+			szAction[0] ? " : " : "", szAction)
 	}
 
 	if (szMessage[0])
@@ -1413,7 +1532,7 @@ necro_start_laser_indicate(iPlayer)
 	set_entvar(iCentaur, var_animtime, get_gametime())
 	set_entvar(iCentaur, var_frame, 0.0)
 	set_entvar(iCentaur, var_sequence, 5)
-	engfunc(EngFunc_EmitSound, iCentaur, CHAN_AUTO, SOUNDS_ZOMBIE_ATTACK[random(sizeof SOUNDS_ZOMBIE_ATTACK)], 1.0, ATTN_NORM, 0, PITCH_LOW)
+	necro_voice_attack(iCentaur)
 }
 
 necro_clear_laser_glow(iPlayer)
@@ -1667,7 +1786,7 @@ bool:necro_start_centaur_spit(iCentaurEnt, const Float:vOrigin[3], iTarget)
 
 	xs_vec_copy(vOrigin, vSelfOrigin)
 	xs_vec_copy(vOrigin, vStart)
-	vStart[2] += 40.0
+	vStart[2] += CENTAUR_SPIT_HEIGHT
 	engfunc(EngFunc_TraceLine, vStart, vTargetOrigin, 0, iCentaurEnt, 0)
 	get_tr2(0, TR_flFraction, fFraction)
 	if (fFraction <= 0.9)
@@ -1681,8 +1800,6 @@ bool:necro_start_centaur_spit(iCentaurEnt, const Float:vOrigin[3], iTarget)
 	set_entvar(iCentaurEnt, var_sequence, 5)
 	set_entvar(iCentaurEnt, var_npcspit, iTarget)
 	set_entvar(iCentaurEnt, var_nextthink, fGameTime + 0.6)
-
-	engfunc(EngFunc_EmitSound, iCentaurEnt, CHAN_AUTO, SOUNDS_ZOMBIE_ATTACK[random(sizeof SOUNDS_ZOMBIE_ATTACK)], 1.0, ATTN_NORM, 0, PITCH_LOW)
 	return true
 }
 
@@ -1707,9 +1824,9 @@ bool:necro_release_centaur_spit(iCentaurEnt, iOwner, const Float:vOrigin[3])
 	get_entvar(iCentaurEnt, var_angles, vAngles)
 	engfunc(EngFunc_MakeVectors, vAngles)
 	global_get(glb_v_forward, vStart)
-	xs_vec_mul_scalar(vStart, 50.0, vStart)
+	xs_vec_mul_scalar(vStart, CENTAUR_SPIT_FORWARD, vStart)
 	xs_vec_add(vSelfOrigin, vStart, vStart)
-	vStart[2] += 40.0
+	vStart[2] += CENTAUR_SPIT_HEIGHT
 
 	engfunc(EngFunc_SetModel, iSpitEnt, MODEL_SPIT)
 	engfunc(EngFunc_SetOrigin, iSpitEnt, vStart)
@@ -1739,6 +1856,7 @@ bool:necro_release_centaur_spit(iCentaurEnt, iOwner, const Float:vOrigin[3])
 	SetTouch(iSpitEnt, "spit_touch")
 
 	set_entvar(iCentaurEnt, var_nextthink, get_gametime() + 0.4)
+	engfunc(EngFunc_EmitSound, iCentaurEnt, CHAN_WEAPON, SOUNDS_ROACH_LAUNCH[random(sizeof SOUNDS_ROACH_LAUNCH)], 1.0, ATTN_NORM, 0, PITCH_NORM)
 	return true
 }
 
@@ -1756,6 +1874,7 @@ necro_attack_entity(iMinion, iOwner, iTarget, bool:bCentaur)
 		kc_player_set_death_reason(iTarget, "DEATH_REASON_ZOMBIE")
 		set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
 		ExecuteHamB(Ham_TakeDamage, iTarget, iMinion, iOwner, fDamage, DMG_SLASH | DMG_ALWAYSGIB)
+		necro_voice_hit(iMinion)
 
 		kc_player_heal(iOwner, fDamage * ZOMBIE_HIT_HEAL_PERCENT, iOwner)
 	}
@@ -1769,6 +1888,7 @@ necro_attack_entity(iMinion, iOwner, iTarget, bool:bCentaur)
 	{
 		new Float:fDamage = bCentaur ? random_float(CENTAUR_MIN_DAMAGE, CENTAUR_MAX_DAMAGE) : random_float(ZOMBIE_MIN_DAMAGE, ZOMBIE_MAX_DAMAGE)
 		ExecuteHamB(Ham_TakeDamage, iTarget, iMinion, iOwner, fDamage, DMG_SLASH | DMG_ALWAYSGIB)
+		necro_voice_hit(iMinion)
 
 		kc_player_heal(iOwner, fDamage * ZOMBIE_HIT_HEAL_PERCENT, iOwner)
 	}
@@ -1781,15 +1901,11 @@ necro_play_attack_animation(iMinion, bool:bCentaur)
 	set_entvar(iMinion, var_frame, 0.0)
 
 	if (bCentaur)
-	{
 		set_entvar(iMinion, var_sequence, get_entvar(iMinion, var_sequence) == 3 ? 4 : 3)
-		engfunc(EngFunc_EmitSound, iMinion, CHAN_AUTO, SOUNDS_ZOMBIE_ATTACK[random(sizeof SOUNDS_ZOMBIE_ATTACK)], 1.0, ATTN_NORM, 0, PITCH_LOW)
-	}
 	else
-	{
 		set_entvar(iMinion, var_sequence, get_entvar(iMinion, var_sequence) == 2 ? 3 : 2)
-		engfunc(EngFunc_EmitSound, iMinion, CHAN_AUTO, SOUNDS_ZOMBIE_ATTACK[random(sizeof SOUNDS_ZOMBIE_ATTACK)], 1.0, ATTN_NORM, 0, PITCH_NORM)
-	}
+
+	engfunc(EngFunc_EmitSound, iMinion, CHAN_WEAPON, SOUND_MINION_SWING, 1.0, ATTN_NORM, 0, PITCH_NORM)
 }
 
 necro_minion_think(iMinion, bool:bCentaur)
@@ -1895,6 +2011,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 				necro_attack_entity(iMinion, iOwner, iJumpTarget, false)
 				necro_play_attack_animation(iMinion, false)
 				Player[iOwner][PlrMinionJumpUntil][iAttackSlot] = 0.0
+				necro_restore_after_jump(iOwner, iAttackSlot, iJumpTarget)
 				Player[iOwner][PlrMinionNextAttackAt][iAttackSlot] = fGameTime + MINION_ATTACK_INTERVAL
 				set_entvar(iMinion, var_nextthink, fGameTime + MINION_ATTACK_INTERVAL)
 				return
@@ -1904,7 +2021,10 @@ necro_minion_think(iMinion, bool:bCentaur)
 			bLanded = true
 
 		if (bLanded)
+		{
 			Player[iOwner][PlrMinionJumpUntil][iAttackSlot] = 0.0
+			necro_restore_after_jump(iOwner, iAttackSlot, iJumpTarget)
+		}
 		else
 		{
 			set_entvar(iMinion, var_nextthink, fGameTime + 0.05)
@@ -1950,7 +2070,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 		set_entvar(iMinion, var_health,
 			floatmin(Float:get_entvar(iMinion, var_health) + CORPSE_HEAL, fMaxHealth))
 
-		send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, 70, 5)
+		send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, 5)
 		engfunc(EngFunc_EmitSound, iMinion, CHAN_AUTO,
 			SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
 		rg_remove_entity(iTarget)
@@ -2009,6 +2129,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 	npc_TurnToTarget(iMinion, vOrigin, vDestination)
 	npc_Move(iMinion, necro_get_move_speed(iMinion, bReturning))
 	necro_set_move_animation(iMinion, bCentaur)
+	necro_voice_move(iMinion)
 	set_entvar(iMinion, var_nextthink, fGameTime + 0.1)
 }
 
@@ -2084,7 +2205,7 @@ bool:necro_move_mode_attack(iMinion, iOwner, iSlot, bool:bCentaur, const Float:v
 		return false
 	}
 
-	if (bReturning)
+	if (bReturning || Player[iOwner][PlrMinionNextAttackAt][iSlot] > fGameTime)
 		return false
 
 	new iIgnore = Player[iOwner][PlrMoveIgnoreUntil][iSlot] > fGameTime ? Player[iOwner][PlrMoveIgnoreTarget][iSlot] : 0
@@ -2103,6 +2224,7 @@ bool:necro_move_mode_attack(iMinion, iOwner, iSlot, bool:bCentaur, const Float:v
 	necro_play_attack_animation(iMinion, bCentaur)
 	set_entvar(iMinion, var_velocity, NULL_VECTOR)
 
+	Player[iOwner][PlrMinionNextAttackAt][iSlot] = fGameTime + MINION_ATTACK_INTERVAL
 	Player[iOwner][PlrMoveWindupTarget][iSlot] = iEnemy
 	Player[iOwner][PlrMoveWindupEndAt][iSlot] = fGameTime + MOVE_WINDUP_TIME
 	set_entvar(iMinion, var_nextthink, fGameTime + MOVE_WINDUP_TIME)
@@ -2210,14 +2332,11 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 	{
 		set_entvar(iZombieEnt, var_fuser3, fGameTime)
 
-		engfunc(EngFunc_EmitSound, iZombieEnt, CHAN_AUTO,
-			SOUNDS_ZOMBIE_PAIN[random(sizeof SOUNDS_ZOMBIE_PAIN)],
-			1.0, ATTN_NORM, 0, !get_entvar(iZombieEnt, var_npctype) ? PITCH_NORM : PITCH_LOW)
-
-		send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, 70, 5)
+		send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, 5)
 	}
 	else
 	{
+
 		if (is_entity_player(iAttacker))
 		{
 			if (Player[iAttacker][PlrKnife] == g_iKnifeId)
@@ -2234,8 +2353,7 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 			Player[iDamagedOwner][PlrMinionRespawnAt][iDamagedSlot] = fGameTime + MINION_RESPAWN_TIME
 		}
 
-		engfunc(EngFunc_EmitSound, iZombieEnt, CHAN_AUTO,
-			SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+		necro_voice_death(iZombieEnt)
 		create_gore(vOrigin)
 
 		set_entvar(iZombieEnt, var_solid, SOLID_NOT)
@@ -2247,6 +2365,7 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 
 	return bDamageChanged ? HAM_OVERRIDE : HAM_IGNORED
 }
+
 
 zombie_play_idle(iZombieEnt, Float:fNextThink=0.1)
 {
@@ -2317,6 +2436,56 @@ necro_minion_reset_status(iMinion)
 	g_iMinionBurnCycles[iMinion] = 0
 	g_iMinionBurnAttacker[iMinion] = 0
 	g_fMinionBurnNextTick[iMinion] = 0.0
+	g_fMinionNextMoveVoice[iMinion] = 0.0
+}
+
+necro_precache_sounds(const szSounds[][], iCount)
+{
+	for (new i; i < iCount; i++)
+		precache_sound(szSounds[i])
+}
+
+necro_voice_yes(iMinion)
+{
+	if (get_entvar(iMinion, var_npctype))
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_VOICE, SOUNDS_ROACH_YES[random(sizeof SOUNDS_ROACH_YES)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+	else
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_VOICE, SOUNDS_ZERGLING_YES[random(sizeof SOUNDS_ZERGLING_YES)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+}
+
+necro_voice_attack(iMinion)
+{
+	if (get_entvar(iMinion, var_npctype))
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_VOICE, SOUNDS_ROACH_ATTACK[random(sizeof SOUNDS_ROACH_ATTACK)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+	else
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_VOICE, SOUNDS_ZERGLING_ATTACK[random(sizeof SOUNDS_ZERGLING_ATTACK)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+}
+
+necro_voice_death(iMinion)
+{
+	if (get_entvar(iMinion, var_npctype))
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_VOICE, SOUNDS_ROACH_DEATH[random(sizeof SOUNDS_ROACH_DEATH)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+	else
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_VOICE, SOUNDS_ZERGLING_DEATH[random(sizeof SOUNDS_ZERGLING_DEATH)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+}
+
+necro_voice_move(iMinion)
+{
+	new Float:fGameTime = get_gametime()
+	if (g_fMinionNextMoveVoice[iMinion] > fGameTime)
+		return
+
+	new iSound = random(sizeof SOUNDS_ZERGLING_MOVE)
+	g_fMinionNextMoveVoice[iMinion] = fGameTime + (get_entvar(iMinion, var_npctype) ? ROACH_MOVE_VOICE_DELAY[iSound] : ZERGLING_MOVE_VOICE_DELAY[iSound])
+	engfunc(EngFunc_EmitSound, iMinion, CHAN_VOICE, SOUNDS_ZERGLING_MOVE[iSound], 1.0, ATTN_NORM, 0, PITCH_NORM)
+}
+
+necro_voice_hit(iMinion)
+{
+	if (get_entvar(iMinion, var_npctype))
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_ITEM, SOUNDS_ROACH_HIT[random(sizeof SOUNDS_ROACH_HIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+	else
+		engfunc(EngFunc_EmitSound, iMinion, CHAN_ITEM, SOUNDS_ZERGLING_HIT[random(sizeof SOUNDS_ZERGLING_HIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
 }
 
 necro_minion_slow(iMinion)
@@ -2606,7 +2775,7 @@ create_zombie(Float:vOrigin[3], Float:vAngles[3], iOwner, iSlot = 0)
 
 	engfunc(EngFunc_SetOrigin, iZombieEnt, vOrigin)
 	engfunc(EngFunc_SetModel, iZombieEnt, MODEL_ZOMBIE)
-	engfunc(EngFunc_SetSize, iZombieEnt, Float:{-18.0, -18.0, 0.0}, Float:{18.0, 18.0, 20.0})
+	engfunc(EngFunc_SetSize, iZombieEnt, Float:{-ZOMBIE_HULL_RADIUS, -ZOMBIE_HULL_RADIUS, 0.0}, Float:{ZOMBIE_HULL_RADIUS, ZOMBIE_HULL_RADIUS, 20.0})
 
 	set_entvar(iZombieEnt, var_origin, vOrigin)
 	set_entvar(iZombieEnt, var_angles, vAngles)
@@ -2632,16 +2801,17 @@ create_zombie(Float:vOrigin[3], Float:vAngles[3], iOwner, iSlot = 0)
 	set_entvar(iZombieEnt, var_animtime, fGameTime)
 	set_entvar(iZombieEnt, var_frame, 0.0)
 	set_entvar(iZombieEnt, var_framerate, 1.0)
-	set_entvar(iZombieEnt, var_sequence, 4)
+	set_entvar(iZombieEnt, var_sequence, 0)
 
 	set_entvar(iZombieEnt, var_npctarget, 0)
 	set_entvar(iZombieEnt, var_npctype, 0)
 	set_entvar(iZombieEnt, var_npcspawntime, fGameTime)
+	set_entvar(iZombieEnt, var_fuser3, fGameTime)
 	set_entvar(iZombieEnt, var_nextthink, fGameTime + 0.7)
 
 	SetThink(iZombieEnt, "necro_zombie_think")
 
-	set_member(iZombieEnt, m_bloodColor, 71)
+	set_member(iZombieEnt, m_bloodColor, MINION_BLOOD_COLOR)
 
 	drop_to_floor(iZombieEnt)
 
@@ -2697,11 +2867,12 @@ create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner)
 	set_entvar(iCentaurEnt, var_npctarget, 0)
 	set_entvar(iCentaurEnt, var_npctype, 1)
 	set_entvar(iCentaurEnt, var_npcspawntime, fGameTime)
+	set_entvar(iCentaurEnt, var_fuser3, fGameTime)
 	set_entvar(iCentaurEnt, var_nextthink, fGameTime + 1.13)
 
 	SetThink(iCentaurEnt, "necro_centaur_think")
 
-	set_member(iCentaurEnt, m_bloodColor, 71)
+	set_member(iCentaurEnt, m_bloodColor, MINION_BLOOD_COLOR)
 
 	new i
 	for (i = 1; i <= MaxClients; i++)
@@ -2719,13 +2890,15 @@ create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner)
 
 create_gore(const Float:vOrigin[3])
 {
-	new const blood_large[] = {204, 205}
-
-	new Float:vDecalOrigin[3]
-	vDecalOrigin[0] = vOrigin[0] + random_float(-50.0, 50.0)
-	vDecalOrigin[1] = vOrigin[1] + random_float(-50.0, 50.0)
-	vDecalOrigin[2] = vOrigin[2]
-	send_msg_TE_WORLDDECAL(vDecalOrigin, blood_large[random(2)])
+	new iDecal = engfunc(EngFunc_DecalIndex, fmt("{yblood%d", random_num(1, 6)))
+	if (iDecal > 0)
+	{
+		new Float:vDecalOrigin[3]
+		vDecalOrigin[0] = vOrigin[0] + random_float(-50.0, 50.0)
+		vDecalOrigin[1] = vOrigin[1] + random_float(-50.0, 50.0)
+		vDecalOrigin[2] = vOrigin[2]
+		send_msg_TE_WORLDDECAL(vDecalOrigin, iDecal)
+	}
 
 	message_begin(MSG_BROADCAST,SVC_TEMPENTITY)
 	write_byte(TE_MODEL)
@@ -2804,7 +2977,7 @@ create_gore(const Float:vOrigin[3])
 			engfunc(EngFunc_WriteCoord, vOrigin[2] + (z * j))
 			write_short(g_pBloodSpraySpr)
 			write_short(g_pBloodSpr)
-			write_byte(248)
+			write_byte(MINION_BLOOD_COLOR)
 			write_byte(15)
 			message_end()
 		}
@@ -2824,8 +2997,7 @@ necro_execute_minions(iOwner)
 		new Float:vOrigin[3]
 		get_entvar(iMinionEnt, var_origin, vOrigin)
 
-		engfunc(EngFunc_EmitSound, iMinionEnt, CHAN_AUTO,
-			SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+		necro_voice_death(iMinionEnt)
 		create_gore(vOrigin)
 
 		minion_remove_lifebar(iOwner, i)

@@ -256,6 +256,8 @@ public fw_PreThink(iPlayer)
 			}
 			else if (get_entvar(ent, var_impulse) == IMPULSE_TORNADO && iTeam == get_entvar(ent, var_team))
 				tornado_burn(ent)
+			else if ((get_entvar(ent, var_flags) & FL_MONSTER) && get_entvar(ent, var_skin) + 1 != iTeam)
+				ExecuteHamB(Ham_TakeDamage, ent, iPlayer, iPlayer, 0.0, DMG_BURN)
 
 			ent = engfunc(EngFunc_FindEntityInSphere, ent, vOrigin, RUSH_RADIUS)
 		}
@@ -342,7 +344,7 @@ public beam_think(iBeamEnt)
 		{
 			if (is_entity_player(ent))
 				kc_player_burn(ent, iOwner, BURN_CYCLES)
-			else if ((get_entvar(ent, var_flags) & FL_MONSTER) && get_entvar(ent, var_skin) != get_entvar(iBeamEnt, var_skin))
+			else if ((get_entvar(ent, var_flags) & FL_MONSTER) && get_entvar(ent, var_skin) + 1 != iTeam)
 				ExecuteHamB(Ham_TakeDamage, ent, iOwner, iOwner, 45.0, DMG_BURN)
 			else if (get_entvar(ent, var_impulse) == IMPULSE_TORNADO && iTeam == get_entvar(ent, var_team))
 				tornado_burn(ent)

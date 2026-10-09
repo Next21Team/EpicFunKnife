@@ -613,6 +613,7 @@ public plugin_natives()
 
 	register_native("kc_darkness", "_21kc_darkness")
 	register_native("kc_player_in_darkness", "_21kc_player_in_darkness")
+	register_native("kc_player_has_hpscan", "_21kc_player_has_hpscan")
 
 	register_native("kc_silence", "_21kc_silence")
 	register_native("kc_player_in_silence", "_21kc_player_in_silence")
@@ -8030,6 +8031,14 @@ public bool:_21kc_player_in_darkness(plugin, num_params)
 	return g_iDarknessTeam > 0
 		&& Player[iPlayer][PlrTeam] != g_iDarknessTeam
 		&& Player[iPlayer][PlrVision] != VISION_NIGHT
+}
+
+public bool:_21kc_player_has_hpscan(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	return CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE)
+		&& is_hp_scan_available(iPlayer)
+		&& (g_iDarknessTeam == -1 || g_iDarknessTeam == Player[iPlayer][PlrTeam])
 }
 
 public bool:_21kc_silence(plugin, num_params)
