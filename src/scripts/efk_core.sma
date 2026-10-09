@@ -281,6 +281,7 @@ enum _:PlayerProperties
 	PlrAttacker,
 	PlrDeathReasonText[LEN_DEATH_REASON],
 	bool:PlrDeathReasonApplied,
+	PlrAbility4HintText[LEN_ABILITY_NAME],
 	PlrHpBarEnt,
 	PlrBlindEffEnt,
 	PlrCameraEnt,
@@ -612,6 +613,7 @@ public plugin_natives()
 
 	register_native("kc_darkness", "_21kc_darkness")
 	register_native("kc_player_in_darkness", "_21kc_player_in_darkness")
+	register_native("kc_player_has_hpscan", "_21kc_player_has_hpscan")
 
 	register_native("kc_silence", "_21kc_silence")
 	register_native("kc_player_in_silence", "_21kc_player_in_silence")
@@ -671,6 +673,7 @@ public plugin_natives()
 	register_native("kc_player_try_crit", "_21kc_player_try_crit")
 
 	register_native("kc_player_set_death_reason", "_21kc_player_set_death_reason")
+	register_native("kc_player_set_ability4_hint", "_21kc_player_set_ability4_hint")
 
 	register_native("kc_player_is_influenced", "_21kc_player_is_influenced")
 
@@ -2062,9 +2065,15 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 					floatround(PlayerF[iSubject][PlrAbility3Charge], floatround_floor))
 
 			if (Knife[iSubjectKnifeId][KNF_ABILITY4_NAME][0] != EOS)
-				formatex(szChargingText[iLen], charsmax(szChargingText), "^n%s (F) (%dpt)",
+			{
+				iLen += formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, "^n%s (F) (%dpt)",
 					Knife[iSubjectKnifeId][KNF_ABILITY4_NAME],
 					floatround(PlayerF[iSubject][PlrAbility4Charge], floatround_floor))
+
+				if (Player[iSubject][PlrAbility4HintText][0] != EOS)
+					formatex(szChargingText[iLen], charsmax(szChargingText) - iLen, " (%s)",
+						Player[iSubject][PlrAbility4HintText])
+			}
 
 			if (szChargingText[0])
 			{
@@ -4876,6 +4885,7 @@ set_knife_params(iPlayer, iKnifeId)
 		set_pdata_string(i, 492 * 4, ANIM_EXTENSIONS[Knife[iKnifeId][KNF_ANIM_EXT]], -1, 5 * 4)
 	}
 
+	Player[iPlayer][PlrAbility4HintText][0] = EOS
 	Player[iPlayer][PlrKnife] = iKnifeId
 }
 
@@ -8023,6 +8033,14 @@ public bool:_21kc_player_in_darkness(plugin, num_params)
 		&& Player[iPlayer][PlrVision] != VISION_NIGHT
 }
 
+public bool:_21kc_player_has_hpscan(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	return CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE)
+		&& is_hp_scan_available(iPlayer)
+		&& (g_iDarknessTeam == -1 || g_iDarknessTeam == Player[iPlayer][PlrTeam])
+}
+
 public bool:_21kc_silence(plugin, num_params)
 {
 	new iTeam = get_param(1)
@@ -8666,6 +8684,12 @@ public bool:_21kc_player_try_crit(plugin, num_params)
 	new iRet
 	ExecuteForward(forward_preuse_crit, iRet, get_param(1), get_param(2))
 	return !iRet
+}
+
+public _21kc_player_set_ability4_hint(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	get_string(2, Player[iPlayer][PlrAbility4HintText], LEN_ABILITY_NAME - 1)
 }
 
 public _21kc_player_set_death_reason(plugin, num_params)

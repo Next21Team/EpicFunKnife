@@ -80,6 +80,12 @@ new const SZ_INFO_TARGET[] = "info_target"
 
 #define var_spike_lifetime	var_fuser1
 
+#define TASK_SPIKE_MONSTER_SCAN		35200
+#define MONSTER_TOUCH_INTERVAL		0.1
+#define MONSTER_TOUCH_SCAN_RADIUS	60.0
+
+new Float:g_fSpikeMonsterDamagedTime[2048 + 1]
+
 enum _:ViewSeq
 {
 	VIEW_SEQ_STAB = 4
@@ -172,6 +178,8 @@ public plugin_init()
 	RegisterHam(Ham_TakeDamage, "player", "fw_PlayerDamage")
 	RegisterHam(Ham_TakeDamage, "player", "fw_PlayerDamage_Post", 1)
 	RegisterHam(Ham_Killed, "player", "fw_PlayerKilled")
+
+	set_task(MONSTER_TOUCH_INTERVAL, "spike_monster_scan", TASK_SPIKE_MONSTER_SCAN, _, _, "b")
 
 	RegisterHookChain(RG_CSGameRules_CleanUpMap, "RG_CSGameRules_CleanUpMap_Post", true)
 }
@@ -371,7 +379,7 @@ public fw_PlayerDamage(iVictim, inflictor, attacker, Float:damage, bits)
 				iSpikeEnt = rg_create_entity(SZ_INFO_TARGET)
 				if (is_entity(iSpikeEnt))
 				{
-					get_floor_origin(iSpikeEnt, vPlayerOrigin, vFloorOrigin)
+					get_spike_floor_origin(iSpikeEnt, vPlayerOrigin, vFloorOrigin)
 
 					if (engfunc(EngFunc_PointContents, vFloorOrigin) == CONTENTS_EMPTY)
 					{
@@ -393,7 +401,7 @@ public fw_PlayerDamage(iVictim, inflictor, attacker, Float:damage, bits)
 					vEntOrigin[1] = vPlayerOrigin[1] + floatsin(i * 360.0 / MAX_STOMP_SPIKES, degrees) * 100.0
 					vEntOrigin[2] = vPlayerOrigin[2]
 
-					get_floor_origin(iSpikeEnt, vEntOrigin, vFloorOrigin)
+					get_spike_floor_origin(iSpikeEnt, vEntOrigin, vFloorOrigin)
 
 					if (engfunc(EngFunc_PointContents, vFloorOrigin) != CONTENTS_EMPTY)
 					{
@@ -418,7 +426,7 @@ public fw_PlayerDamage(iVictim, inflictor, attacker, Float:damage, bits)
 						vEntOrigin[1] = vPlayerOrigin[1] + floatsin(i * 360.0 / MAX_STOMP_SPIKES + 180.0 / MAX_STOMP_SPIKES, degrees) * 160.0
 						vEntOrigin[2] = vPlayerOrigin[2]
 
-						get_floor_origin(iSpikeEnt, vEntOrigin, vFloorOrigin)
+						get_spike_floor_origin(iSpikeEnt, vEntOrigin, vFloorOrigin)
 
 						if (engfunc(EngFunc_PointContents, vFloorOrigin) != CONTENTS_EMPTY)
 						{
@@ -607,6 +615,39 @@ public spike_think(iEnt)
 	}
 }
 
+public spike_monster_scan()
+{
+	new iMonster = NULLENT
+	while ((iMonster = rg_find_ent_by_class(iMonster, CLASSNAME_ZOMBIE)))
+	{
+		if (get_entvar(iMonster, var_impulse) != IMPULSE_ZOMBIE || (get_entvar(iMonster, var_flags) & FL_KILLME))
+			continue
+
+		new Float:vOrigin[3], Float:vMonsterMin[3], Float:vMonsterMax[3]
+		get_entvar(iMonster, var_origin, vOrigin)
+		get_entvar(iMonster, var_absmin, vMonsterMin)
+		get_entvar(iMonster, var_absmax, vMonsterMax)
+
+		new iSpike = NULLENT
+		while ((iSpike = engfunc(EngFunc_FindEntityInSphere, iSpike, vOrigin, MONSTER_TOUCH_SCAN_RADIUS)))
+		{
+			if (get_entvar(iSpike, var_impulse) != IMPULSE_SPIKES)
+				continue
+
+			new Float:vSpikeMin[3], Float:vSpikeMax[3]
+			get_entvar(iSpike, var_absmin, vSpikeMin)
+			get_entvar(iSpike, var_absmax, vSpikeMax)
+
+			if (vSpikeMin[0] > vMonsterMax[0] || vSpikeMax[0] < vMonsterMin[0]
+				|| vSpikeMin[1] > vMonsterMax[1] || vSpikeMax[1] < vMonsterMin[1]
+				|| vSpikeMin[2] > vMonsterMax[2] || vSpikeMax[2] < vMonsterMin[2])
+				continue
+
+			dllfunc(DLLFunc_Touch, iSpike, iMonster)
+		}
+	}
+}
+
 public spike_touch(iEnt, iOther)
 {
 	if (!is_entity(iOther))
@@ -690,7 +731,33 @@ public spike_touch(iEnt, iOther)
 			if (Player[iAttacker][Team] == get_entvar(iOther, var_skin) + 1)
 				return
 
-			ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iAttacker, 60.0, DMG_BLAST)
+			new Float:fGameTime = get_gametime()
+			if (g_fSpikeMonsterDamagedTime[iOther] > fGameTime)
+				return
+
+			if (iSeq == SPIKE_SEQ_UP)
+			{
+				new Float:fDamage = random_float(SPIKES_START_MINDAMAGE, SPIKES_START_MAXDAMAGE)
+				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iAttacker, fDamage, DMG_CLUB | DMG_NPC_SLOW)
+
+				if (is_entity(iOther) && !(get_entvar(iOther, var_flags) & FL_KILLME))
+				{
+					new Float:vVelocity[3]
+					get_entvar(iOther, var_velocity, vVelocity)
+					vVelocity[2] = (get_entvar(iOther, var_flags) & FL_ONGROUND) ? 800.0 : 500.0
+					set_entvar(iOther, var_velocity, vVelocity)
+					set_entvar(iOther, var_flags, get_entvar(iOther, var_flags) & ~FL_ONGROUND)
+				}
+
+				g_fSpikeMonsterDamagedTime[iOther] = fGameTime + 0.3
+			}
+			else
+			{
+				new Float:fDamage = random_float(SPIKES_MINDAMAGE, SPIKES_MAXDAMAGE)
+				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iAttacker, fDamage, DMG_CLUB)
+
+				g_fSpikeMonsterDamagedTime[iOther] = fGameTime + 0.5
+			}
 		}
 	}
 }
@@ -758,13 +825,13 @@ public efk_ability(iPlayer)
 		xs_vec_mul_scalar(vVector, distance, fDistance)
 		xs_vec_add(vOrigin, fDistance, vOrigin)
 
-		get_floor_origin(iSpikeEnt, vOrigin, fDistance)
+		get_spike_floor_origin(iSpikeEnt, vOrigin, fDistance)
 
 		if (engfunc(EngFunc_PointContents, fDistance) != CONTENTS_EMPTY)
 		{
 			up_koef++
 			fDistance[2] = vOrigin[2] + 36.0 + up_koef * 15.0
-			get_floor_origin(iSpikeEnt, fDistance, fDistance)
+			get_spike_floor_origin(iSpikeEnt, fDistance, fDistance)
 
 			if (engfunc(EngFunc_PointContents, fDistance) != CONTENTS_EMPTY)
 			{
@@ -861,6 +928,34 @@ set_spikes_spine_cooldown_charge(iPlayer)
 	new Float:fCharge = kc_player_get_abil2_charge(iPlayer)
 	if (fCharge > SPINE_SPIKES_MAX_CHARGE)
 		kc_player_set_abil2_charge(iPlayer, SPINE_SPIKES_MAX_CHARGE)
+}
+
+get_spike_floor_origin(iEnt, const Float:vStart[3], Float:vOrigin[3])
+{
+	new Float:vTraceStart[3], Float:vEnd[3], iHidden[4], iHiddenSolid[4], iHiddenCount
+
+	xs_vec_copy(vStart, vTraceStart)
+
+	vEnd[0] = vTraceStart[0]
+	vEnd[1] = vTraceStart[1]
+	vEnd[2] = -8192.0
+
+	for (new i; i < sizeof iHidden + 1; i++)
+	{
+		engfunc(EngFunc_TraceLine, vTraceStart, vEnd, IGNORE_MONSTERS, iEnt, 0)
+		get_tr2(0, TR_vecEndPos, vOrigin)
+
+		new iHit = get_tr2(0, TR_pHit)
+		if (iHit <= 0 || !is_entity(iHit) || !(get_entvar(iHit, var_flags) & FL_MONSTER) || iHiddenCount >= sizeof iHidden)
+			break
+
+		iHidden[iHiddenCount] = iHit
+		iHiddenSolid[iHiddenCount++] = get_entvar(iHit, var_solid)
+		set_entvar(iHit, var_solid, SOLID_NOT)
+	}
+
+	for (new i; i < iHiddenCount; i++)
+		set_entvar(iHidden[i], var_solid, iHiddenSolid[i])
 }
 
 bool:check_floor_disnace(iEnt, Float:vStart[3], Float:fDist)

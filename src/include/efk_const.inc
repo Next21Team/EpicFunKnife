@@ -250,6 +250,8 @@ enum _:BlockAirFlags(<<=1)
 #define FREEZE_TIME					3.5
 #define CHILL_TIME					3.0
 
+#define DMG_NPC_SLOW				DMG_SLOWBURN
+
 #define FALL_DAMAGE					0.9
 #define FALL_EASING					0.4
 
