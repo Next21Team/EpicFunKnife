@@ -1283,6 +1283,7 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	ClearPlayerGameFlag(iPlayer, PLGF_IN_FIXED_ANIMATION);
 	ClearPlayerGameFlag(iPlayer, PLGF_IS_DISABLED_CHARGE);
 	ClearPlayerGameFlag(iPlayer, PLGF_IS_DISABLED_INVENTORY);
+	ClearPlayerGameFlag(iPlayer, PLGF_IN_ITEM_ANIMATION);
 
 	new i = NULLENT
 	while ((i = rg_find_ent_by_class(i, SZ_BEAM)))
@@ -1472,13 +1473,13 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 						}
 
 						Player[iPlayer][PlrGlowCount]--
-
-						if (!Player[iPlayer][PlrGlowCount])
-							player_reset_render(iPlayer)
-						else
-							player_calculate_render_colors(iPlayer)
 					}
 				}
+
+				if (Player[iPlayer][PlrGlowCount])
+					player_calculate_render_colors(iPlayer)
+				else
+					player_reset_render(iPlayer)
 			}
 			case VIS_SHADOW:
 			{
@@ -2710,6 +2711,7 @@ public RG_CBasePlayer_Killed_Post(iVictim, iAttacker, iFlags)
 	ClearPlayerGameFlag(iVictim, PLGF_IN_UNABILITY);
 	ClearPlayerGameFlag(iVictim, PLGF_IS_DISABLED_CHARGE);
 	ClearPlayerGameFlag(iVictim, PLGF_IS_DISABLED_INVENTORY);
+	ClearPlayerGameFlag(iVictim, PLGF_IN_ITEM_ANIMATION);
 
 	player_unburn(iVictim)
 	player_unfreeze(iVictim)
