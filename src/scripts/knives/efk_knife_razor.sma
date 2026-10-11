@@ -103,6 +103,9 @@ new const CLASSNAME_SPHERE_SHELL[]	= "next21_razor_sphere_sh"
 #define STATUS_COLOR_G				0
 #define STATUS_COLOR_B				255
 
+new bool:g_bDrivePushPending[MAX_PLAYERS + 1]
+new Float:g_vDrivePush[MAX_PLAYERS + 1][3]
+
 new const DRIVE_MODE_NAMES[][] =
 {
 	"Off",
@@ -613,11 +616,22 @@ public RG_CBasePlayer_TraceAttack_Pre(iVictim, iAttacker, Float:fDamage, Float:v
 
 	vPush[2] = DRIVE_PUSH_LIFT
 
-	kc_player_unfreeze(iVictim)
-	set_member(iVictim, m_flVelocityModifier, 1.0)
-	set_entvar(iVictim, var_velocity, vPush)
+	g_bDrivePushPending[iVictim] = true
+	xs_vec_copy(vPush, g_vDrivePush[iVictim])
+
+	drive_apply_push(iVictim)
 
 	return HC_CONTINUE
+}
+
+// The push is applied twice: right on the hit and again after the damage was taken, because the
+// stock knife damage handling runs in between and overwrites the velocity/ground state.
+drive_apply_push(iVictim)
+{
+	kc_player_unfreeze(iVictim)
+	set_member(iVictim, m_flVelocityModifier, 1.0)
+	set_entvar(iVictim, var_flags, get_entvar(iVictim, var_flags) & ~FL_ONGROUND)
+	set_entvar(iVictim, var_velocity, g_vDrivePush[iVictim])
 }
 
 public Ham_PlayerTakeDamage_Pre(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
@@ -644,6 +658,14 @@ public Ham_PlayerTakeDamage_Pre(iVictim, iInflictor, iAttacker, Float:fDamage, i
 
 public Ham_PlayerTakeDamage_Post(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 {
+	if (g_bDrivePushPending[iVictim])
+	{
+		g_bDrivePushPending[iVictim] = false
+
+		if (is_user_alive(iVictim))
+			drive_apply_push(iVictim)
+	}
+
 	if (GetHamReturnStatus() == HAM_SUPERCEDE)
 		return HAM_SUPERCEDE
 
