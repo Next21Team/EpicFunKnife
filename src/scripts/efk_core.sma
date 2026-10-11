@@ -7496,7 +7496,8 @@ public _21kc_player_set_powerspeed(plugin, num_params)
 	new Float:fNewPowerSpeed = get_param_f(2)
 
 	PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
-	PlayerF[iPlayer][PlrPowerSpeedDelay] = (fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
+	PlayerF[iPlayer][PlrPowerSpeedDelay] = (!CheckPlayerGameFlag(iPlayer, PLGF_IN_POWERSPEED_DRIVE)
+			&& fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
 		? get_gametime() + POWERSPEED_GAIN_GRACE
 		: get_gametime() + 0.5
 
