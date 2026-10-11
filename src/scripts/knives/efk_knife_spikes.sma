@@ -618,9 +618,9 @@ public spike_think(iEnt)
 public spike_monster_scan()
 {
 	new iMonster = NULLENT
-	while ((iMonster = rg_find_ent_by_class(iMonster, CLASSNAME_ZOMBIE)))
+	while ((iMonster = rg_find_ent_by_class(iMonster, CLASSNAME_MINION)))
 	{
-		if (get_entvar(iMonster, var_impulse) != IMPULSE_ZOMBIE || (get_entvar(iMonster, var_flags) & FL_KILLME))
+		if (get_entvar(iMonster, var_impulse) != IMPULSE_MINION || (get_entvar(iMonster, var_flags) & FL_KILLME))
 			continue
 
 		new Float:vOrigin[3], Float:vMonsterMin[3], Float:vMonsterMax[3]
@@ -739,15 +739,6 @@ public spike_touch(iEnt, iOther)
 			{
 				new Float:fDamage = random_float(SPIKES_START_MINDAMAGE, SPIKES_START_MAXDAMAGE)
 				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iAttacker, fDamage, DMG_CLUB | DMG_NPC_SLOW)
-
-				if (is_entity(iOther) && !(get_entvar(iOther, var_flags) & FL_KILLME))
-				{
-					new Float:vVelocity[3]
-					get_entvar(iOther, var_velocity, vVelocity)
-					vVelocity[2] = (get_entvar(iOther, var_flags) & FL_ONGROUND) ? 800.0 : 500.0
-					set_entvar(iOther, var_velocity, vVelocity)
-					set_entvar(iOther, var_flags, get_entvar(iOther, var_flags) & ~FL_ONGROUND)
-				}
 
 				g_fSpikeMonsterDamagedTime[iOther] = fGameTime + 0.3
 			}

@@ -554,7 +554,7 @@ public Ham_EnvExplosionTakeDamage_Post(iEnt, iInflictor, iPlayer, Float:fDamage,
 	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return HAM_IGNORED
 
-	if (get_entvar(iEnt, var_impulse) == IMPULSE_ZOMBIE)
+	if (get_entvar(iEnt, var_impulse) == IMPULSE_MINION)
 	{
 		if (Player[iPlayer][PlrTeam] == get_entvar(iEnt, var_skin) + 1)
 			return HAM_IGNORED
@@ -596,7 +596,7 @@ public sphere_think(iSphereEnt)
 					if (iSphereInitialSpeed >= 10 && Player[iOwner][PlrTeam] != get_entvar(iTarget, var_team))
 						kc_player_set_capture(get_entvar(iTarget, var_owner), CAPTURE_NONE)
 				}
-				case IMPULSE_ZOMBIE:
+				case IMPULSE_MINION:
 				{
 					if (Player[iOwner][PlrTeam] != get_entvar(iTarget, var_skin) + 1)
 						iTargets[iTargetsNum++] = iTarget

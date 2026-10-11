@@ -282,7 +282,7 @@ public fw_Player_Damage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 
 	switch (get_entvar(iInflictor, var_impulse))
 	{
-		case IMPULSE_ZOMBIE:
+		case IMPULSE_MINION:
 		{
 			if (kc_player_get_vision(iVictim) != VISION_BLIND && !kc_player_in_freeze(iVictim) && !kc_player_in_chill(iVictim))
 				send_msg_ScreenFade((1<<12), (1<<8), (1<<4), {0, 255, 0}, 35, MSG_ONE, _, iVictim)
@@ -295,7 +295,7 @@ public fw_Player_Damage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 
 			return HAM_IGNORED
 		}
-		case IMPULSE_ZOMBIE_SPIT:
+		case IMPULSE_MINION_SPIT:
 			return HAM_SUPERCEDE
 	}
 

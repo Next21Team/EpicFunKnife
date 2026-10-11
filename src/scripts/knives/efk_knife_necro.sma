@@ -53,15 +53,14 @@ new const PLUGIN[] = "EFK: Necro Knife"
 #define ATTACK_RANGE_TOLERANCE	30.0
 #define ATTACK_ANIM_LOCK_TIME	0.5
 #define CENTAUR_SPIT_HEIGHT	18.0
-#define ZOMBIE_HULL_RADIUS	12.0
+#define ZERGLING_HULL_RADIUS	12.0
 #define CENTAUR_SPIT_FORWARD	30.0
-#define MINION_BLOOD_COLOR	195
+#define MINION_BLOOD_COLOR	199
 #define MOVE_HIT_IGNORE_TIME	0.5
 #define CENTAUR_FOLLOW_STOP_DISTANCE	100.0
-#define CENTAUR_AGGRESSION_RADIUS	1000.0
 #define MINION_RETURN_SPEED	250.0
-#define ZOMBIE_SPEED		250.0
-#define CANNIBALIZE_WINDUP_TIME	0.3
+#define MINION_SPEED		250.0
+#define MODE_CHANGE_WINDUP_TIME	0.3
 #define IMPULSE_NECRO_LIFEBAR	30000100
 
 new const MODEL_V_KNIFE[] = "models/next21_efk/v_necro_knife_b02.mdl"
@@ -73,11 +72,14 @@ new const SOUND_KNIFE_STAB[] = "next21_efk/necro_knife_stab.wav"
 new const SOUND_KNIFE_HITWALL[] = "next21_efk/necro_knife_hitwall.wav"
 new const SOUND_KNIFE_SLASH[] = "next21_efk/necro_knife_slash.wav"
 
-new const MODEL_ZOMBIE[] = "models/next21_efk/zergling.mdl"
+new const MODEL_ZERGLING[] = "models/next21_efk/zergling.mdl"
 new const MODEL_CENTAUR[] = "models/next21_efk/roach.mdl"
 
 #define SPIT_DAMAGE		20.0
 #define SPIT_LIFETIME	45.0
+#define ROACH_SPIT_SPEED	800.0
+#define HYDRA_SPIT_SPEED	1300.0
+#define ROACH_FAST_SPIT_SPEED	1600.0
 
 new const MODEL_SPIT[] = "models/next21_efk/crimson_spore.mdl"
 new const MODEL_MINION_LIFEBAR[] = "sprites/next21_efk/lifebar_necro.spr"
@@ -88,31 +90,33 @@ new const SOUND_SOUL[] = "next21_efk/soul_pulse.wav"
 
 #define NPC_TEAMMATE_DAMAGE_TIME 5.0
 
-#define ZOMBIE_HEALTH			90.0
-#define ZOMBIE_MIN_DAMAGE		20.0
-#define ZOMBIE_MAX_DAMAGE		30.0
-#define ZOMBIE_HIT_HEAL_PERCENT	0.25
-#define ZOMBIE_ATTACK_RANGE		90.0
-#define ZOMBIE_REGEN_DELAY		5.0
-#define ZOMBIE_REGEN_RATE		5.0
+#define ZERGLING_HEALTH			90.0
+#define ZERGLING_MIN_DAMAGE		20.0
+#define ZERGLING_MAX_DAMAGE		30.0
+#define MINION_HIT_HEAL_PERCENT	0.25
+#define ZERGLING_ATTACK_RANGE		60.0
+#define MINION_REGEN_DELAY		5.0
+#define MINION_REGEN_RATE		5.0
 
 #define CENTAUR_HEALTH			180.0
 #define CENTAUR_MIN_DAMAGE		30.0
 #define CENTAUR_MAX_DAMAGE		40.0
 #define CENTAUR_ATTACK_RANGE	90.0
 #define CENTAUR_SPIT_MIN_RANGE	250.0
-#define CENTAUR_SPIT_SEARCH_RANGE	4000.0
+#define CENTAUR_SPIT_RANGE	800.0
+#define HYDRA_SPIT_RANGE	1600.0
+#define HYDRA_SPIT_HEIGHT	50.0
+#define HYDRA_HEALTH		130.0
+#define HYDRA_MELEE_DAMAGE_MUL	0.5
 
 #define LASER_CHARGE_TIME		1.0
 #define LASER_INDICATE_TIME	0.5
 #define LASER_DAMAGE			30.0
 #define LASER_TRACE_OVERSHOOT	24.0
 #define FOLLOW_TAP_TIME	0.3
-#define ZOMBIE_JUMP_SPEED	650.0
-#define ZOMBIE_JUMP_LIFT	250.0
-#define ZOMBIE_JUMP_MAX_TIME	1.0
-
-#define CORPSE_HEAL				50.0
+#define ZERGLING_JUMP_SPEED	650.0
+#define ZERGLING_JUMP_LIFT	250.0
+#define ZERGLING_JUMP_MAX_TIME	1.0
 
 #define MINION_CHILL_SPEED_MUL		0.4
 #define MINION_SLOW_SPEED_MUL		0.35
@@ -138,8 +142,8 @@ new const SOUND_FROST_HIT[]		= "next21_efk/frost_hit.wav"
 new const SOUND_ICEBLOCK_CRASH[]	= "next21_efk/ice_block_crash.wav"
 new const SPRITE_FLAME[]		= "sprites/next21_efk/flame.spr"
 
-new const _CLASSNAME_ZOMBIE[]		= CLASSNAME_ZOMBIE
-new const _CLASSNAME_ZOMBIE_SPIT[]	= CLASSNAME_ZOMBIE_SPIT
+new const _CLASSNAME_MINION[]		= CLASSNAME_MINION
+new const _CLASSNAME_MINION_SPIT[]	= CLASSNAME_MINION_SPIT
 
 new const SOUNDS_CRIT[][] =
 {
@@ -244,7 +248,7 @@ new const SOUNDS_ROACH_SPIT_IMPACT[][] =
 
 enum NecroForm
 {
-	FORM_ZOMBIES,
+	FORM_ZERGLINGS,
 	FORM_CENTAUR
 }
 
@@ -277,12 +281,14 @@ enum _:PlayerData
 	Float:PlrLaserPendingAt,
 	Float:PlrLaserIndicateEndAt,
 	Float:PlrLaserLockedEnd[3],
-	Float:PlrZombieCharge[MAX_MINION_SLOTS],
+	Float:PlrMinionCharge[MAX_MINION_SLOTS],
 	Float:PlrMinionJumpUntil[MAX_MINION_SLOTS],
 	PlrJumpPrevAction[MAX_MINION_SLOTS],
 	Float:PlrChargeLastTick,
-	Float:PlrMergeAt,
-	bool:PlrMergeOrdered,
+	Float:PlrModeChangeAt,
+	bool:PlrModeChangeOrdered,
+	bool:PlrHydraForm,
+	bool:PlrModeChangeHydra,
 	PlrSouls
 }
 
@@ -329,7 +335,7 @@ public plugin_precache()
 	necro_precache_sounds(SOUNDS_ROACH_SPIT_IMPACT, sizeof SOUNDS_ROACH_SPIT_IMPACT)
 	precache_sound(SOUND_MINION_SWING)
 
-	precache_model(MODEL_ZOMBIE)
+	precache_model(MODEL_ZERGLING)
 	precache_model(MODEL_ICEBLOCK)
 	precache_sound(SOUND_FROST_HIT)
 	precache_sound(SOUND_ICEBLOCK_CRASH)
@@ -402,14 +408,15 @@ public client_putinserver(iPlayer)
 	Player[iPlayer][PlrIsAlive] = false
 	Player[iPlayer][PlrTeam] = 0
 	Player[iPlayer][PlrKnife] = -1
-	Player[iPlayer][PlrForm] = FORM_ZOMBIES
+	Player[iPlayer][PlrForm] = FORM_ZERGLINGS
+	Player[iPlayer][PlrHydraForm] = false
 	Player[iPlayer][PlrSouls] = 0
 	necro_reset_npc_actions(iPlayer)
 	arrayset(Player[iPlayer][PlrMinionEnt], 0, MAX_MINION_SLOTS)
 	arrayset(Player[iPlayer][PlrMinionBarEnt], 0, MAX_MINION_SLOTS)
 	arrayset(Player[iPlayer][PlrMinionRespawnAt], 0.0, MAX_MINION_SLOTS)
 	arrayset(Player[iPlayer][PlrMinionNextAttackAt], 0.0, MAX_MINION_SLOTS)
-	arrayset(Player[iPlayer][PlrZombieCharge], 0.0, MAX_MINION_SLOTS)
+	arrayset(Player[iPlayer][PlrMinionCharge], 0.0, MAX_MINION_SLOTS)
 	arrayset(Player[iPlayer][PlrMinionJumpUntil], 0.0, MAX_MINION_SLOTS)
 	arrayset(Player[iPlayer][PlrJumpPrevAction], -1, MAX_MINION_SLOTS)
 	Player[iPlayer][PlrChargeLastTick] = 0.0
@@ -417,8 +424,8 @@ public client_putinserver(iPlayer)
 	Player[iPlayer][PlrLaserLockTime] = 0.0
 	Player[iPlayer][PlrLaserIndicateEndAt] = 0.0
 	Player[iPlayer][PlrLastFormSwitch] = 0.0
-	Player[iPlayer][PlrMergeAt] = 0.0
-	Player[iPlayer][PlrMergeOrdered] = false
+	Player[iPlayer][PlrModeChangeAt] = 0.0
+	Player[iPlayer][PlrModeChangeOrdered] = false
 }
 
 necro_reset_npc_actions(iOwner)
@@ -429,7 +436,7 @@ necro_reset_npc_actions(iOwner)
 		Player[iOwner][PlrNpcActionTarget][i] = 0
 		Player[iOwner][PlrMinionWalking][i] = false
 		Player[iOwner][PlrMoveWindupTarget][i] = 0
-		Player[iOwner][PlrZombieCharge][i] = 0.0
+		Player[iOwner][PlrMinionCharge][i] = 0.0
 		Player[iOwner][PlrMinionJumpUntil][i] = 0.0
 		Player[iOwner][PlrJumpPrevAction][i] = -1
 		Player[iOwner][PlrMoveIgnoreTarget][i] = 0
@@ -464,11 +471,11 @@ public RG_CSGameRules_RestartRound_Pre()
 public RG_CSGameRules_CleanUpMap_Post()
 {
 	new iEnt = NULLENT
-	while ((iEnt = rg_find_ent_by_class(iEnt, _CLASSNAME_ZOMBIE)))
+	while ((iEnt = rg_find_ent_by_class(iEnt, _CLASSNAME_MINION)))
 		rg_remove_entity(iEnt)
 
 	iEnt = NULLENT
-	while ((iEnt = rg_find_ent_by_class(iEnt, _CLASSNAME_ZOMBIE_SPIT)))
+	while ((iEnt = rg_find_ent_by_class(iEnt, _CLASSNAME_MINION_SPIT)))
 		rg_remove_entity(iEnt)
 
 	for (new iPlayer = 1; iPlayer <= MaxClients; iPlayer++)
@@ -503,10 +510,13 @@ public RG_CBasePlayer_ImpulseCommands_Pre(iPlayer)
 	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return HC_CONTINUE
 
-	if (Player[iPlayer][PlrForm] == FORM_ZOMBIES)
-		necro_order_merge(iPlayer)
+	new iButtons = get_entvar(iPlayer, var_button)
+	if (Player[iPlayer][PlrForm] == FORM_ZERGLINGS)
+		necro_order_mode_change(iPlayer)
+	else if (iButtons & (IN_USE | IN_RELOAD))
+		necro_swap_centaur(iPlayer, bool:(iButtons & IN_RELOAD))
 	else
-		necro_finish_split(iPlayer)
+		necro_set_zerglings_mode(iPlayer)
 
 	set_entvar(iPlayer, var_impulse, 0)
 
@@ -595,12 +605,12 @@ necro_use_ultimate(iPlayer, iSlot)
 	if (Player[iPlayer][PlrForm] == FORM_CENTAUR)
 		necro_centaur_laser(iPlayer)
 	else
-		necro_zombie_dash(iPlayer, iSlot)
+		necro_zergling_dash(iPlayer, iSlot)
 }
 
-necro_zombie_dash(iPlayer, iSlot)
+necro_zergling_dash(iPlayer, iSlot)
 {
-	if (Player[iPlayer][PlrZombieCharge][iSlot] < 100.0)
+	if (Player[iPlayer][PlrMinionCharge][iSlot] < 100.0)
 		return
 
 	new iMinion = Player[iPlayer][PlrMinionEnt][iSlot]
@@ -646,7 +656,7 @@ necro_zombie_dash(iPlayer, iSlot)
 		}
 
 		new iEnemyMinion = NULLENT
-		while ((iEnemyMinion = rg_find_ent_by_class(iEnemyMinion, _CLASSNAME_ZOMBIE)))
+		while ((iEnemyMinion = rg_find_ent_by_class(iEnemyMinion, _CLASSNAME_MINION)))
 		{
 			if (!necro_is_enemy_entity(iPlayer, iEnemyMinion) || (get_entvar(iEnemyMinion, var_flags) & FL_KILLME))
 				continue
@@ -675,8 +685,8 @@ necro_zombie_dash(iPlayer, iSlot)
 		return
 
 	npc_TurnToTarget(iMinion, vOrigin, vTargetOrigin)
-	xs_vec_mul_scalar(vVelocity, ZOMBIE_JUMP_SPEED / fDistance, vVelocity)
-	vVelocity[2] = floatmax(vVelocity[2] + ZOMBIE_JUMP_LIFT, ZOMBIE_JUMP_LIFT)
+	xs_vec_mul_scalar(vVelocity, ZERGLING_JUMP_SPEED / fDistance, vVelocity)
+	vVelocity[2] = floatmax(vVelocity[2] + ZERGLING_JUMP_LIFT, ZERGLING_JUMP_LIFT)
 	set_entvar(iMinion, var_velocity, vVelocity)
 	set_entvar(iMinion, var_flags, get_entvar(iMinion, var_flags) & ~FL_ONGROUND)
 
@@ -684,8 +694,8 @@ necro_zombie_dash(iPlayer, iSlot)
 		? -1 : _:Player[iPlayer][PlrNpcAction][iSlot]
 	Player[iPlayer][PlrNpcAction][iSlot] = NPC_ACTION_TARGET
 	Player[iPlayer][PlrNpcActionTarget][iSlot] = iTarget
-	Player[iPlayer][PlrMinionJumpUntil][iSlot] = fGameTime + ZOMBIE_JUMP_MAX_TIME
-	Player[iPlayer][PlrZombieCharge][iSlot] = 0.0
+	Player[iPlayer][PlrMinionJumpUntil][iSlot] = fGameTime + ZERGLING_JUMP_MAX_TIME
+	Player[iPlayer][PlrMinionCharge][iSlot] = 0.0
 
 	necro_voice_attack(iMinion)
 }
@@ -756,8 +766,8 @@ public fw_PlayerKilled(iVictim, iAttacker)
 		Player[iVictim][PlrLaserPendingAt] = 0.0
 		Player[iVictim][PlrLaserLockTime] = 0.0
 		Player[iVictim][PlrLaserIndicateEndAt] = 0.0
-		Player[iVictim][PlrMergeOrdered] = false
-		Player[iVictim][PlrMergeAt] = 0.0
+		Player[iVictim][PlrModeChangeOrdered] = false
+		Player[iVictim][PlrModeChangeAt] = 0.0
 		necro_reset_npc_actions(iVictim)
 		necro_execute_minions(iVictim)
 		kill_all_npc(iVictim)
@@ -804,16 +814,9 @@ necro_register_kill(iOwner)
 	}
 }
 
-Float:necro_get_aggression_radius(iOwner)
-{
-	new Float:fRadius = Player[iOwner][PlrForm] == FORM_CENTAUR
-		? CENTAUR_AGGRESSION_RADIUS : MINION_FOLLOW_RADIUS
-	return fRadius
-}
-
 Float:necro_get_move_speed(iMinion, bool:bReturning=false)
 {
-	new Float:fSpeed = bReturning ? MINION_RETURN_SPEED : ZOMBIE_SPEED
+	new Float:fSpeed = bReturning ? MINION_RETURN_SPEED : MINION_SPEED
 	new Float:fMul = 1.0
 	if (necro_minion_is_chilled(iMinion))
 		fMul = MINION_CHILL_SPEED_MUL
@@ -840,16 +843,16 @@ bool:necro_find_minion_slot(iEnt, &iOwner, &iSlot)
 
 necro_tick(iPlayer, Float:fGameTime)
 {
-	if (Player[iPlayer][PlrMergeAt] > 0.0 && Player[iPlayer][PlrMergeAt] <= fGameTime)
+	if (Player[iPlayer][PlrModeChangeAt] > 0.0 && Player[iPlayer][PlrModeChangeAt] <= fGameTime)
 	{
-		Player[iPlayer][PlrMergeAt] = 0.0
-		necro_finish_cannibalize(iPlayer)
+		Player[iPlayer][PlrModeChangeAt] = 0.0
+		necro_finish_mode_change(iPlayer)
 	}
 
-	if (Player[iPlayer][PlrMergeOrdered] && !necro_form_complete(iPlayer))
+	if (Player[iPlayer][PlrModeChangeOrdered] && !necro_form_complete(iPlayer))
 	{
-		Player[iPlayer][PlrMergeOrdered] = false
-		Player[iPlayer][PlrMergeAt] = 0.0
+		Player[iPlayer][PlrModeChangeOrdered] = false
+		Player[iPlayer][PlrModeChangeAt] = 0.0
 	}
 
 	if (Player[iPlayer][PlrLaserPendingAt] > 0.0)
@@ -885,7 +888,7 @@ necro_tick(iPlayer, Float:fGameTime)
 	{
 		new iChargeEnt = Player[iPlayer][PlrMinionEnt][i]
 		if (iChargeEnt && is_entity(iChargeEnt) && !(get_entvar(iChargeEnt, var_flags) & FL_KILLME))
-			Player[iPlayer][PlrZombieCharge][i] = floatmin(100.0, Player[iPlayer][PlrZombieCharge][i] + ABIL1_CHARGE * fChargeDt)
+			Player[iPlayer][PlrMinionCharge][i] = floatmin(100.0, Player[iPlayer][PlrMinionCharge][i] + ABIL1_CHARGE * fChargeDt)
 	}
 
 	new szSoulHint[24]
@@ -951,7 +954,7 @@ public efk_ability4(iPlayer)
 		if (!iMinion || !is_entity(iMinion) || (get_entvar(iMinion, var_flags) & FL_KILLME))
 			continue
 
-		new Float:fMaxHealth = get_entvar(iMinion, var_npctype) ? CENTAUR_HEALTH : ZOMBIE_HEALTH
+		new Float:fMaxHealth = necro_minion_max_health(iMinion)
 		set_entvar(iMinion, var_health, floatmin(Float:get_entvar(iMinion, var_health) + fHeal, fMaxHealth))
 	}
 
@@ -966,8 +969,7 @@ minion_update_lifebar(iOwner, iSlot)
 	if (!iBar || !iMinion || is_nullent(iBar) || is_nullent(iMinion))
 		return
 
-	new Float:fMaxHealth = Player[iOwner][PlrForm] == FORM_CENTAUR && iSlot == MINION_SLOT_CENTAUR
-		? CENTAUR_HEALTH : ZOMBIE_HEALTH
+	new Float:fMaxHealth = necro_minion_max_health(iMinion)
 	new Float:fHealth = floatmax(0.0, Float:get_entvar(iMinion, var_health))
 	set_entvar(iBar, var_frame, floatclamp(fHealth * 100.0 / fMaxHealth, 0.0, 99.0))
 }
@@ -1035,7 +1037,7 @@ public necro_AddToFullPack(es_state, e, ent, host, hostflags, player)
 
 	new iImpulse = get_entvar(ent, var_impulse)
 
-	if (iImpulse == IMPULSE_ZOMBIE)
+	if (iImpulse == IMPULSE_MINION)
 	{
 		new Float:vVariant[3]
 		get_entvar(ent, var_vuser1, vVariant)
@@ -1140,9 +1142,9 @@ bool:minion_spawn_slot(iOwner, iSlot)
 
 	new iEnt
 	if (Player[iOwner][PlrForm] == FORM_CENTAUR)
-		iEnt = create_centaur(vSpawnOrigin, vAngles, 0.0, iOwner)
+		iEnt = create_centaur(vSpawnOrigin, vAngles, 0.0, iOwner, Player[iOwner][PlrHydraForm])
 	else
-		iEnt = create_zombie(vSpawnOrigin, vAngles, iOwner, iSlot)
+		iEnt = create_zergling(vSpawnOrigin, vAngles, iOwner, iSlot)
 
 	if (is_nullent(iEnt))
 		return false
@@ -1152,60 +1154,70 @@ bool:minion_spawn_slot(iOwner, iSlot)
 	return true
 }
 
-bool:necro_order_merge(iOwner)
+bool:necro_order_mode_change(iOwner)
 {
+	if (!(get_entvar(iOwner, var_button) & (IN_USE | IN_RELOAD)))
+		return false
+
 	if (!Player[iOwner][PlrIsAlive] || Player[iOwner][PlrKnife] != g_iKnifeId
-		|| Player[iOwner][PlrForm] != FORM_ZOMBIES || !necro_form_complete(iOwner)
+		|| Player[iOwner][PlrForm] != FORM_ZERGLINGS || !necro_form_complete(iOwner)
 		|| kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner))
 		return false
 
 	if (get_gametime() - Player[iOwner][PlrLastFormSwitch] < FORM_SWITCH_COOLDOWN)
 		return false
 
-	new iZombieA = Player[iOwner][PlrMinionEnt][0]
-	new iZombieB = Player[iOwner][PlrMinionEnt][1]
-	if (!(get_entvar(iZombieA, var_flags) & FL_ONGROUND) || !(get_entvar(iZombieB, var_flags) & FL_ONGROUND))
+	new iZerglingA = Player[iOwner][PlrMinionEnt][0]
+	new iZerglingB = Player[iOwner][PlrMinionEnt][1]
+	if (!(get_entvar(iZerglingA, var_flags) & FL_ONGROUND) || !(get_entvar(iZerglingB, var_flags) & FL_ONGROUND))
 		return false
 
-	Player[iOwner][PlrMergeOrdered] = true
+	Player[iOwner][PlrModeChangeOrdered] = true
+	Player[iOwner][PlrModeChangeHydra] = bool:(get_entvar(iOwner, var_button) & IN_RELOAD)
 	return true
 }
 
-bool:necro_finish_cannibalize(iOwner)
+bool:necro_finish_mode_change(iOwner)
 {
 	if (kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner))
 		return false
 
-	new iZombieA = Player[iOwner][PlrMinionEnt][0]
-	new iZombieB = Player[iOwner][PlrMinionEnt][1]
+	new iZerglingA = Player[iOwner][PlrMinionEnt][0]
+	new iZerglingB = Player[iOwner][PlrMinionEnt][1]
 
-	if (!iZombieA || !iZombieB || !is_entity(iZombieA) || !is_entity(iZombieB)
-		|| (get_entvar(iZombieA, var_flags) & FL_KILLME) || (get_entvar(iZombieB, var_flags) & FL_KILLME))
+	if (!iZerglingA || !iZerglingB || !is_entity(iZerglingA) || !is_entity(iZerglingB)
+		|| (get_entvar(iZerglingA, var_flags) & FL_KILLME) || (get_entvar(iZerglingB, var_flags) & FL_KILLME))
 		return false
 
-	if (!(get_entvar(iZombieA, var_flags) & FL_ONGROUND) || !(get_entvar(iZombieB, var_flags) & FL_ONGROUND))
+	if (!(get_entvar(iZerglingA, var_flags) & FL_ONGROUND) || !(get_entvar(iZerglingB, var_flags) & FL_ONGROUND))
 		return false
 
 	new Float:vOrigin[3], Float:vAngles[3]
-	get_entvar(iZombieA, var_origin, vOrigin)
-	get_entvar(iZombieA, var_angles, vAngles)
+	get_entvar(iZerglingA, var_origin, vOrigin)
+	get_entvar(iZerglingA, var_angles, vAngles)
 	vAngles[0] = vAngles[2] = 0.0
 
-	new Float:fHealth = floatmin(CENTAUR_HEALTH,
-		Float:get_entvar(iZombieA, var_health) + Float:get_entvar(iZombieB, var_health))
+	new bool:bHydra = Player[iOwner][PlrModeChangeHydra]
+	Player[iOwner][PlrModeChangeHydra] = false
 
-	new Float:fMergedCharge = (Player[iOwner][PlrZombieCharge][0] + Player[iOwner][PlrZombieCharge][1]) / 2.0
+	new Float:fNewMax = bHydra ? HYDRA_HEALTH : CENTAUR_HEALTH
+	new Float:fAvgPct = (Float:get_entvar(iZerglingA, var_health) / necro_minion_max_health(iZerglingA)
+		+ Float:get_entvar(iZerglingB, var_health) / necro_minion_max_health(iZerglingB)) / 2.0
+	new Float:fHealth = floatmin(fNewMax, fAvgPct * fNewMax)
 
-	ExecuteHamB(Ham_TakeDamage, iZombieA, 0, iZombieA, 9000.0, DMG_BLAST)
-	ExecuteHamB(Ham_TakeDamage, iZombieB, 0, iZombieB, 9000.0, DMG_BLAST)
+	new Float:fModeCharge = (Player[iOwner][PlrMinionCharge][0] + Player[iOwner][PlrMinionCharge][1]) / 2.0
+
+	ExecuteHamB(Ham_TakeDamage, iZerglingA, 0, iZerglingA, 9000.0, DMG_BLAST)
+	ExecuteHamB(Ham_TakeDamage, iZerglingB, 0, iZerglingB, 9000.0, DMG_BLAST)
 
 	arrayset(Player[iOwner][PlrMinionRespawnAt], 0.0, MAX_MINION_SLOTS)
 	Player[iOwner][PlrLaserPendingAt] = 0.0
 	Player[iOwner][PlrLaserLockTime] = 0.0
 
 	Player[iOwner][PlrForm] = FORM_CENTAUR
+	Player[iOwner][PlrHydraForm] = bHydra
 
-	new iCentaur = create_centaur(vOrigin, vAngles, fHealth, iOwner)
+	new iCentaur = create_centaur(vOrigin, vAngles, fHealth, iOwner, bHydra)
 	if (!is_nullent(iCentaur))
 	{
 		Player[iOwner][PlrMinionEnt][MINION_SLOT_CENTAUR] = iCentaur
@@ -1214,8 +1226,8 @@ bool:necro_finish_cannibalize(iOwner)
 
 	Player[iOwner][PlrLastFormSwitch] = get_gametime()
 	necro_reset_npc_actions(iOwner)
-	Player[iOwner][PlrZombieCharge][MINION_SLOT_CENTAUR] = fMergedCharge
-	Player[iOwner][PlrMergeOrdered] = false
+	Player[iOwner][PlrMinionCharge][MINION_SLOT_CENTAUR] = fModeCharge
+	Player[iOwner][PlrModeChangeOrdered] = false
 	return true
 }
 
@@ -1229,31 +1241,91 @@ bool:necro_form_complete(iPlayer)
 
 	for (new i; i < MAX_MINION_SLOTS; i++)
 	{
-		new iZombie = Player[iPlayer][PlrMinionEnt][i]
-		if (!iZombie || !is_entity(iZombie) || (get_entvar(iZombie, var_flags) & FL_KILLME))
+		new iMinion = Player[iPlayer][PlrMinionEnt][i]
+		if (!iMinion || !is_entity(iMinion) || (get_entvar(iMinion, var_flags) & FL_KILLME))
 			return false
 	}
 
 	return true
 }
 
-necro_spawn_split_zombie(iOwner, iSlot, const Float:vBase[3], Float:vAngles[3], Float:fHealth, Float:fYaw)
+necro_spawn_zergling_mode(iOwner, iSlot, const Float:vBase[3], Float:vAngles[3], Float:fHealth, Float:fYaw)
 {
-	new Float:vSpawn[3], iZombie = 0
+	new Float:vSpawn[3], iMinion = 0
 	if (necro_find_spawn_point(vBase, fYaw, iOwner, vSpawn))
-		iZombie = create_zombie(vSpawn, vAngles, iOwner, iSlot)
+		iMinion = create_zergling(vSpawn, vAngles, iOwner, iSlot)
 
-	if (!is_nullent(iZombie))
+	if (!is_nullent(iMinion))
 	{
-		set_entvar(iZombie, var_health, fHealth)
-		Player[iOwner][PlrMinionEnt][iSlot] = iZombie
-		minion_create_lifebar(iOwner, iSlot, iZombie)
+		set_entvar(iMinion, var_health, fHealth)
+		Player[iOwner][PlrMinionEnt][iSlot] = iMinion
+		minion_create_lifebar(iOwner, iSlot, iMinion)
 	}
 	else
 		Player[iOwner][PlrMinionRespawnAt][iSlot] = get_gametime() + 0.5
 }
 
-bool:necro_finish_split(iOwner)
+bool:necro_swap_centaur(iOwner, bool:bHydra)
+{
+	if (!Player[iOwner][PlrIsAlive] || Player[iOwner][PlrKnife] != g_iKnifeId || Player[iOwner][PlrForm] != FORM_CENTAUR)
+		return false
+
+	if (Player[iOwner][PlrHydraForm] == bHydra)
+		return false
+
+	if (kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner))
+		return false
+
+	if (get_gametime() - Player[iOwner][PlrLastFormSwitch] < FORM_SWITCH_COOLDOWN)
+		return false
+
+	new iOld = Player[iOwner][PlrMinionEnt][MINION_SLOT_CENTAUR]
+	if (!iOld || !is_entity(iOld) || (get_entvar(iOld, var_flags) & FL_KILLME))
+		return false
+
+	if (!(get_entvar(iOld, var_flags) & FL_ONGROUND))
+		return false
+
+	new Float:fGameTime = get_gametime()
+	new Float:vOrigin[3], Float:vAngles[3]
+	get_entvar(iOld, var_origin, vOrigin)
+	get_entvar(iOld, var_angles, vAngles)
+	vAngles[0] = vAngles[2] = 0.0
+
+	new Float:fNewMax = bHydra ? HYDRA_HEALTH : CENTAUR_HEALTH
+	new Float:fHealth = floatmin(fNewMax, Float:get_entvar(iOld, var_health) / necro_minion_max_health(iOld) * fNewMax)
+	new Float:fCharge = Player[iOwner][PlrMinionCharge][MINION_SLOT_CENTAUR]
+
+	necro_voice_death(iOld)
+	create_gore(vOrigin)
+
+	minion_remove_lifebar(iOwner, MINION_SLOT_CENTAUR)
+	Player[iOwner][PlrMinionEnt][MINION_SLOT_CENTAUR] = 0
+	set_entvar(iOld, var_solid, SOLID_NOT)
+	set_entvar(iOld, var_health, 0.0)
+	set_entvar(iOld, var_flags, FL_KILLME)
+	set_entvar(iOld, var_nextthink, fGameTime)
+
+	arrayset(Player[iOwner][PlrMinionRespawnAt], 0.0, MAX_MINION_SLOTS)
+	Player[iOwner][PlrLaserPendingAt] = 0.0
+	Player[iOwner][PlrLaserLockTime] = 0.0
+	Player[iOwner][PlrHydraForm] = bHydra
+
+	new iNew = create_centaur(vOrigin, vAngles, fHealth, iOwner, bHydra)
+	if (!is_nullent(iNew))
+	{
+		Player[iOwner][PlrMinionEnt][MINION_SLOT_CENTAUR] = iNew
+		minion_create_lifebar(iOwner, MINION_SLOT_CENTAUR, iNew)
+	}
+
+	Player[iOwner][PlrLastFormSwitch] = fGameTime
+	necro_reset_npc_actions(iOwner)
+	Player[iOwner][PlrMinionCharge][MINION_SLOT_CENTAUR] = fCharge
+	Player[iOwner][PlrModeChangeOrdered] = false
+	return true
+}
+
+bool:necro_set_zerglings_mode(iOwner)
 {
 	if (!Player[iOwner][PlrIsAlive] || Player[iOwner][PlrKnife] != g_iKnifeId
 		|| kc_player_in_silence(iOwner) || kc_player_in_darkness(iOwner))
@@ -1274,9 +1346,9 @@ bool:necro_finish_split(iOwner)
 	get_entvar(iCentaur, var_angles, vAngles)
 	vAngles[0] = vAngles[2] = 0.0
 
-	new Float:fZombieHealth = floatmin(ZOMBIE_HEALTH, Float:get_entvar(iCentaur, var_health) / 2.0)
+	new Float:fZerglingHealth = floatmin(ZERGLING_HEALTH, Float:get_entvar(iCentaur, var_health) / necro_minion_max_health(iCentaur) * ZERGLING_HEALTH)
 
-	new Float:fSplitCharge = Player[iOwner][PlrZombieCharge][MINION_SLOT_CENTAUR] / 2.0
+	new Float:fModeCharge = Player[iOwner][PlrMinionCharge][MINION_SLOT_CENTAUR] / 2.0
 
 	ExecuteHamB(Ham_TakeDamage, iCentaur, 0, iCentaur, 9000.0, DMG_BLAST)
 
@@ -1284,20 +1356,21 @@ bool:necro_finish_split(iOwner)
 	Player[iOwner][PlrLaserPendingAt] = 0.0
 	Player[iOwner][PlrLaserLockTime] = 0.0
 
-	Player[iOwner][PlrForm] = FORM_ZOMBIES
+	Player[iOwner][PlrForm] = FORM_ZERGLINGS
+	Player[iOwner][PlrHydraForm] = false
 
 	new Float:vBase[3]
 	xs_vec_copy(vOrigin, vBase)
 	vBase[2] += 36.0
 
-	necro_spawn_split_zombie(iOwner, 0, vBase, vAngles, fZombieHealth, vAngles[1] + MINION_SPAWN_ANGLE)
-	necro_spawn_split_zombie(iOwner, 1, vBase, vAngles, fZombieHealth, vAngles[1] - MINION_SPAWN_ANGLE)
+	necro_spawn_zergling_mode(iOwner, 0, vBase, vAngles, fZerglingHealth, vAngles[1] + MINION_SPAWN_ANGLE)
+	necro_spawn_zergling_mode(iOwner, 1, vBase, vAngles, fZerglingHealth, vAngles[1] - MINION_SPAWN_ANGLE)
 
 	Player[iOwner][PlrLastFormSwitch] = get_gametime()
 	necro_reset_npc_actions(iOwner)
-	Player[iOwner][PlrZombieCharge][0] = fSplitCharge
-	Player[iOwner][PlrZombieCharge][1] = fSplitCharge
-	Player[iOwner][PlrMergeOrdered] = false
+	Player[iOwner][PlrMinionCharge][0] = fModeCharge
+	Player[iOwner][PlrMinionCharge][1] = fModeCharge
+	Player[iOwner][PlrModeChangeOrdered] = false
 	return true
 }
 
@@ -1329,7 +1402,7 @@ public spit_touch(iSpitEnt, iOther)
 			return
 		}
 
-		kc_player_set_death_reason(iOther, "DEATH_REASON_ZOMBIE")
+		kc_player_set_death_reason(iOther, "DEATH_REASON_MINION")
 		set_member(iOther, m_LastHitGroup, HIT_GENERIC)
 		ExecuteHamB(Ham_TakeDamage, iOther, iSpitEnt, iOwner, SPIT_DAMAGE, DMG_BLAST)
 		spit_kill(iSpitEnt)
@@ -1345,12 +1418,12 @@ public spit_touch(iSpitEnt, iOther)
 	if (get_entvar(iOther, var_solid) <= SOLID_TRIGGER)
 		return
 
-	if (get_entvar(iOther, var_impulse) == IMPULSE_ZOMBIE && get_entvar(iOther, var_skin) + 1 == Player[iOwner][PlrTeam])
+	if (get_entvar(iOther, var_impulse) == IMPULSE_MINION && get_entvar(iOther, var_skin) + 1 == Player[iOwner][PlrTeam])
 		return
 
 	switch (get_entvar(iOther, var_impulse))
 	{
-		case IMPULSE_ZOMBIE:
+		case IMPULSE_MINION:
 		{
 			ExecuteHamB(Ham_TakeDamage, iOther, iSpitEnt, iOwner, SPIT_DAMAGE, DMG_BLAST)
 		}
@@ -1412,10 +1485,10 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 	szMessage[0] = 0
 	iLen = 0
 
-	new Float:fMergeElapsed = get_gametime() - Player[iSubject][PlrLastFormSwitch]
-	new iMergeCharge = clamp(floatround(fMergeElapsed * 100.0 / FORM_SWITCH_COOLDOWN), 0, 100)
+	new Float:fModeElapsed = get_gametime() - Player[iSubject][PlrLastFormSwitch]
+	new iModeCharge = clamp(floatround(fModeElapsed * 100.0 / FORM_SWITCH_COOLDOWN), 0, 100)
 	iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "%L: %L (%dpt)", iPlayer, "NECRO_MODE",
-		iPlayer, Player[iSubject][PlrForm] == FORM_CENTAUR ? "NECRO_CENTAUR" : "NECRO_ZOMBIES", iMergeCharge)
+		iPlayer, Player[iSubject][PlrForm] == FORM_CENTAUR ? (Player[iSubject][PlrHydraForm] ? "NECRO_HYDRA" : "NECRO_CENTAUR") : "NECRO_ZERGLINGS", iModeCharge)
 
 	new bool:bCentaurForm = bool:(Player[iSubject][PlrForm] == FORM_CENTAUR)
 	new iSlots = bCentaurForm ? 1 : MAX_MINION_SLOTS
@@ -1438,7 +1511,7 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 
 		iLen += formatex(szMessage[iLen], charsmax(szMessage) - iLen, "^n%s [%s] (%dpt)%s%s",
 			bCentaurForm ? "E/R" : (i == 0 ? "E" : "R"), szLabel,
-			floatround(Player[iSubject][PlrZombieCharge][i], floatround_floor),
+			floatround(Player[iSubject][PlrMinionCharge][i], floatround_floor),
 			szAction[0] ? " : " : "", szAction)
 	}
 
@@ -1498,10 +1571,10 @@ necro_centaur_laser(iPlayer)
 	if (!iCentaur || !is_entity(iCentaur) || (get_entvar(iCentaur, var_flags) & FL_KILLME) || necro_minion_is_frozen(iCentaur)
 		|| Player[iPlayer][PlrLaserLockTime] > fGameTime
 		|| Player[iPlayer][PlrLaserPendingAt] > 0.0 || Player[iPlayer][PlrLaserIndicateEndAt] > 0.0
-		|| Player[iPlayer][PlrZombieCharge][MINION_SLOT_CENTAUR] < 100.0)
+		|| Player[iPlayer][PlrMinionCharge][MINION_SLOT_CENTAUR] < 100.0)
 		return PLUGIN_HANDLED
 
-	Player[iPlayer][PlrZombieCharge][MINION_SLOT_CENTAUR] = 0.0
+	Player[iPlayer][PlrMinionCharge][MINION_SLOT_CENTAUR] = 0.0
 	Player[iPlayer][PlrLaserPendingAt] = fGameTime + LASER_CHARGE_TIME
 	necro_track_laser_aim(iPlayer)
 	return PLUGIN_CONTINUE
@@ -1559,6 +1632,15 @@ necro_fire_centaur_laser(iPlayer)
 	if (!iCentaur || !is_entity(iCentaur) || (get_entvar(iCentaur, var_flags) & FL_KILLME))
 		return
 
+	if (!Player[iPlayer][PlrHydraForm])
+	{
+		new Float:vSpitOrigin[3]
+		get_entvar(iCentaur, var_origin, vSpitOrigin)
+		necro_launch_spit(iCentaur, iPlayer, vSpitOrigin, Player[iPlayer][PlrLaserLockedEnd], ROACH_FAST_SPIT_SPEED)
+		engfunc(EngFunc_EmitSound, iCentaur, CHAN_WEAPON, SOUNDS_ROACH_LAUNCH[random(sizeof SOUNDS_ROACH_LAUNCH)], 1.0, ATTN_NORM, 0, PITCH_NORM)
+		return
+	}
+
 	new Float:vLockedEnd[3]
 	xs_vec_copy(Player[iPlayer][PlrLaserLockedEnd], vLockedEnd)
 
@@ -1582,18 +1664,18 @@ necro_fire_centaur_laser(iPlayer)
 	get_tr2(0, TR_vecEndPos, vEnd)
 	new iHit = get_tr2(0, TR_pHit)
 
-	send_msg_TE_BEAMPOINTS(vBeamStart, vEnd, g_pLaserbeamSpr, 0, 1, 7, 10, 0, {180, 0, 40}, 200, 0)
+	send_msg_TE_BEAMPOINTS(vBeamStart, vEnd, g_pLaserbeamSpr, 0, 1, 7, 10, 0, {60, 220, 60}, 200, 0)
 
 	if (is_entity_player(iHit))
 	{
 		if (Player[iHit][PlrIsAlive] && (iHit == iPlayer || Player[iHit][PlrTeam] != Player[iPlayer][PlrTeam]))
 		{
-			kc_player_set_death_reason(iHit, "DEATH_REASON_ZOMBIE")
+			kc_player_set_death_reason(iHit, "DEATH_REASON_MINION")
 			set_member(iHit, m_LastHitGroup, HIT_GENERIC)
 			ExecuteHamB(Ham_TakeDamage, iHit, iCentaur, iPlayer, LASER_DAMAGE, DMG_ENERGYBEAM)
 		}
 	}
-	else if (is_entity(iHit) && get_entvar(iHit, var_impulse) == IMPULSE_ZOMBIE
+	else if (is_entity(iHit) && get_entvar(iHit, var_impulse) == IMPULSE_MINION
 		&& get_entvar(iHit, var_skin) + 1 != Player[iPlayer][PlrTeam])
 	{
 		ExecuteHamB(Ham_TakeDamage, iHit, iCentaur, iPlayer, LASER_DAMAGE, DMG_ENERGYBEAM)
@@ -1605,7 +1687,7 @@ bool:necro_is_enemy_entity(iOwner, iEnt)
 	if (is_entity_player(iEnt))
 		return bool:(Player[iEnt][PlrIsAlive] && Player[iEnt][PlrTeam] != Player[iOwner][PlrTeam])
 
-	if (!is_entity(iEnt) || get_entvar(iEnt, var_impulse) != IMPULSE_ZOMBIE)
+	if (!is_entity(iEnt) || get_entvar(iEnt, var_impulse) != IMPULSE_MINION)
 		return false
 
 	return bool:(get_entvar(iEnt, var_skin) + 1 != Player[iOwner][PlrTeam])
@@ -1638,7 +1720,7 @@ find_necro_target(iOwner, const Float:vOrigin[3], Float:fRadius, iPreferred, Flo
 	}
 
 	iEnt = NULLENT
-	while ((iEnt = rg_find_ent_by_class(iEnt, _CLASSNAME_ZOMBIE)))
+	while ((iEnt = rg_find_ent_by_class(iEnt, _CLASSNAME_MINION)))
 	{
 		if (iEnt == iExclude || !necro_is_enemy_entity(iOwner, iEnt) || (get_entvar(iEnt, var_flags) & FL_KILLME))
 			continue
@@ -1659,7 +1741,7 @@ find_necro_target(iOwner, const Float:vOrigin[3], Float:fRadius, iPreferred, Flo
 bool:necro_valid_manual_target(iOwner, iTarget)
 {
 	if (necro_is_enemy_entity(iOwner, iTarget))
-		return true
+		return bool:!(is_entity_player(iTarget) && kc_player_get_visibility(iTarget) >= VIS_TRANS)
 
 	return bool:(is_entity(iTarget) && !is_entity_player(iTarget) && get_entvar(iTarget, var_impulse) == IMPULSE_PRESENT
 		&& !(get_entvar(iTarget, var_flags) & FL_KILLME))
@@ -1685,7 +1767,7 @@ bool:necro_command_destination(iOwner, iSelfSlot, bool:bCentaur, const Float:vOr
 	bReturning = false
 	iTarget = 0
 
-	if (!bCentaur && Player[iOwner][PlrMergeOrdered] && iSelfSlot >= 0)
+	if (!bCentaur && Player[iOwner][PlrModeChangeOrdered] && iSelfSlot >= 0)
 	{
 		new iSiblingSlot = iSelfSlot == 0 ? 1 : 0
 		new iSibling = Player[iOwner][PlrMinionEnt][iSiblingSlot]
@@ -1757,6 +1839,24 @@ bool:necro_command_destination(iOwner, iSelfSlot, bool:bCentaur, const Float:vOr
 	return true
 }
 
+Float:necro_minion_max_health(iMinion)
+{
+	new iType = get_entvar(iMinion, var_npctype)
+	if (!iType)
+		return ZERGLING_HEALTH
+	return iType == 2 ? HYDRA_HEALTH : CENTAUR_HEALTH
+}
+
+Float:necro_spit_range(iMinion)
+{
+	return get_entvar(iMinion, var_npctype) == 2 ? HYDRA_SPIT_RANGE : CENTAUR_SPIT_RANGE
+}
+
+Float:necro_spit_height(iMinion)
+{
+	return get_entvar(iMinion, var_npctype) == 2 ? HYDRA_SPIT_HEIGHT : CENTAUR_SPIT_HEIGHT
+}
+
 necro_set_move_animation(iEnt, bool:bCentaur)
 {
 	new iSequence = bCentaur ? 2 : 1
@@ -1787,10 +1887,12 @@ bool:necro_start_centaur_spit(iCentaurEnt, const Float:vOrigin[3], iTarget)
 	get_entvar(iTarget, var_origin, vTargetOrigin)
 	if (get_distance_f(vOrigin, vTargetOrigin) <= CENTAUR_SPIT_MIN_RANGE)
 		return false
+	if (get_distance_f(vOrigin, vTargetOrigin) > necro_spit_range(iCentaurEnt))
+		return false
 
 	xs_vec_copy(vOrigin, vSelfOrigin)
 	xs_vec_copy(vOrigin, vStart)
-	vStart[2] += CENTAUR_SPIT_HEIGHT
+	vStart[2] += necro_spit_height(iCentaurEnt)
 	engfunc(EngFunc_TraceLine, vStart, vTargetOrigin, 0, iCentaurEnt, 0)
 	get_tr2(0, TR_flFraction, fFraction)
 	if (fFraction <= 0.9)
@@ -1807,6 +1909,51 @@ bool:necro_start_centaur_spit(iCentaurEnt, const Float:vOrigin[3], iTarget)
 	return true
 }
 
+bool:necro_launch_spit(iCentaurEnt, iOwner, const Float:vOrigin[3], const Float:vTargetOrigin[3], Float:fSpeed)
+{
+	new iSpitEnt = rg_create_entity(SZ_EXPLOSION)
+	if (is_nullent(iSpitEnt))
+		return false
+
+	new Float:vSelfOrigin[3], Float:vStart[3], Float:vAngles[3]
+	xs_vec_copy(vOrigin, vSelfOrigin)
+
+	get_entvar(iCentaurEnt, var_angles, vAngles)
+	engfunc(EngFunc_MakeVectors, vAngles)
+	global_get(glb_v_forward, vStart)
+	xs_vec_mul_scalar(vStart, CENTAUR_SPIT_FORWARD, vStart)
+	xs_vec_add(vSelfOrigin, vStart, vStart)
+	vStart[2] += necro_spit_height(iCentaurEnt)
+
+	engfunc(EngFunc_SetModel, iSpitEnt, MODEL_SPIT)
+	engfunc(EngFunc_SetOrigin, iSpitEnt, vStart)
+	engfunc(EngFunc_SetSize, iSpitEnt, Float:{-5.0, -5.0, -5.0}, Float:{5.0, 5.0, 5.0})
+	set_entvar(iSpitEnt, var_origin, vStart)
+	set_entvar(iSpitEnt, var_solid, SOLID_TRIGGER)
+	set_entvar(iSpitEnt, var_movetype, MOVETYPE_FLYMISSILE)
+	set_entvar(iSpitEnt, var_rendermode, kRenderNormal)
+	set_entvar(iSpitEnt, var_gravity, 0.0)
+	set_entvar(iSpitEnt, var_classname, _CLASSNAME_MINION_SPIT)
+	set_entvar(iSpitEnt, var_impulse, IMPULSE_MINION_SPIT)
+	set_entvar(iSpitEnt, var_owner, iOwner)
+	set_entvar(iSpitEnt, var_nextthink, get_gametime() + SPIT_LIFETIME)
+
+	send_msg_TE_BEAMFOLLOW(iSpitEnt, g_pShockwaveSpr, 4, 2, {60, 220, 60}, 100)
+
+	new Float:vDirection[3]
+	xs_vec_sub(vTargetOrigin, vStart, vAngles)
+	xs_vec_normalize(vAngles, vDirection)
+	vector_to_angle(vDirection, vAngles)
+	xs_vec_mul_scalar(vDirection, fSpeed, vDirection)
+
+	set_entvar(iSpitEnt, var_velocity, vDirection)
+	set_entvar(iSpitEnt, var_angles, vAngles)
+
+	SetThink(iSpitEnt, "spit_think")
+	SetTouch(iSpitEnt, "spit_touch")
+	return true
+}
+
 bool:necro_release_centaur_spit(iCentaurEnt, iOwner, const Float:vOrigin[3])
 {
 	new iTarget = get_entvar(iCentaurEnt, var_npcspit)
@@ -1817,51 +1964,20 @@ bool:necro_release_centaur_spit(iCentaurEnt, iOwner, const Float:vOrigin[3])
 	if (is_nullent(iTarget) || (get_entvar(iTarget, var_flags) & FL_KILLME))
 		return false
 
-	new iSpitEnt = rg_create_entity(SZ_EXPLOSION)
-	if (is_nullent(iSpitEnt))
-		return false
-
-	new Float:vTargetOrigin[3], Float:vSelfOrigin[3], Float:vStart[3], Float:vAngles[3]
+	new Float:vTargetOrigin[3]
 	get_entity_center(iTarget, vTargetOrigin)
-	xs_vec_copy(vOrigin, vSelfOrigin)
-
-	get_entvar(iCentaurEnt, var_angles, vAngles)
-	engfunc(EngFunc_MakeVectors, vAngles)
-	global_get(glb_v_forward, vStart)
-	xs_vec_mul_scalar(vStart, CENTAUR_SPIT_FORWARD, vStart)
-	xs_vec_add(vSelfOrigin, vStart, vStart)
-	vStart[2] += CENTAUR_SPIT_HEIGHT
-
-	engfunc(EngFunc_SetModel, iSpitEnt, MODEL_SPIT)
-	engfunc(EngFunc_SetOrigin, iSpitEnt, vStart)
-	engfunc(EngFunc_SetSize, iSpitEnt, Float:{-5.0, -5.0, -5.0}, Float:{5.0, 5.0, 5.0})
-	set_entvar(iSpitEnt, var_origin, vStart)
-	set_entvar(iSpitEnt, var_solid, SOLID_TRIGGER)
-	set_entvar(iSpitEnt, var_movetype, MOVETYPE_FLYMISSILE)
-	set_entvar(iSpitEnt, var_rendermode, kRenderNormal)
-	set_entvar(iSpitEnt, var_gravity, 0.0)
-	set_entvar(iSpitEnt, var_classname, _CLASSNAME_ZOMBIE_SPIT)
-	set_entvar(iSpitEnt, var_impulse, IMPULSE_ZOMBIE_SPIT)
-	set_entvar(iSpitEnt, var_owner, iOwner)
-	set_entvar(iSpitEnt, var_nextthink, get_gametime() + SPIT_LIFETIME)
-
-	send_msg_TE_BEAMFOLLOW(iSpitEnt, g_pShockwaveSpr, 4, 2, {195, 41, 28}, 100)
-
-	new Float:vDirection[3]
-	xs_vec_sub(vTargetOrigin, vStart, vAngles)
-	xs_vec_normalize(vAngles, vDirection)
-	vector_to_angle(vDirection, vAngles)
-	xs_vec_mul_scalar(vDirection, 1000.0, vDirection)
-
-	set_entvar(iSpitEnt, var_velocity, vDirection)
-	set_entvar(iSpitEnt, var_angles, vAngles)
-
-	SetThink(iSpitEnt, "spit_think")
-	SetTouch(iSpitEnt, "spit_touch")
+	if (!necro_launch_spit(iCentaurEnt, iOwner, vOrigin, vTargetOrigin, get_entvar(iCentaurEnt, var_npctype) == 2 ? HYDRA_SPIT_SPEED : ROACH_SPIT_SPEED))
+		return false
 
 	set_entvar(iCentaurEnt, var_nextthink, get_gametime() + 0.4)
 	engfunc(EngFunc_EmitSound, iCentaurEnt, CHAN_WEAPON, SOUNDS_ROACH_LAUNCH[random(sizeof SOUNDS_ROACH_LAUNCH)], 1.0, ATTN_NORM, 0, PITCH_NORM)
 	return true
+}
+
+Float:necro_minion_melee_damage(iMinion, bool:bCentaur)
+{
+	new Float:fDamage = bCentaur ? random_float(CENTAUR_MIN_DAMAGE, CENTAUR_MAX_DAMAGE) : random_float(ZERGLING_MIN_DAMAGE, ZERGLING_MAX_DAMAGE)
+	return get_entvar(iMinion, var_npctype) == 2 ? fDamage * HYDRA_MELEE_DAMAGE_MUL : fDamage
 }
 
 necro_attack_entity(iMinion, iOwner, iTarget, bool:bCentaur)
@@ -1874,27 +1990,27 @@ necro_attack_entity(iMinion, iOwner, iTarget, bool:bCentaur)
 		if (kc_player_apply_concentblock(iTarget, iMinion))
 			return
 
-		new Float:fDamage = bCentaur ? random_float(CENTAUR_MIN_DAMAGE, CENTAUR_MAX_DAMAGE) : random_float(ZOMBIE_MIN_DAMAGE, ZOMBIE_MAX_DAMAGE)
-		kc_player_set_death_reason(iTarget, "DEATH_REASON_ZOMBIE")
+		new Float:fDamage = necro_minion_melee_damage(iMinion, bCentaur)
+		kc_player_set_death_reason(iTarget, "DEATH_REASON_MINION")
 		set_member(iTarget, m_LastHitGroup, HIT_GENERIC)
 		ExecuteHamB(Ham_TakeDamage, iTarget, iMinion, iOwner, fDamage, DMG_SLASH | DMG_ALWAYSGIB)
 		necro_voice_hit(iMinion)
 
-		kc_player_heal(iOwner, fDamage * ZOMBIE_HIT_HEAL_PERCENT, iOwner)
+		kc_player_heal(iOwner, fDamage * MINION_HIT_HEAL_PERCENT, iOwner)
 	}
-	else if (is_entity(iTarget) && get_entvar(iTarget, var_impulse) == IMPULSE_ZOMBIE
+	else if (is_entity(iTarget) && get_entvar(iTarget, var_impulse) == IMPULSE_MINION
 		&& get_entvar(iTarget, var_npctype) == 0 && get_entvar(iTarget, var_npcowner) == iOwner)
 	{
-		if (Player[iOwner][PlrMergeAt] <= 0.0)
-			Player[iOwner][PlrMergeAt] = get_gametime() + CANNIBALIZE_WINDUP_TIME
+		if (Player[iOwner][PlrModeChangeAt] <= 0.0)
+			Player[iOwner][PlrModeChangeAt] = get_gametime() + MODE_CHANGE_WINDUP_TIME
 	}
 	else if (is_entity(iTarget))
 	{
-		new Float:fDamage = bCentaur ? random_float(CENTAUR_MIN_DAMAGE, CENTAUR_MAX_DAMAGE) : random_float(ZOMBIE_MIN_DAMAGE, ZOMBIE_MAX_DAMAGE)
+		new Float:fDamage = necro_minion_melee_damage(iMinion, bCentaur)
 		ExecuteHamB(Ham_TakeDamage, iTarget, iMinion, iOwner, fDamage, DMG_SLASH | DMG_ALWAYSGIB)
 		necro_voice_hit(iMinion)
 
-		kc_player_heal(iOwner, fDamage * ZOMBIE_HIT_HEAL_PERCENT, iOwner)
+		kc_player_heal(iOwner, fDamage * MINION_HIT_HEAL_PERCENT, iOwner)
 	}
 }
 
@@ -1943,15 +2059,15 @@ necro_minion_think(iMinion, bool:bCentaur)
 	}
 
 	new Float:fLastDamage = Float:get_entvar(iMinion, var_fuser3)
-	if (fLastDamage > 0.0 && fGameTime - fLastDamage >= ZOMBIE_REGEN_DELAY)
+	if (fLastDamage > 0.0 && fGameTime - fLastDamage >= MINION_REGEN_DELAY)
 	{
-		new Float:fMaxHealth = bCentaur ? CENTAUR_HEALTH : ZOMBIE_HEALTH
+		new Float:fMaxHealth = necro_minion_max_health(iMinion)
 		new Float:fHealth = Float:get_entvar(iMinion, var_health)
 		if (fHealth < fMaxHealth)
 		{
 			new Float:fLastRegen = Float:get_entvar(iMinion, var_fuser2)
 			new Float:fDt = fLastRegen > 0.0 ? floatmin(fGameTime - fLastRegen, 1.0) : 0.0
-			set_entvar(iMinion, var_health, floatmin(fMaxHealth, fHealth + ZOMBIE_REGEN_RATE * fDt))
+			set_entvar(iMinion, var_health, floatmin(fMaxHealth, fHealth + MINION_REGEN_RATE * fDt))
 		}
 		set_entvar(iMinion, var_fuser2, fGameTime)
 	}
@@ -1967,7 +2083,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 		{
 			new Float:vPendingOrigin[3]
 			get_entvar(iPendingTarget, var_origin, vPendingOrigin)
-			if (get_distance_f(vOrigin, vPendingOrigin) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZOMBIE_ATTACK_RANGE) + ATTACK_RANGE_TOLERANCE)
+			if (get_distance_f(vOrigin, vPendingOrigin) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZERGLING_ATTACK_RANGE) + ATTACK_RANGE_TOLERANCE)
 				necro_attack_entity(iMinion, iOwner, iPendingTarget, bCentaur)
 		}
 		return
@@ -1977,7 +2093,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 		|| Player[iOwner][PlrLaserLockTime] > fGameTime)
 	{
 		if (Player[iOwner][PlrLaserPendingAt] > 0.0)
-			zombie_play_idle(iMinion)
+			minion_play_idle(iMinion)
 		else
 			set_entvar(iMinion, var_nextthink, fGameTime + 0.1)
 
@@ -1987,7 +2103,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 
 	if (kc_player_in_silence(iOwner))
 	{
-		zombie_play_idle(iMinion)
+		minion_play_idle(iMinion)
 		set_entvar(iMinion, var_velocity, NULL_VECTOR)
 		return
 	}
@@ -2003,14 +2119,14 @@ necro_minion_think(iMinion, bool:bCentaur)
 	if (iAttackSlot >= 0 && !bCentaur && Player[iOwner][PlrMinionJumpUntil][iAttackSlot] > fGameTime)
 	{
 		new iJumpTarget = Player[iOwner][PlrNpcActionTarget][iAttackSlot]
-		new bool:bLanded = fGameTime > Player[iOwner][PlrMinionJumpUntil][iAttackSlot] - ZOMBIE_JUMP_MAX_TIME + 0.25
+		new bool:bLanded = fGameTime > Player[iOwner][PlrMinionJumpUntil][iAttackSlot] - ZERGLING_JUMP_MAX_TIME + 0.25
 			&& (get_entvar(iMinion, var_flags) & FL_ONGROUND)
 
 		if (necro_valid_manual_target(iOwner, iJumpTarget))
 		{
 			new Float:vJumpTarget[3]
 			get_entvar(iJumpTarget, var_origin, vJumpTarget)
-			if (get_distance_f(vOrigin, vJumpTarget) <= ZOMBIE_ATTACK_RANGE)
+			if (get_distance_f(vOrigin, vJumpTarget) <= ZERGLING_ATTACK_RANGE)
 			{
 				necro_attack_entity(iMinion, iOwner, iJumpTarget, false)
 				necro_play_attack_animation(iMinion, false)
@@ -2059,7 +2175,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 	}
 
 	if (iTarget && is_entity(iTarget) && get_entvar(iTarget, var_impulse) == IMPULSE_PRESENT
-		&& get_distance_f(vOrigin, vDestination) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZOMBIE_ATTACK_RANGE))
+		&& get_distance_f(vOrigin, vDestination) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZERGLING_ATTACK_RANGE))
 	{
 		dllfunc(DLLFunc_Touch, iTarget, iOwner)
 		set_entvar(iMinion, var_npctarget, 0)
@@ -2067,30 +2183,12 @@ necro_minion_think(iMinion, bool:bCentaur)
 		return
 	}
 
-	if (iTarget && is_entity(iTarget) && get_entvar(iTarget, var_impulse) == IMPULSE_CORPSE
-		&& get_distance_f(vOrigin, vDestination) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZOMBIE_ATTACK_RANGE))
-	{
-		new Float:fMaxHealth = bCentaur ? CENTAUR_HEALTH : ZOMBIE_HEALTH
-		set_entvar(iMinion, var_health,
-			floatmin(Float:get_entvar(iMinion, var_health) + CORPSE_HEAL, fMaxHealth))
-
-		send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, 5)
-		engfunc(EngFunc_EmitSound, iMinion, CHAN_AUTO,
-			SOUNDS_CRIT[random(sizeof SOUNDS_CRIT)], 1.0, ATTN_NORM, 0, PITCH_NORM)
-		rg_remove_entity(iTarget)
-
-		necro_play_attack_animation(iMinion, bCentaur)
-		set_entvar(iMinion, var_npctarget, 0)
-		set_entvar(iMinion, var_nextthink, fGameTime + 0.2)
-		return
-	}
-
-	if (iTarget && get_distance_f(vOrigin, vDestination) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZOMBIE_ATTACK_RANGE))
+	if (iTarget && get_distance_f(vOrigin, vDestination) <= (bCentaur ? CENTAUR_ATTACK_RANGE : ZERGLING_ATTACK_RANGE))
 	{
 		if (iAttackSlot >= 0 && Player[iOwner][PlrMinionNextAttackAt][iAttackSlot] > fGameTime)
 		{
 			set_entvar(iMinion, var_velocity, NULL_VECTOR)
-			zombie_play_idle(iMinion, 0.1)
+			minion_play_idle(iMinion, 0.1)
 			return
 		}
 
@@ -2110,7 +2208,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 	if (bCentaur && iAttackSlot >= 0 && Player[iOwner][PlrNpcAction][iAttackSlot] == NPC_ACTION_MOVE)
 	{
 		new Float:vSpitTarget[3]
-		new iSpitTarget = find_necro_target(iOwner, vOrigin, CENTAUR_SPIT_SEARCH_RANGE, 0, vSpitTarget)
+		new iSpitTarget = find_necro_target(iOwner, vOrigin, necro_spit_range(iMinion), 0, vSpitTarget)
 		if (iSpitTarget && necro_start_centaur_spit(iMinion, vOrigin, iSpitTarget))
 			return
 	}
@@ -2125,7 +2223,7 @@ necro_minion_think(iMinion, bool:bCentaur)
 
 	if (get_distance_f(vOrigin, vDestination) <= 60.0)
 	{
-		zombie_play_idle(iMinion)
+		minion_play_idle(iMinion)
 		set_entvar(iMinion, var_nextthink, fGameTime + 0.1)
 		return
 	}
@@ -2175,7 +2273,7 @@ necro_find_stuck_ally(iOwner, const Float:vOrigin[3], Float:fRange, iIgnore, Flo
 bool:necro_move_mode_attack(iMinion, iOwner, iSlot, bool:bCentaur, const Float:vOrigin[3], bool:bReturning)
 {
 	new Float:fGameTime = get_gametime()
-	new Float:fRange = bCentaur ? CENTAUR_ATTACK_RANGE : ZOMBIE_ATTACK_RANGE
+	new Float:fRange = bCentaur ? CENTAUR_ATTACK_RANGE : ZERGLING_ATTACK_RANGE
 	new iWindupTarget = Player[iOwner][PlrMoveWindupTarget][iSlot]
 
 	if (iWindupTarget)
@@ -2235,9 +2333,9 @@ bool:necro_move_mode_attack(iMinion, iOwner, iSlot, bool:bCentaur, const Float:v
 	return true
 }
 
-public necro_zombie_think(iZombieEnt)
+public necro_zergling_think(iMinionEnt)
 {
-	necro_minion_think(iZombieEnt, false)
+	necro_minion_think(iMinionEnt, false)
 }
 
 public necro_centaur_think(iCentaurEnt)
@@ -2245,85 +2343,63 @@ public necro_centaur_think(iCentaurEnt)
 	necro_minion_think(iCentaurEnt, true)
 }
 
-public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits)
+public npc_TakeDamage(iMinionEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits)
 {
-	if (get_entvar(iZombieEnt, var_impulse) != IMPULSE_ZOMBIE)
+	if (get_entvar(iMinionEnt, var_impulse) != IMPULSE_MINION)
 		return HAM_IGNORED
 
-	if (get_entvar(iZombieEnt, var_flags) & FL_KILLME)
+	if (get_entvar(iMinionEnt, var_flags) & FL_KILLME)
 		return HAM_IGNORED
 
-	new iOwner = get_entvar(iZombieEnt, var_npcowner)
+	new iOwner = get_entvar(iMinionEnt, var_npcowner)
 	new Float:fGameTime = get_gametime()
 
 	if (!is_entity_player(iOwner))
-		return HAM_SUPERCEDE
-
-	if (!Player[iOwner][PlrIsAlive])
-		return HAM_SUPERCEDE
-
-	if (kc_player_in_silence(iOwner))
-		return HAM_SUPERCEDE
+		return HAM_IGNORED
 
 	new iDamagedSlot, iDamagedOwner
-	necro_find_minion_slot(iZombieEnt, iDamagedOwner, iDamagedSlot)
-
-	new Float:vMinionOrigin[3], Float:vReference[3], Float:fRadius = necro_get_aggression_radius(iOwner)
-	get_entvar(iZombieEnt, var_origin, vMinionOrigin)
-	get_entvar(iOwner, var_origin, vReference)
-	if (iDamagedOwner == iOwner && Player[iOwner][PlrNpcAction][iDamagedSlot] == NPC_ACTION_TARGET)
-	{
-		new iTarget = Player[iOwner][PlrNpcActionTarget][iDamagedSlot]
-		if (is_entity_player(iTarget))
-		{
-			if (Player[iTarget][PlrIsAlive])
-				get_entvar(iTarget, var_origin, vReference)
-		}
-		fRadius = MINION_TARGET_RADIUS
-	}
-	if (get_distance_f(vMinionOrigin, vReference) > fRadius)
-		return HAM_SUPERCEDE
+	necro_find_minion_slot(iMinionEnt, iDamagedOwner, iDamagedSlot)
 
 	if (is_entity_player(iAttacker))
 	{
 		if (Player[iOwner][PlrTeam] == Player[iAttacker][PlrTeam] && iOwner != iAttacker)
 		{
-			if (Float:get_entvar(iZombieEnt, var_npcspawntime) + NPC_TEAMMATE_DAMAGE_TIME < fGameTime)
+			if (Float:get_entvar(iMinionEnt, var_npcspawntime) + NPC_TEAMMATE_DAMAGE_TIME < fGameTime)
 				return HAM_SUPERCEDE
 		}
 	}
 
 	new Float:vOrigin[3]
-	new Float:fHealth = Float:get_entvar(iZombieEnt, var_health)
-	get_entvar(iZombieEnt, var_origin, vOrigin)
+	new Float:fHealth = Float:get_entvar(iMinionEnt, var_health)
+	get_entvar(iMinionEnt, var_origin, vOrigin)
 
 	new bool:bDamageChanged
 	if (!g_bMinionDot && (iDmgBits & DMG_NPC_SLOW))
-		necro_minion_slow(iZombieEnt)
+		necro_minion_slow(iMinionEnt)
 
 	if (g_bMinionDot)
 	{
 		if (fDamage < fHealth)
 		{
-			set_entvar(iZombieEnt, var_health, fHealth - fDamage)
-			set_entvar(iZombieEnt, var_fuser3, fGameTime)
-			necro_show_damage(iAttacker, iOwner, iZombieEnt, fDamage)
+			set_entvar(iMinionEnt, var_health, fHealth - fDamage)
+			set_entvar(iMinionEnt, var_fuser3, fGameTime)
+			necro_show_damage(iAttacker, iOwner, iMinionEnt, fDamage)
 			return HAM_SUPERCEDE
 		}
 	}
 	else if (iDmgBits & DMG_SLOWFREEZE)
 	{
-		necro_minion_chill(iZombieEnt)
+		necro_minion_chill(iMinionEnt)
 		return HAM_SUPERCEDE
 	}
 	else if (iDmgBits & DMG_BURN)
 	{
-		necro_minion_burn(iZombieEnt, iAttacker)
+		necro_minion_burn(iMinionEnt, iAttacker)
 		return HAM_SUPERCEDE
 	}
 	else if (iDmgBits & DMG_FREEZE)
 	{
-		if (necro_minion_freeze(iZombieEnt))
+		if (necro_minion_freeze(iMinionEnt))
 		{
 			fDamage += MINION_FROZEN_HIT_DAMAGE
 			SetHamParamFloat(4, fDamage)
@@ -2335,14 +2411,14 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 
 	if (fDamage < fHealth)
 	{
-		set_entvar(iZombieEnt, var_fuser3, fGameTime)
-		necro_show_damage(iAttacker, iOwner, iZombieEnt, fDamage)
+		set_entvar(iMinionEnt, var_fuser3, fGameTime)
+		necro_show_damage(iAttacker, iOwner, iMinionEnt, fDamage)
 
 		send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, 5)
 	}
 	else
 	{
-		necro_show_damage(iAttacker, iOwner, iZombieEnt, fHealth)
+		necro_show_damage(iAttacker, iOwner, iMinionEnt, fHealth)
 
 		if (is_entity_player(iAttacker))
 		{
@@ -2355,7 +2431,7 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 			minion_remove_lifebar(iDamagedOwner, iDamagedSlot)
 			Player[iDamagedOwner][PlrMinionEnt][iDamagedSlot] = 0
 			Player[iDamagedOwner][PlrMinionNextAttackAt][iDamagedSlot] = 0.0
-			Player[iDamagedOwner][PlrZombieCharge][iDamagedSlot] = 0.0
+			Player[iDamagedOwner][PlrMinionCharge][iDamagedSlot] = 0.0
 			Player[iDamagedOwner][PlrMinionJumpUntil][iDamagedSlot] = 0.0
 			Player[iDamagedOwner][PlrJumpPrevAction][iDamagedSlot] = -1
 			Player[iDamagedOwner][PlrNpcAction][iDamagedSlot] = NPC_ACTION_FOLLOW
@@ -2364,13 +2440,13 @@ public npc_TakeDamage(iZombieEnt, iInflictor, iAttacker, Float:fDamage, iDmgBits
 			Player[iDamagedOwner][PlrMinionRespawnAt][iDamagedSlot] = fGameTime + MINION_RESPAWN_TIME
 		}
 
-		necro_voice_death(iZombieEnt)
+		necro_voice_death(iMinionEnt)
 		create_gore(vOrigin)
 
-		set_entvar(iZombieEnt, var_solid, SOLID_NOT)
-		set_entvar(iZombieEnt, var_health, 0.0)
-		set_entvar(iZombieEnt, var_flags, FL_KILLME)
-		set_entvar(iZombieEnt, var_nextthink, fGameTime)
+		set_entvar(iMinionEnt, var_solid, SOLID_NOT)
+		set_entvar(iMinionEnt, var_health, 0.0)
+		set_entvar(iMinionEnt, var_flags, FL_KILLME)
+		set_entvar(iMinionEnt, var_nextthink, fGameTime)
 		return HAM_SUPERCEDE
 	}
 
@@ -2386,15 +2462,15 @@ necro_show_damage(iAttacker, iOwner, iMinion, Float:fDamage)
 	floating_damage_show(iAttacker, iMinion, fDamage)
 }
 
-zombie_play_idle(iZombieEnt, Float:fNextThink=0.1)
+minion_play_idle(iMinionEnt, Float:fNextThink=0.1)
 {
-	if (get_entvar(iZombieEnt, var_sequence) != 0 && get_gametime() >= Float:get_entvar(iZombieEnt, var_fuser4))
+	if (get_entvar(iMinionEnt, var_sequence) != 0 && get_gametime() >= Float:get_entvar(iMinionEnt, var_fuser4))
 	{
-		set_entvar(iZombieEnt, var_animtime, 0.0)
-		set_entvar(iZombieEnt, var_frame, 0.0)
-		set_entvar(iZombieEnt, var_sequence, 0)
+		set_entvar(iMinionEnt, var_animtime, 0.0)
+		set_entvar(iMinionEnt, var_frame, 0.0)
+		set_entvar(iMinionEnt, var_sequence, 0)
 	}
-	set_entvar(iZombieEnt, var_nextthink, get_gametime() + fNextThink)
+	set_entvar(iMinionEnt, var_nextthink, get_gametime() + fNextThink)
 }
 
 bool:necro_minion_is_frozen(iMinion)
@@ -2635,9 +2711,9 @@ public necro_status_tick()
 {
 	new Float:fGameTime = get_gametime()
 	new iMinion = NULLENT
-	while ((iMinion = rg_find_ent_by_class(iMinion, _CLASSNAME_ZOMBIE)))
+	while ((iMinion = rg_find_ent_by_class(iMinion, _CLASSNAME_MINION)))
 	{
-		if (get_entvar(iMinion, var_impulse) != IMPULSE_ZOMBIE || (get_entvar(iMinion, var_flags) & FL_KILLME))
+		if (get_entvar(iMinion, var_impulse) != IMPULSE_MINION || (get_entvar(iMinion, var_flags) & FL_KILLME))
 			continue
 
 		if (g_fMinionFrozenUntil[iMinion] > 0.0 && g_fMinionFrozenUntil[iMinion] <= fGameTime)
@@ -2689,7 +2765,7 @@ public npc_Classify(const iEnt)
 	if (is_nullent(iEnt))
 		return HAM_IGNORED
 
-	if (get_entvar(iEnt, var_impulse) != IMPULSE_ZOMBIE)
+	if (get_entvar(iEnt, var_impulse) != IMPULSE_MINION)
 		return HAM_IGNORED
 
 	SetHamReturnInteger(7) // CLASS_ALIEN_MONSTER
@@ -2783,71 +2859,71 @@ npc_Move(ent, Float:fSpeed)
 	set_entvar(ent, var_velocity, vflVelocity)
 }
 
-create_zombie(Float:vOrigin[3], Float:vAngles[3], iOwner, iSlot = 0)
+create_zergling(Float:vOrigin[3], Float:vAngles[3], iOwner, iSlot = 0)
 {
 	new iTeam = Player[iOwner][PlrTeam]
-	new iZombieEnt = rg_create_entity(SZ_EXPLOSION)
-	if (is_nullent(iZombieEnt))
+	new iMinionEnt = rg_create_entity(SZ_EXPLOSION)
+	if (is_nullent(iMinionEnt))
 		return NULLENT
 
-	necro_minion_reset_status(iZombieEnt)
+	necro_minion_reset_status(iMinionEnt)
 
-	engfunc(EngFunc_SetOrigin, iZombieEnt, vOrigin)
-	engfunc(EngFunc_SetModel, iZombieEnt, MODEL_ZOMBIE)
-	engfunc(EngFunc_SetSize, iZombieEnt, Float:{-ZOMBIE_HULL_RADIUS, -ZOMBIE_HULL_RADIUS, 0.0}, Float:{ZOMBIE_HULL_RADIUS, ZOMBIE_HULL_RADIUS, 20.0})
+	engfunc(EngFunc_SetOrigin, iMinionEnt, vOrigin)
+	engfunc(EngFunc_SetModel, iMinionEnt, MODEL_ZERGLING)
+	engfunc(EngFunc_SetSize, iMinionEnt, Float:{-ZERGLING_HULL_RADIUS, -ZERGLING_HULL_RADIUS, 0.0}, Float:{ZERGLING_HULL_RADIUS, ZERGLING_HULL_RADIUS, 20.0})
 
-	set_entvar(iZombieEnt, var_origin, vOrigin)
-	set_entvar(iZombieEnt, var_angles, vAngles)
+	set_entvar(iMinionEnt, var_origin, vOrigin)
+	set_entvar(iMinionEnt, var_angles, vAngles)
 
-	set_entvar(iZombieEnt, var_flags, FL_MONSTER)
-	set_entvar(iZombieEnt, var_solid, SOLID_BBOX)
-	set_entvar(iZombieEnt, var_movetype, MOVETYPE_PUSHSTEP)
-	set_entvar(iZombieEnt, var_skin, iTeam - 1)
+	set_entvar(iMinionEnt, var_flags, FL_MONSTER)
+	set_entvar(iMinionEnt, var_solid, SOLID_BBOX)
+	set_entvar(iMinionEnt, var_movetype, MOVETYPE_PUSHSTEP)
+	set_entvar(iMinionEnt, var_skin, iTeam - 1)
 	new Float:vVariant[3]
 	vVariant[0] = iSlot == 1 ? 1.0 : 0.0
-	set_entvar(iZombieEnt, var_vuser1, vVariant)
-	set_entvar(iZombieEnt, var_rendermode, kRenderNormal)
+	set_entvar(iMinionEnt, var_vuser1, vVariant)
+	set_entvar(iMinionEnt, var_rendermode, kRenderNormal)
 
-	set_entvar(iZombieEnt, var_takedamage, 1.0)
-	set_entvar(iZombieEnt, var_health, ZOMBIE_HEALTH)
+	set_entvar(iMinionEnt, var_takedamage, 1.0)
+	set_entvar(iMinionEnt, var_health, ZERGLING_HEALTH)
 
-	set_entvar(iZombieEnt, var_classname, _CLASSNAME_ZOMBIE)
-	set_entvar(iZombieEnt, var_impulse, IMPULSE_ZOMBIE)
-	set_entvar(iZombieEnt, var_npcowner, iOwner)
+	set_entvar(iMinionEnt, var_classname, _CLASSNAME_MINION)
+	set_entvar(iMinionEnt, var_impulse, IMPULSE_MINION)
+	set_entvar(iMinionEnt, var_npcowner, iOwner)
 
 	new Float:fGameTime = get_gametime()
 
-	set_entvar(iZombieEnt, var_animtime, fGameTime)
-	set_entvar(iZombieEnt, var_frame, 0.0)
-	set_entvar(iZombieEnt, var_framerate, 1.0)
-	set_entvar(iZombieEnt, var_sequence, 0)
+	set_entvar(iMinionEnt, var_animtime, fGameTime)
+	set_entvar(iMinionEnt, var_frame, 0.0)
+	set_entvar(iMinionEnt, var_framerate, 1.0)
+	set_entvar(iMinionEnt, var_sequence, 0)
 
-	set_entvar(iZombieEnt, var_npctarget, 0)
-	set_entvar(iZombieEnt, var_npctype, 0)
-	set_entvar(iZombieEnt, var_npcspawntime, fGameTime)
-	set_entvar(iZombieEnt, var_fuser3, fGameTime)
-	set_entvar(iZombieEnt, var_nextthink, fGameTime + 0.7)
+	set_entvar(iMinionEnt, var_npctarget, 0)
+	set_entvar(iMinionEnt, var_npctype, 0)
+	set_entvar(iMinionEnt, var_npcspawntime, fGameTime)
+	set_entvar(iMinionEnt, var_fuser3, fGameTime)
+	set_entvar(iMinionEnt, var_nextthink, fGameTime + 0.7)
 
-	SetThink(iZombieEnt, "necro_zombie_think")
+	SetThink(iMinionEnt, "necro_zergling_think")
 
-	set_member(iZombieEnt, m_bloodColor, MINION_BLOOD_COLOR)
+	set_member(iMinionEnt, m_bloodColor, MINION_BLOOD_COLOR)
 
-	drop_to_floor(iZombieEnt)
+	drop_to_floor(iMinionEnt)
 
 	new i
 	for (i = 1; i <= MaxClients; i++)
 		if (Player[i][PlrIsAlive])
-			check_stuck(i, iZombieEnt, vOrigin)
+			check_stuck(i, iMinionEnt, vOrigin)
 
 	i = -1
-	while ((i = find_ent_by_class(i, _CLASSNAME_ZOMBIE)))
-		if (i != iZombieEnt)
-			check_stuck_zombies(i, iZombieEnt, vOrigin)
+	while ((i = find_ent_by_class(i, _CLASSNAME_MINION)))
+		if (i != iMinionEnt)
+			check_stuck_minions(i, iMinionEnt, vOrigin)
 
-	return iZombieEnt
+	return iMinionEnt
 }
 
-create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner)
+create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner, bool:bHydra=false)
 {
 	new iCentaurEnt = rg_create_entity(SZ_EXPLOSION)
 	if (is_nullent(iCentaurEnt))
@@ -2870,10 +2946,10 @@ create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner)
 	set_entvar(iCentaurEnt, var_rendermode, kRenderNormal)
 
 	set_entvar(iCentaurEnt, var_takedamage, 1.0)
-	set_entvar(iCentaurEnt, var_health, fHealth > 0.0 ? fHealth : CENTAUR_HEALTH)
+	set_entvar(iCentaurEnt, var_health, fHealth > 0.0 ? fHealth : (bHydra ? HYDRA_HEALTH : CENTAUR_HEALTH))
 
-	set_entvar(iCentaurEnt, var_classname, _CLASSNAME_ZOMBIE)
-	set_entvar(iCentaurEnt, var_impulse, IMPULSE_ZOMBIE)
+	set_entvar(iCentaurEnt, var_classname, _CLASSNAME_MINION)
+	set_entvar(iCentaurEnt, var_impulse, IMPULSE_MINION)
 	set_entvar(iCentaurEnt, var_npcowner, iOwner)
 
 	new Float:fGameTime = get_gametime()
@@ -2884,7 +2960,7 @@ create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner)
 	set_entvar(iCentaurEnt, var_sequence, 1)
 
 	set_entvar(iCentaurEnt, var_npctarget, 0)
-	set_entvar(iCentaurEnt, var_npctype, 1)
+	set_entvar(iCentaurEnt, var_npctype, bHydra ? 2 : 1)
 	set_entvar(iCentaurEnt, var_npcspawntime, fGameTime)
 	set_entvar(iCentaurEnt, var_fuser3, fGameTime)
 	set_entvar(iCentaurEnt, var_nextthink, fGameTime + 1.13)
@@ -2899,9 +2975,9 @@ create_centaur(Float:vOrigin[3], Float:vAngles[3], Float:fHealth, iOwner)
 			check_stuck(i, iCentaurEnt, vOrigin)
 
 	i = -1
-	while ((i = find_ent_by_class(i, _CLASSNAME_ZOMBIE)))
+	while ((i = find_ent_by_class(i, _CLASSNAME_MINION)))
 		if (i != iCentaurEnt)
-			check_stuck_zombies(i, iCentaurEnt, vOrigin)
+			check_stuck_minions(i, iCentaurEnt, vOrigin)
 
 	drop_to_floor(iCentaurEnt)
 	return iCentaurEnt
@@ -3034,7 +3110,7 @@ kill_all_npc(iOwner)
 {
 	Player[iOwner][PlrLaserPendingAt] = 0.0
 	Player[iOwner][PlrLaserLockTime] = 0.0
-	Player[iOwner][PlrMergeOrdered] = false
+	Player[iOwner][PlrModeChangeOrdered] = false
 
 	for (new i; i < MAX_MINION_SLOTS; i++)
 	{
@@ -3048,7 +3124,7 @@ kill_all_npc(iOwner)
 	}
 
 	new iSpitEnt = NULLENT
-	while ((iSpitEnt = rg_find_ent_by_class(iSpitEnt, _CLASSNAME_ZOMBIE_SPIT)))
+	while ((iSpitEnt = rg_find_ent_by_class(iSpitEnt, _CLASSNAME_MINION_SPIT)))
 	{
 		if (get_entvar(iSpitEnt, var_owner) == iOwner)
 			rg_remove_entity(iSpitEnt)
@@ -3132,7 +3208,7 @@ check_stuck(id, ent, Float:vNpcOrigin[3])
 	}
 }
 
-check_stuck_zombies(zmb, ent, Float:vNpcOrigin[3])
+check_stuck_minions(zmb, ent, Float:vNpcOrigin[3])
 {
 	if (get_entvar(zmb, var_flags) & FL_KILLME)
 		return
