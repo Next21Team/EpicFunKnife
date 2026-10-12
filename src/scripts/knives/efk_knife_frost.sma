@@ -1379,8 +1379,8 @@ public efk_ability3(iPlayer)
 	set_entvar(iCloneSkeleton, var_solid, SOLID_TRIGGER)
 	set_entvar(iCloneSkeleton, var_owner, iPlayer)
 	set_entvar(iCloneSkeleton, var_team, get_user_team(iPlayer))
-	set_entvar(iCloneSkeleton, var_rendermode, kRenderTransAlpha)
-	set_entvar(iCloneSkeleton, var_renderamt, 0.0)
+	set_entvar(iCloneSkeleton, var_rendermode, kRenderNormal)
+	set_entvar(iCloneSkeleton, var_renderamt, 16.0)
 	set_entvar(iCloneSkeleton, var_clone_buffed, bBuffed)
 
 	new iBlend[2], iSeq, iPlayerSeq
