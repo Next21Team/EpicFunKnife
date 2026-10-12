@@ -745,9 +745,6 @@ public gas_touch(iGasEnt, iOtherEnt)
 
 public ItemGiveCode:efk_give_ffnade_item(iPlayer, iSenderImpulse)
 {
-	if (iSenderImpulse != IMPULSE_PRESENT && kc_player_check_game_flag(iPlayer, PLGF_IN_HAMMER_THROWN))
-		return ITEM_NOT_AVAILABLE
-
 	if (!Player[iPlayer][PlrIsAlive])
 	{
 		Player[iPlayer][PlrNextSpawn][0]++
@@ -776,9 +773,6 @@ public ItemGiveCode:efk_give_ffnade_item(iPlayer, iSenderImpulse)
 
 public ItemGiveCode:efk_give_gasnade_item(iPlayer, iSenderImpulse)
 {
-	if (iSenderImpulse != IMPULSE_PRESENT && kc_player_check_game_flag(iPlayer, PLGF_IN_HAMMER_THROWN))
-		return ITEM_NOT_AVAILABLE
-
 	if (!Player[iPlayer][PlrIsAlive])
 	{
 		Player[iPlayer][PlrNextSpawn][1]++
