@@ -101,10 +101,10 @@ new const PLUGIN[] = "EFK: Nuclear Knife"
 #define VIEW_SEQ_DRAW		3
 #define HAMMER_WINDUP_TIME	0.3
 
-#define TASK_HAMMER_THROW	32674
-#define TASK_HAMMER_FLIGHT_TIMEOUT	32676
-#define TASK_HAMMER_LOOP_SOUND	32677
-#define TASK_HAMMER_RETURN_RETRY	32700
+#define TASK_HAMMER_THROW	36100
+#define TASK_HAMMER_FLIGHT_TIMEOUT	36200
+#define TASK_HAMMER_LOOP_SOUND	36300
+#define TASK_HAMMER_RETURN_RETRY	36400
 #define HAMMER_RETURN_RETRY_DELAY	0.2
 
 #define HAMMER_FLIGHT_TIMEOUT	12.0
@@ -138,7 +138,7 @@ new const SOUND_HEAVYFALL[]		= "next21_efk/heavy_fall.wav"
 new const SOUND_HAMMER_LOOP[]	= "next21_efk/nuclear_hammer_loop_b02.wav"
 new const SOUND_HAMMER_HITWALL[]	= "next21_efk/nuclear_hammer_hitwall.wav"
 
-#define TASK_UNABILITY		32673
+#define TASK_UNABILITY		36000
 
 enum _:PlayerData
 {
