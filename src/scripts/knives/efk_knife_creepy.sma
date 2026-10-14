@@ -1412,6 +1412,21 @@ bool:ghost_attack(iPlayer, iGhost, Float:fDamage, Float:fRangeLimit)
 						set_entvar(iTarget, var_owner, iPlayer)
 					}
 				}
+				case IMPULSE_HAMMER:
+				{
+					iOwner = get_entvar(iTarget, var_owner)
+					if (is_user_alive(iOwner) && iTeam != get_member(iOwner, m_iTeam))
+					{
+						new Float:vTargetVelocity[3], Float:vTargetAngles[3]
+						get_entvar(iTarget, var_velocity, vTargetVelocity)
+						xs_vec_neg(vTargetVelocity, vTargetVelocity)
+						set_entvar(iTarget, var_velocity, vTargetVelocity)
+
+						get_entvar(iTarget, var_angles, vTargetAngles)
+						xs_vec_neg(vTargetAngles, vTargetAngles)
+						set_entvar(iTarget, var_angles, vTargetAngles)
+					}
+				}
 				case IMPULSE_WIND_WAVE:
 				{
 					if (iTeam != get_entvar(iTarget, var_team))

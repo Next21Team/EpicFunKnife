@@ -88,6 +88,7 @@ KAMUI_TIMER = Kamui time^n(%..1f sec. left)
 
 DAMAGE_REFLECTED = Damage reflected:
 DAMAGE_REFLECTED_COEFF = Coefficient of reflected damage:
+DAMAGE_REFLECTED_COEFF_HAMMER = Reflection charge on hammer:
 
 GHOST_TIMER = Ghost time: %..1f sec.^nSwitch camera (F)
 
@@ -313,6 +314,7 @@ KAMUI_TIMER = Время Камуи^n(осталось %..1f сек.)
 
 DAMAGE_REFLECTED = Урона отражено:
 DAMAGE_REFLECTED_COEFF = Коэффициент отражаемого урона:
+DAMAGE_REFLECTED_COEFF_HAMMER = Заряд отражения на молоте:
 
 GHOST_TIMER = Время призрака: %..1f сек.^nПереключить камеру (F)
 
@@ -538,6 +540,7 @@ KAMUI_TIMER = Tiempo de Kamui^n(%..1f seg. restantes)
 
 DAMAGE_REFLECTED = Daño reflejado:
 DAMAGE_REFLECTED_COEFF = Coeficiente de daño reflejado:
+DAMAGE_REFLECTED_COEFF_HAMMER = Carga de reflejo en el martillo:
 
 GHOST_TIMER = Tiempo fantasma: %..1f seg.^nCambiar cámara (F)
 
