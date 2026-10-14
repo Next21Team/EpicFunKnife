@@ -17,7 +17,11 @@ enum _:PlayerGameFlags(<<=1)
 	PLGF_IS_DISABLED_INVENTORY,
 	PLGF_IS_AUTHORIZED,
 	PLGF_IN_LOCK_POWER_SPEED,
-	PLGF_IN_MARKED_VISIBILITY
+	PLGF_IN_MARKED_VISIBILITY,
+	PLGF_IN_POWERSPEED_DRIVE,
+	PLGF_IN_HAMMER_THROWN,
+	PLGF_IN_HAMMER_RETURNING,
+	PLGF_IN_ITEM_ANIMATION
 };
 
 enum _:KnifeFlags(<<=1)
@@ -165,13 +169,13 @@ enum _:BlockAirFlags(<<=1)
 #define EFK_GAME_TAG				"Epic Fun Knife" // Тэг игры меню и чата
 #define RESET_ABIL_AFTER_SPAWN		5.0 			// сколько секунд заряжать оружие после спавна
 #define ADMIN_FLAG					ADMIN_IMMUNITY
-#define CLASSNAME_ZOMBIE			"next21_npc"
+#define CLASSNAME_MINION			"next21_npc"
 #define CLASSNAME_ACIDTRAP			"next21_acidtrap"
 #define CLASSNAME_CORPSE    		"next21_corpse"
 #define CLASSNAME_FAKEPLAYER		"next21_fakeplayer"
 #define CLASSNAME_ICICLE			"next21_icicle"
 #define CLASSNAME_KUNAI				"next21_kunai"
-#define CLASSNAME_ZOMBIE_SPIT		"next21_zombie_spit"
+#define CLASSNAME_MINION_SPIT		"next21_minion_spit"
 #define CLASSNAME_ACIDB				"next21_toxical_ball"
 #define CLASSNAME_ACIDP				"next21_toxical_poison"
 #define CLASSNAME_ACIDG				"next21_toxical_gas"
@@ -189,13 +193,13 @@ enum _:BlockAirFlags(<<=1)
 #define IMPULSE_FIELD				30000002
 #define IMPULSE_FIELD_WALL			30000003
 #define IMPULSE_ICICLE				30000004
-#define IMPULSE_ZOMBIE_SPIT			30000005
+#define IMPULSE_MINION_SPIT			30000005
 #define IMPULSE_ACIDB				30000006
 #define IMPULSE_RAZOR_SPHERE		30000007
 #define IMPULSE_LASER				30000008
 #define IMPULSE_BUG					30000009
 #define IMPULSE_FAKEPLAYER			30000010
-#define IMPULSE_ZOMBIE				30000011
+#define IMPULSE_MINION				30000011
 #define IMPULSE_SPIKES				30000012
 #define IMPULSE_ACIDG				30000013
 #define IMPULSE_ACIDP				30000014
@@ -223,6 +227,8 @@ enum _:BlockAirFlags(<<=1)
 #define IMPULSE_THUNDER_STRIKE_BEAM	30000036
 #define IMPULSE_KUNAI				30000037
 #define IMPULSE_BLIND_EFFECT		30000038
+#define IMPULSE_HAMMER				30000039
+#define IMPULSE_NINJA_SHADOW		30000040
 
 #define MAX_PLAYER_MONEY			55000
 #define MAX_PLAYER_HEALTH			180.0
@@ -249,6 +255,8 @@ enum _:BlockAirFlags(<<=1)
 
 #define FREEZE_TIME					3.5
 #define CHILL_TIME					3.0
+
+#define DMG_NPC_SLOW				DMG_SLOWBURN
 
 #define FALL_DAMAGE					0.9
 #define FALL_EASING					0.4
@@ -289,6 +297,8 @@ enum _:BlockAirFlags(<<=1)
 #define var_npcspawntime		var_fuser1
 
 #define var_dueltarget			var_iuser1
+
+#define var_hammer_recall		var_iuser1
 
 #define MODEL_PLAYER_ANIMATIONS 	"models/next21_efk/player_animations5.mdl"
 

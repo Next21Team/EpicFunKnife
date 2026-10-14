@@ -923,6 +923,18 @@ frost_explode(iEnt)
 		else
 			kc_player_chill(iTarget, CHILL_TIME, iOwner)
 	}
+
+	iTarget = NULLENT
+	while ((iTarget = engfunc(EngFunc_FindEntityInSphere, iTarget, vOrigin, FROST_RADIUS)))
+	{
+		if (iTarget <= MaxClients || !(get_entvar(iTarget, var_flags) & FL_MONSTER)
+			|| (get_entvar(iTarget, var_skin) + 1 == Player[iOwner][PlrTeam] && get_entvar(iTarget, var_npcowner) != iOwner))
+			continue
+
+		get_entvar(iTarget, var_origin, vOrigin2)
+		ExecuteHamB(Ham_TakeDamage, iTarget, iEnt, iOwner, 0.0,
+			random_num(1, 100) <= floatround(radius_calucation(vOrigin2, vOrigin)) ? DMG_FREEZE : DMG_SLOWFREEZE)
+	}
 }
 
 fire_explode(iEnt)
@@ -959,6 +971,8 @@ fire_explode(iEnt)
 			kc_player_burn(iTarget, iOwner, BURN_CYCLES)
 		else if (get_entvar(iTarget, var_impulse) == IMPULSE_TORNADO && Player[iOwner][PlrTeam] == get_entvar(iTarget, var_team))
 			tornado_burn(iTarget)
+		else if ((get_entvar(iTarget, var_flags) & FL_MONSTER) && (get_entvar(iTarget, var_skin) + 1 != Player[iOwner][PlrTeam] || get_entvar(iTarget, var_npcowner) == iOwner))
+			ExecuteHamB(Ham_TakeDamage, iTarget, iEnt, iOwner, 0.0, DMG_BURN)
 	}
 }
 

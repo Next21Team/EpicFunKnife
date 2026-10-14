@@ -1492,7 +1492,7 @@ public kunai_touch(iEnt, iOther)
 			if (is_entity_player(iOwner) && get_member(iOwner, m_iTeam) != get_entvar(iOther, var_team))
 				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iOwner, KUNAI_DAMAGE, DMG_GENERIC)
 		}
-		case IMPULSE_ZOMBIE:
+		case IMPULSE_MINION:
 		{
 			new iOwner = get_entvar(iEnt, var_owner)
 			if (is_entity_player(iOwner) && get_member(iOwner, m_iTeam) != get_entvar(iOther, var_skin) + 1)

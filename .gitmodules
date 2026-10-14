@@ -1,4 +1,4 @@
 [submodule "ext/EFK-Floating-Damage"]
 	path = ext/EFK-Floating-Damage
-	url = https://github.com/Next21Team/EFK-Floating-Damage.git
+	url = https://github.com/Razavik/EFK-Floating-Damage.git
 	branch = efk

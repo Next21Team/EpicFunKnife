@@ -335,7 +335,7 @@ public fw_PlayerTakeDamage_Pre(iPlayer, iInflictor, iAttacker, Float:fDamage, bi
 	new iWaterGuardOwner = get_entvar(iWaterGuard, var_owner)
 	new iInflictorImpulse = get_entvar(iInflictor, var_impulse)
 
-	if (iInflictorImpulse == IMPULSE_ZOMBIE)
+	if (iInflictorImpulse == IMPULSE_MINION)
 	{
 		new Float:vInflictorOrigin[3]
 		get_entvar(iInflictor, var_origin, vInflictorOrigin)

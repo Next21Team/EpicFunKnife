@@ -88,6 +88,7 @@ KAMUI_TIMER = Kamui time^n(%..1f sec. left)
 
 DAMAGE_REFLECTED = Damage reflected:
 DAMAGE_REFLECTED_COEFF = Coefficient of reflected damage:
+DAMAGE_REFLECTED_COEFF_HAMMER = Reflection charge on hammer:
 
 GHOST_TIMER = Ghost time: %..1f sec.^nSwitch camera (F)
 
@@ -150,12 +151,16 @@ TELEKINESIS_MODE_PUSH_TO = Mode: Push to the crosshair [On self] (E, R)
 TELEKINESIS_MODE_PUSH_AWAY = Mode: Push away [On self] (E, R)
 TELEKINESIS_MODE_PUSH_ENEMY = Mode: Push enemy away (E, R)
 
-NPC_ACTION_HUNTER = Hunting (R + ...)
-NPC_ACTION_MOVE = Moving to a point (R + MOUSE1)
-NPC_ACTION_FOLLOW = Follow you (R + MOUSE2)
-NPC_ACTION_TARGET = Chasing a victim (R + MOUSE1)
-NPC_ACTION_CIRCLE = Around a point (R + E)
-NPC_ACTION_CANNIBAL = Cannibalism (E + T)
+NPC_ACTION_MOVE = Moving to a point
+NPC_ACTION_TARGET = Chasing a target
+NPC_ACTION_FOLLOW = Following owner
+NECRO_ZERGLINGS = Zerglings
+NECRO_CENTAUR = Roach
+NECRO_HYDRA = Hydralisk
+NECRO_CHARGE = Charge
+NECRO_MODE = Mode (T)
+NECRO_HP = %d hp
+NECRO_RESPAWN = %d
 
 DEATH_REASON_FALL = CRASHED
 DEATH_REASON_DROWN = DROWNED
@@ -178,7 +183,7 @@ DEATH_REASON_TELEKINESIS = RIPPED BY TELEKINETIC IMPACT
 DEATH_REASON_SPIKES = PIERCED BY SPIKES
 DEATH_REASON_ACID = CORRODED BY ACID
 DEATH_REASON_GAS = GASSED
-DEATH_REASON_ZOMBIE = RIPPED BY ZOMBIE
+DEATH_REASON_MINION = RIPPED BY A MINION
 DEATH_REASON_BUG = KILLED BY BUG
 DEATH_REASON_FROZEN = FROZEN
 DEATH_REASON_GHOST = RIPED BY GHOST
@@ -313,6 +318,7 @@ KAMUI_TIMER = Время Камуи^n(осталось %..1f сек.)
 
 DAMAGE_REFLECTED = Урона отражено:
 DAMAGE_REFLECTED_COEFF = Коэффициент отражаемого урона:
+DAMAGE_REFLECTED_COEFF_HAMMER = Заряд отражения на молоте:
 
 GHOST_TIMER = Время призрака: %..1f сек.^nПереключить камеру (F)
 
@@ -375,12 +381,16 @@ TELEKINESIS_MODE_PUSH_TO = Режим: Толчок к прицелу [На се
 TELEKINESIS_MODE_PUSH_AWAY = Режим: Толчок от прицела [На себя] (E, R)
 TELEKINESIS_MODE_PUSH_ENEMY = Режим: Толчок противника от себя (E, R)
 
-NPC_ACTION_HUNTER = Охотятся (R + ...)
-NPC_ACTION_MOVE = Двигаются к точке (R + MOUSE1)
-NPC_ACTION_FOLLOW = Следует за вами (R + MOUSE2)
-NPC_ACTION_TARGET = Преследуют жертву (R + MOUSE1)
-NPC_ACTION_CIRCLE = Вокруг точки (R + E)
-NPC_ACTION_CANNIBAL = Каннибализм (E + T)
+NPC_ACTION_MOVE = Движется к точке
+NPC_ACTION_TARGET = Преследует цель
+NPC_ACTION_FOLLOW = Следует за владельцем
+NECRO_ZERGLINGS = Zerglings
+NECRO_CENTAUR = Roach
+NECRO_HYDRA = Hydralisk
+NECRO_CHARGE = Заряд
+NECRO_MODE = Mode (T)
+NECRO_HP = %d HP
+NECRO_RESPAWN = %d
 
 DEATH_REASON_FALL = РАЗБИТ
 DEATH_REASON_DROWN = УТОНУЛ
@@ -403,7 +413,7 @@ DEATH_REASON_TELEKINESIS = РАЗОРВАН ТЕЛЕКИНЕТИЧЕСКИМ В�
 DEATH_REASON_SPIKES = ПРОТКНУТ ШИПАМИ
 DEATH_REASON_ACID = РАЗЪЕДЕН КИСЛОТОЙ
 DEATH_REASON_GAS = ОТРАВЛЕН ГАЗОМ
-DEATH_REASON_ZOMBIE = РАСТЕРЗАН ЗОМБИ
+DEATH_REASON_MINION = РАСТЕРЗАН МИНЬОНОМ
 DEATH_REASON_BUG = УБИТ ЖУКОМ
 DEATH_REASON_FROZEN = ЗАМОРОЖЕН
 DEATH_REASON_GHOST = ПОРВАН ДУХОМ
@@ -538,6 +548,7 @@ KAMUI_TIMER = Tiempo de Kamui^n(%..1f seg. restantes)
 
 DAMAGE_REFLECTED = Daño reflejado:
 DAMAGE_REFLECTED_COEFF = Coeficiente de daño reflejado:
+DAMAGE_REFLECTED_COEFF_HAMMER = Carga de reflejo en el martillo:
 
 GHOST_TIMER = Tiempo fantasma: %..1f seg.^nCambiar cámara (F)
 
@@ -600,12 +611,16 @@ TELEKINESIS_MODE_PUSH_TO = Modo: empujar hacia la mira [Sobre ti] (E, R)
 TELEKINESIS_MODE_PUSH_AWAY = Modo: alejar [Sobre ti] (E, R)
 TELEKINESIS_MODE_PUSH_ENEMY = Modo: alejar al enemigo (E, R)
 
-NPC_ACTION_HUNTER = Cazar (R + ...)
-NPC_ACTION_MOVE = Mover a un punto (R + MOUSE1)
-NPC_ACTION_FOLLOW = Seguirte (R + MOUSE2)
-NPC_ACTION_TARGET = Perseguir a una víctima (R + MOUSE1)
-NPC_ACTION_CIRCLE = Alrededor de un punto (R + E)
-NPC_ACTION_CANNIBAL = Canibalismo (E + T)
+NPC_ACTION_MOVE = Moviéndose a un punto
+NPC_ACTION_TARGET = Persiguiendo un objetivo
+NPC_ACTION_FOLLOW = Siguiendo al dueño
+NECRO_ZERGLINGS = Zerglings
+NECRO_CENTAUR = Roach
+NECRO_HYDRA = Hydralisk
+NECRO_CHARGE = Carga
+NECRO_MODE = Mode (T)
+NECRO_HP = %d HP
+NECRO_RESPAWN = %d
 
 DEATH_REASON_FALL = ESTAMPADO CONTRA EL PISO
 DEATH_REASON_DROWN = AHOGADO
@@ -628,7 +643,7 @@ DEATH_REASON_TELEKINESIS = DESTROZADO POR UN IMPACTO TELEQUINÉTICO
 DEATH_REASON_SPIKES = EMPALADO POR ESPINAS
 DEATH_REASON_ACID = CORROÍDO POR ÁCIDO
 DEATH_REASON_GAS = ASFIXIADO POR GAS
-DEATH_REASON_ZOMBIE = DESTROZADO POR UN ZOMBI
+DEATH_REASON_MINION = DESTROZADO POR UN SECUAZ
 DEATH_REASON_BUG = ASESINADO POR UN BICHO
 DEATH_REASON_FROZEN = CONGELADO
 DEATH_REASON_GHOST = DESTROZADO POR UN FANTASMA
