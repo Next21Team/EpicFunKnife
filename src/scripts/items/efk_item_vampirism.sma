@@ -22,9 +22,7 @@ enum _:ViewSeq
 	VIEW_SEQ_WAER = 1
 }
 
-new Float:g_fWearTime[MAX_PLAYERS + 1],
-	g_iItemId, g_pVModel, g_iMaskCells,
-	bool:g_bIsRoundEnded
+new g_iItemId, g_iVActId, g_pVModel, g_iMaskCells, bool:g_bIsRoundEnded
 
 public plugin_precache()
 {
@@ -38,27 +36,14 @@ public plugin_init()
 	register_plugin(PLUGIN, EFK_VERSION, "Next21 Team")
 
 	g_iItemId = kc_register_item("ITEM_VAMPIRISM", "BUY_VAMPIRISM", "efk_give_item", ITEM_PRICE, .iFlags=ITMF_INVENTORY)
-	if (g_iItemId < 0)
-		set_fail_state("[%s] error registration", PLUGIN)
-
-	RegisterHookChain(RG_CBasePlayer_PreThink, "RG_CBasePlayer_PreThink_Pre")
+	g_iVActId = kc_register_view_action("efk_vact_item")
+	if (g_iItemId < 0 || g_iVActId < 0)
+		set_fail_state("[%s] error action", PLUGIN)
 
 	RegisterHam(Ham_TakeDamage, "player", "Ham_Player_TakeDamage_Post", true)
 
-	register_event("TextMsg", "event_NewGame", "a", "2=#Game_Commencing", "2=#Game_will_restart_in")
 	register_logevent("logevent_RoundStart", 2, "1=Round_Start")
 	register_logevent("logevent_RoundEnd", 2, "1=Round_End")
-	register_event("CurWeapon", "event_CurWeapon", "be", "1=1")
-}
-
-public client_putinserver(iPlayer)
-{
-	g_fWearTime[iPlayer] = 0.0
-}
-
-public event_NewGame()
-{
-	arrayset(g_fWearTime, 0.0, sizeof g_fWearTime)
 }
 
 public logevent_RoundStart()
@@ -69,44 +54,6 @@ public logevent_RoundStart()
 public logevent_RoundEnd()
 {
 	g_bIsRoundEnded = true
-}
-
-public event_CurWeapon(iPlayer)
-{
-	if (g_fWearTime[iPlayer] > 0.0)
-	{
-		g_fWearTime[iPlayer] = 0.0
-		client_print(iPlayer, print_center, "%L", iPlayer, "ITEM_CASHBACK")
-		rg_add_account(iPlayer, ITEM_PRICE)
-	}
-}
-
-public RG_CBasePlayer_PreThink_Pre(iPlayer)
-{
-	if (g_fWearTime[iPlayer] > 0.0)
-	{
-		if (!is_user_alive(iPlayer))
-		{
-			g_fWearTime[iPlayer] = 0.0
-			client_print(iPlayer, print_center, "%L", iPlayer, "ITEM_CASHBACK")
-			rg_add_account(iPlayer, ITEM_PRICE)
-			return HC_CONTINUE
-		}
-
-		if (g_fWearTime[iPlayer] <= get_gametime())
-		{
-			new iItem = get_member(iPlayer, m_pActiveItem)
-			if (!is_nullent(iItem))
-				ExecuteHamB(Ham_Item_Deploy, iItem)
-
-			create_mask_cells(iPlayer)
-
-			give_vamp(iPlayer, ITEM_MAX_HP)
-			g_fWearTime[iPlayer] = 0.0
-		}
-	}
-
-	return HC_CONTINUE
 }
 
 public Ham_Player_TakeDamage_Post(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
@@ -196,33 +143,29 @@ public ItemGiveCode:efk_give_item(iPlayer, iSenderImpulse)
 	if (Float:get_member(iPlayer, m_flNextAttack) > 0.0)
 		return ITEM_NOT_AVAILABLE
 
-	if (kc_player_get_capture(iPlayer) != CAPTURE_NONE)
+	if (!kc_player_set_view_action(iPlayer, g_iVActId, WEAR_TIME, g_pVModel, VIEW_SEQ_WAER))
 		return ITEM_NOT_AVAILABLE
-
-	new VisibilityType:iVisibility = kc_player_get_visibility(iPlayer)
-	if (iVisibility >= VIS_TRANS && iVisibility != VIS_CLONE)
-		return ITEM_NOT_AVAILABLE
-
-	set_pev(iPlayer, pev_viewmodel, g_pVModel)
-	kc_player_set_view_anim(iPlayer, VIEW_SEQ_WAER)
-
-	if (get_member(iPlayer, m_iFOV) != 90)
-	{
-		set_member(iPlayer, m_iFOV, 90)
-		set_member(iPlayer, m_iClientFOV, 90)
-		set_entvar(iPlayer, var_fov, 90.0)
-		send_msg_SetFOV(90, MSG_ONE, _, iPlayer)
-	}
-
-	set_member(iPlayer, m_flNextAttack, WEAR_TIME)
-
-	new iItem = get_member(iPlayer, m_pActiveItem)
-	if (!is_nullent(iItem))
-		set_member(iItem, m_Weapon_flTimeWeaponIdle, WEAR_TIME)
-
-	g_fWearTime[iPlayer] = get_gametime() + WEAR_TIME
 
 	return ITEM_OK
+}
+
+public efk_vact_item(iPlayer, bool:bComplete)
+{
+	if (bComplete)
+	{
+		new iItem = get_member(iPlayer, m_pActiveItem)
+		if (!is_nullent(iItem))
+			ExecuteHamB(Ham_Item_Deploy, iItem)
+
+		create_mask_cells(iPlayer)
+
+		give_vamp(iPlayer, ITEM_MAX_HP)
+	}
+	else
+	{
+		client_print(iPlayer, print_center, "%L", iPlayer, "ITEM_CASHBACK")
+		rg_add_account(iPlayer, ITEM_PRICE)
+	}
 }
 
 give_vamp(iPlayer, iValue)
