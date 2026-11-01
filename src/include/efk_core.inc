@@ -1397,6 +1397,26 @@ native bool:kc_player_in_silence(const iPlayer);
 native kc_player_slow(const iPlayer, const Float:fSlow, const Float:fSlowTime);
 
 /**
+ * Get the player's view action
+ *
+ * @param 	iPlayer			- Player ID
+ * @return					- View action ID or -1
+ */
+native kc_player_get_view_action(const iPlayer);
+
+/**
+ * Set the view action for the player
+ *
+ * @param 	iPlayer			- Player ID
+ * @param 	iVAct			- View action ID
+ * @param 	fActTime		- Action time
+ * @param	pModelVStr		- Allocated string for view model. Use EngFunc_AllocString
+ * @param 	iSeq			- Sequence
+ * @return					- Call result
+ */
+native bool:kc_player_set_view_action(const iPlayer, const iVAct, Float:fActTime, const pModelVStr, const iSeq);
+
+/**
  * Play first-person animation for the player
  *
  * @param 	iPlayer			- Player ID
@@ -1550,6 +1570,14 @@ native kc_register_item(const szMenuText[], const szChatText[], const szGiveCall
  * @return					- Menu item ID if registration is successful, otherwise -1
  */
 native kc_register_menu_item(const szName[], const szCallback[]);
+
+/**
+ * Register a view action
+ *
+ * @param 	szCallback		- action end handler
+ * @return					- View action ID if registration is successful, otherwise -1
+ */
+native kc_register_view_action(const szCallback[]);
 
 /**
  * Register a custom weapon HUD

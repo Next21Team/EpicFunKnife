@@ -152,6 +152,7 @@ enum AcidTrapState
 #define MAX_KNIVES			32
 #define MAX_ITEMS			32
 #define MAX_MENUITEMS		32
+#define MAX_VIEW_ACTIONS	32
 #define MAX_MIXCOLORS		8
 
 enum _:BlockAirFlags(<<=1)
