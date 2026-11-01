@@ -27,6 +27,7 @@ new const GAME_TAG[] = EFK_GAME_TAG
 #define KnifeF[%1][%2]				g_knife_data_f[%1][%2]
 #define Item[%1][%2]				g_item_data[%1][%2]
 #define MenuItem[%1][%2]			g_menu_item_data[%1][%2]
+#define ViewAction[%1][%2]			g_view_action_data[%1][%2]
 
 #define SetPlayerGameFlag(%1,%2)      (Player[%1][PlrGameFlags] |= %2)
 #define ClearPlayerGameFlag(%1,%2)    (Player[%1][PlrGameFlags] &= ~%2)
@@ -47,9 +48,8 @@ new const GAME_TAG[] = EFK_GAME_TAG
 #define LEN_ABILITY_NAME			24
 #define LEN_ITEM_DESCRIPTION 		32
 #define LEN_ITEM_CHATDESCRIPTION 	32
-#define LEN_ITEM_FUNC				32
 #define LEN_MENU_ITEM_NAME			32
-#define LEN_MENU_ITEM_FUNC			32
+#define LEN_CALLBACK				32
 #define LEN_DEATH_REASON			32
 
 new const PLAYER_MODEL_PATH[]		= "models/player/%s/%s.mdl"
@@ -301,7 +301,8 @@ enum _:PlayerProperties
 	PlrHealthTmp,
 	PlrDamageAccept[MAX_PLAYERS + 1],
 	PlrDamageAcceptRnd[MAX_PLAYERS + 1],
-	bool:PlrBlockUseAbility2
+	bool:PlrBlockUseAbility2,
+	PlrVActActive
 }
 
 enum _:PlayerPropertiesF
@@ -361,7 +362,8 @@ enum _:PlayerPropertiesF
 	Float:PlrReflectionEndTime,
 	Float:PlrHealedBy[MAX_PLAYERS + 1],
 	Float:PlrCaptureAngles[3],
-	Float:PlrFixedCaptureAngles[3]
+	Float:PlrFixedCaptureAngles[3],
+	Float:PlrVActEndTime
 }
 
 enum _:PlayerPropertiesState
@@ -459,12 +461,18 @@ enum _:MenuItemProperties
 	MItmCallback
 }
 
+enum _:ViewActionProperties
+{
+	VACT_CALLBACK
+}
+
 new
 g_player_data[MAX_PLAYERS][PlayerProperties], Float:g_player_data_f[MAX_PLAYERS][PlayerPropertiesF],
 g_player_state[MAX_PLAYERS][4][PlayerPropertiesState], Float:g_player_state_f[MAX_PLAYERS][4][PlayerPropertiesStateF],
 g_knife_data[MAX_KNIVES][KnifeProperties], Float:g_knife_data_f[MAX_KNIVES][KnifePropertiesF],
 g_item_data[MAX_ITEMS][ItemProperties],
 g_menu_item_data[MAX_MENUITEMS][MenuItemProperties],
+g_view_action_data[MAX_VIEW_ACTIONS][ViewActionProperties],
 
 forward_abil_pre, forward_abil_post, forward_core_change_knife_pre, forward_core_change_knife_post,
 forward_crosshair_draw_pre,
@@ -480,7 +488,7 @@ forward_apply_damage, forward_reflection_start, forward_reflection_stop, forward
 forward_concentblock_timeout, forward_player_options_update, forward_ability1_toggle,
 forward_creature_take_damage,
 
-g_iTotalKnives, g_iTotalItems, g_iTotalMenuItems,
+g_iTotalKnives, g_iTotalItems, g_iTotalMenuItems, g_iTotalViewActions,
 HookChain:g_pSV_WriteFullClientUpdate, g_szDeathString[32], g_iAssistKiller,
 HookChain:g_hcCBasePlayer_PainSoundBlock,
 g_msgHideWeapon, g_msgStatusText,
@@ -698,6 +706,10 @@ public plugin_natives()
 	register_native("kc_player_get_caused_damage", "_21kc_player_get_caused_damage")
 
 	register_native("kc_creature_take_damage", "_21kc_creature_take_damage")
+
+	register_native("kc_register_view_action", "_21kc_register_view_action")
+	register_native("kc_player_get_view_action", "_21kc_player_get_view_action")
+	register_native("kc_player_set_view_action", "_21kc_player_set_view_action")
 }
 
 public plugin_cfg()
@@ -1018,6 +1030,8 @@ public client_putinserver(iPlayer)
 
 	Player[iPlayer][PlrTopColorTeam] = -1
 
+	Player[iPlayer][PlrVActActive] = -1
+
 	create_hat_entity(iPlayer)
 	create_lifebar_entity(iPlayer)
 
@@ -1083,6 +1097,9 @@ public client_disconnected(iPlayer)
 	Player[iPlayer][PlrIsBhopEnabled] = false
 
 	Player[iPlayer][PlrLevel] = 0
+
+	Player[iPlayer][PlrVActActive] = -1
+	PlayerF[iPlayer][PlrVActEndTime] = 0.0
 
 	for (new i = 1; i <= MaxClients; i++)
 	{
@@ -1152,6 +1169,8 @@ public RG_CSGameRules_RestartRound_Pre()
 		{
 			arrayset(Player[i][PlrItemValue], -1, MAX_ITEMS)
 			Player[i][PlrIsBhopEnabled] = false
+			Player[i][PlrVActActive] = -1
+			PlayerF[i][PlrVActEndTime] = 0.0
 		}
 
 		TrieClear(g_tInventoryCache)
@@ -1281,7 +1300,6 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 	ClearPlayerGameFlag(iPlayer, PLGF_IN_FIXED_ANIMATION);
 	ClearPlayerGameFlag(iPlayer, PLGF_IS_DISABLED_CHARGE);
 	ClearPlayerGameFlag(iPlayer, PLGF_IS_DISABLED_INVENTORY);
-	ClearPlayerGameFlag(iPlayer, PLGF_IN_ITEM_ANIMATION);
 
 	new i = NULLENT
 	while ((i = rg_find_ent_by_class(i, SZ_BEAM)))
@@ -1936,6 +1954,9 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 
 			fStateUpdateTime[iPlayer] = 1.0 + fGameTime
 		}
+
+		if (PlayerF[iPlayer][PlrVActEndTime] <= fGameTime)
+			player_end_view_action(iPlayer, true)
 
 		if (get_entvar(iPlayer, var_flags) & FL_ONGROUND)
 		{
@@ -2703,7 +2724,6 @@ public RG_CBasePlayer_Killed_Post(iVictim, iAttacker, iFlags)
 	ClearPlayerGameFlag(iVictim, PLGF_IN_UNABILITY);
 	ClearPlayerGameFlag(iVictim, PLGF_IS_DISABLED_CHARGE);
 	ClearPlayerGameFlag(iVictim, PLGF_IS_DISABLED_INVENTORY);
-	ClearPlayerGameFlag(iVictim, PLGF_IN_ITEM_ANIMATION);
 
 	player_unburn(iVictim)
 	player_unfreeze(iVictim)
@@ -2738,6 +2758,8 @@ public RG_CBasePlayer_Killed_Post(iVictim, iAttacker, iFlags)
 		set_entvar(Player[iVictim][PlrHpBarEnt], var_effects, EF_NODRAW)
 
 	player_set_camera(iVictim, CAMERA_MODE_1ST, false)
+
+	player_end_view_action(iVictim, false)
 
 	if (is_entity_player(iAttacker))
 		PlayerF[iAttacker][PlrPreGameTime] = 0.0
@@ -3697,6 +3719,8 @@ public event_CurWeapon(iPlayer)
 		write_byte(24)
 		message_end()
 	}
+
+	player_end_view_action(iPlayer, false)
 }
 
 public event_Health(iPlayer)
@@ -6819,6 +6843,18 @@ player_uncapture(iPlayer)
 	}
 }
 
+player_end_view_action(iPlayer, bool:bComplete)
+{
+	new iVAct = Player[iPlayer][PlrVActActive]
+	if (iVAct == -1)
+		return
+
+	Player[iPlayer][PlrVActActive] = -1
+	PlayerF[iPlayer][PlrVActEndTime] = 0.0
+
+	ExecuteForward(ViewAction[iVAct][VACT_CALLBACK], _, iPlayer, bComplete)
+}
+
 bool:player_levitation(iPlayer)
 {
 	if (Player[iPlayer][PlrLevitation])
@@ -7523,7 +7559,7 @@ public _21kc_register_menu_item(plugin, num_params)
 
 	new iItem = g_iTotalMenuItems
 
-	new szCallback[LEN_MENU_ITEM_FUNC]
+	new szCallback[LEN_CALLBACK]
 
 	get_string(1, MenuItem[iItem][MItmName], LEN_MENU_ITEM_NAME - 1)
 	get_string(2, szCallback, charsmax(szCallback))
@@ -7551,7 +7587,7 @@ public _21kc_register_item(plugin, num_params)
 	}
 
 	new iItem = g_iTotalItems
-	new szCallback[LEN_ITEM_FUNC]
+	new szCallback[LEN_CALLBACK]
 
 	get_string(1, Item[iItem][ItmDescription], LEN_ITEM_DESCRIPTION - 1)
 	get_string(2, Item[iItem][ItmChatDescription], LEN_ITEM_CHATDESCRIPTION - 1)
@@ -7588,7 +7624,7 @@ public bool:_21kc_item_register_enable_handler(plugin, num_params)
 	if (iItem >= g_iTotalItems)
 		return false
 
-	new szCallback[LEN_ITEM_FUNC]
+	new szCallback[LEN_CALLBACK]
 	get_string(2, szCallback, charsmax(szCallback))
 
 	new pCallback = CreateOneForward(plugin, szCallback, FP_CELL, FP_CELL, FP_CELL)
@@ -8896,4 +8932,70 @@ public _21kc_creature_take_damage(plugin, num_params)
 	ExecuteForward(forward_creature_take_damage, iRet, iCreatureEnt, iAttacker, fDamage)
 
 	return iRet == PLUGIN_CONTINUE
+}
+
+public _21kc_register_view_action(plugin, num_params)
+{
+	new szCallback[LEN_CALLBACK]
+	get_string(1, szCallback, charsmax(szCallback))
+
+	new iVAct = g_iTotalViewActions
+
+	new pCallback = CreateOneForward(plugin, szCallback, FP_CELL, FP_CELL)
+	if (pCallback < 0)
+	{
+		log_error(AMX_ERR_NATIVE, "[%s] (kc_register_view_action) Callback function %s not found", PLUGIN, szCallback)
+		return -1
+	}
+
+	ViewAction[iVAct][VACT_CALLBACK] = pCallback
+
+	g_iTotalViewActions++
+
+	return iVAct
+}
+
+public _21kc_player_get_view_action(plugin, num_params)
+{
+	return Player[get_param(1)][PlrVActActive]
+}
+
+public bool:_21kc_player_set_view_action(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	new iVAct = get_param(2)
+	new Float:fActTime = get_param_f(3)
+	new pModelVStr = get_param(4)
+	new iSeq = get_param(5)
+
+	if (Player[iPlayer][PlrCaptureType] != CAPTURE_NONE)
+		return false
+
+	new VisibilityType:iVisibility = Player[iPlayer][PlrVisibility]
+	if (iVisibility >= VIS_TRANS && iVisibility != VIS_CLONE)
+		return false
+
+	player_end_view_action(iPlayer, false)
+
+	set_pev(iPlayer, pev_viewmodel, pModelVStr)
+	player_set_view_anim(iPlayer, iSeq)
+
+	if (get_member(iPlayer, m_iFOV) != 90)
+	{
+		set_member(iPlayer, m_iFOV, 90)
+		set_member(iPlayer, m_iClientFOV, 90)
+		set_entvar(iPlayer, var_fov, 90.0)
+		send_msg_SetFOV(90, MSG_ONE, _, iPlayer)
+	}
+
+	set_member(iPlayer, m_flNextAttack, fActTime)
+
+	new iItem = get_member(iPlayer, m_pActiveItem)
+	if (!is_nullent(iItem))
+		set_member(iItem, m_Weapon_flTimeWeaponIdle, fActTime)
+
+	Player[iPlayer][PlrVActActive] = iVAct
+	PlayerF[iPlayer][PlrVActEndTime] = get_gametime() + fActTime
+
+	return true
 }

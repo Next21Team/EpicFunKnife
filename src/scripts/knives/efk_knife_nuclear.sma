@@ -1707,7 +1707,7 @@ public hammer_ground_think(iHammerEnt)
 
 hammer_start_return(iOwner, iHammerEnt)
 {
-	if (kc_player_check_game_flag(iOwner, PLGF_IN_ITEM_ANIMATION))
+	if (kc_player_get_view_action(iOwner) > -1)
 	{
 		remove_task(TASK_HAMMER_RETURN_RETRY + iOwner)
 		set_task(HAMMER_RETURN_RETRY_DELAY, "task_hammer_return_retry", TASK_HAMMER_RETURN_RETRY + iOwner)
@@ -1743,7 +1743,7 @@ hammer_enforce_hidden_hands(iPlayer)
 
 	if (Player[iPlayer][PlrHammerEnt])
 	{
-		if (!kc_player_check_game_flag(iPlayer, PLGF_IN_ITEM_ANIMATION))
+		if (kc_player_get_view_action(iPlayer) == -1)
 			set_pev(iPlayer, pev_viewmodel, 0)
 		set_pev(iPlayer, pev_weaponmodel, 0)
 		set_member(iPlayer, m_szAnimExtention, ANIM_EXT_NO_HAMMER)
@@ -1969,7 +1969,7 @@ hammer_update_return_velocity(iOwner, iHammerEnt)
 
 hammer_return_complete(iOwner, iHammerEnt)
 {
-	if (kc_player_check_game_flag(iOwner, PLGF_IN_ITEM_ANIMATION))
+	if (kc_player_get_view_action(iOwner) > -1)
 	{
 		set_entvar(iHammerEnt, var_velocity, Float:{0.0, 0.0, 0.0})
 		remove_task(TASK_HAMMER_RETURN_RETRY + iOwner)
