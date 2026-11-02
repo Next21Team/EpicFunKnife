@@ -1349,7 +1349,7 @@ necro_tick(iPlayer, Float:fGameTime)
 	new szSoulHint[24]
 	if (Player[iPlayer][PlrSouls])
 		formatex(szSoulHint, charsmax(szSoulHint), "+%dHP", floatround(SOUL_HEAL_VALUE * Player[iPlayer][PlrSouls]))
-	kc_player_set_ability4_hint(iPlayer, szSoulHint)
+	kc_player_set_abil4_hint(iPlayer, szSoulHint)
 
 	for (new i; i < MAX_MINION_SLOTS; i++)
 	{
@@ -2177,7 +2177,7 @@ public efk_ability(iPlayer, iTarget)
 	return PLUGIN_HANDLED
 }
 
-necro_trace_aim_point(iPlayer, iHeavy, Float:vEnd[3])
+necro_trace_aim_point(iPlayer, iHeavy, Float:vEnd[])
 {
 	new Float:vStart[3], Float:vViewOfs[3], Float:vAngles[3], Float:vDirection[3]
 	get_entvar(iPlayer, var_origin, vStart)

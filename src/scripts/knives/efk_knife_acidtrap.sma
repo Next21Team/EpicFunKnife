@@ -16,7 +16,7 @@ new const PLUGIN[] = "EFK: Acidtrap Knife"
 
 #define HP				80.0
 #define GRAVITY			1.0
-#define SPEED			260.0
+#define SPEED			250.0
 #define MINDAMAGE		5.0
 #define MAXDAMAGE		10.0
 
@@ -81,6 +81,8 @@ new const MODELS_SMOKE[][] =
 #define POISON_TIMESTODIE		15
 
 #define DETONATE_AIM_RADIUS		96.0
+
+#define WALLRUN_CHARGE_REWARD	15
 
 #define HIGHLIGHT_MIN_DOT 			0.95
 #define HIGHLIGHT_UPDATE_TIME 		0.2
@@ -224,7 +226,7 @@ public plugin_init()
 	RegisterHookChain(RG_CSGameRules_CleanUpMap, "RG_CSGameRules_CleanUpMap_Post", true)
 	RegisterHookChain(RG_CBasePlayer_Spawn, "RG_CBasePlayer_Spawn_Post", true)
 	RegisterHam(Ham_Player_PreThink, "player", "fw_PreThink")
-	RegisterHam(Ham_Killed, "player", "fw_PlayerKilled", 1)
+	RegisterHookChain(RG_CBasePlayer_Killed, "RG_CBasePlayer_Killed_Post", true)
 
 	register_event("CurWeapon", "event_CurWeapon", "be", "1=1")
 
@@ -646,9 +648,15 @@ public fw_PreThink(iPlayer)
 	return HAM_IGNORED
 }
 
-public fw_PlayerKilled(iVictim)
+public RG_CBasePlayer_Killed_Post(iVictim, iAttacker)
 {
 	Player[iVictim][PlrIsAlive] = false
+
+	if (iAttacker != iVictim && is_entity_player(iAttacker) && Player[iAttacker][PlrKnife] == g_iKnifeId && Player[iAttacker][PlrIsAlive]
+		&& get_member(iAttacker, m_iTeam) != get_member(iVictim, m_iTeam))
+	{
+		Player[iAttacker][PlrWallPt] = min(100, Player[iAttacker][PlrWallPt] + WALLRUN_CHARGE_REWARD)
+	}
 
 	if (Player[iVictim][PlrKnife] == g_iKnifeId)
 		clear_highlighted_acidtrap(iVictim)

@@ -972,8 +972,13 @@ public ice_clone_think(iCloneEnt)
 		{
 			set_entvar(iIcicleEnt, var_icicle_buffed, 0)
 			set_entvar(iIcicleEnt, var_icicle_spawntime, get_gametime())
+			set_entvar(iIcicleEnt, var_icicle_rangemode, IRM_TRACE)
+			set_entvar(iIcicleEnt, var_icicle_strong, true)
 
-			create_beamfollow(iIcicleEnt)
+			// Prevent tracing of oneself
+			set_entvar(iCloneEnt, var_owner, 0)
+
+			icicle_fire_trace(iIcicleEnt, iOwner, vIcicleOrigin, vDirection, 8192.0)
 
 			engfunc(EngFunc_EmitSound, iCloneEnt, CHAN_WEAPON, SOUND_ICICLE_LAUNCH, 1.0, ATTN_NORM, 0, PITCH_NORM)
 		}
@@ -1212,6 +1217,35 @@ bool:player_can_trace_icicle(iPlayer)
 	return bool:(get_entvar(iPlayer, var_waterlevel) >= 1)
 }
 
+icicle_fire_trace(iIcicleEnt, iOwner, Float:vStart[3], Float:vDirection[3], Float:fMaxDistance)
+{
+	new Float:vDest[3], Float:vHitPos[3]
+	xs_vec_mul_scalar(vDirection, fMaxDistance, vDest)
+	xs_vec_add(vStart, vDest, vDest)
+
+	engfunc(EngFunc_TraceLine, vStart, vDest, DONT_IGNORE_MONSTERS, iOwner, 0)
+	get_tr2(0, TR_vecEndPos, vHitPos)
+
+	new Float:fFieldDist, iFieldEnt = check_field_part_on_line(iOwner, vStart, vHitPos, fFieldDist)
+	if (iFieldEnt)
+	{
+		xs_vec_add_scaled(vStart, vDirection, fFieldDist, vDest)
+		engfunc(EngFunc_TraceLine, vStart, vDest, DONT_IGNORE_MONSTERS, iOwner, 0)
+		get_tr2(0, TR_vecEndPos, vHitPos)
+	}
+
+	create_beam(0, vStart, vHitPos, 7, 6)
+	engfunc(EngFunc_SetOrigin, iIcicleEnt, vHitPos)
+
+	new iHit = get_tr2(0, TR_pHit)
+	if (!is_nullent(iHit))
+		icicle_touch(iIcicleEnt, iHit)
+
+	new iCloneEnt = check_owner_ice_clone_on_line(iOwner, vStart, vHitPos)
+	if (iCloneEnt)
+		icicle_touch(iIcicleEnt, iCloneEnt)
+}
+
 bool:throw_icicle(iPlayer, bool:bBuffed=false)
 {
 	if (pev(iPlayer, pev_viewmodel) != g_pKnifeVStr)
@@ -1275,42 +1309,19 @@ bool:throw_icicle(iPlayer, bool:bBuffed=false)
 		new Float:fTraceMaxDistance = iWindBoost == WINDBOOST_NEGATIVE ?
 			ICICLE_WEAK_DISTANCE : 8192.0
 
-		new Float:vStart[3], Float:vViewOfs[3],
-			Float:vDest[3], Float:vHitPos[3], Float:vDirection[3]
+		new Float:vStart[3], Float:vViewOfs[3], Float:vTraceDir[3]
 
 		get_entvar(iPlayer, var_origin, vStart)
 		get_entvar(iPlayer, var_view_ofs, vViewOfs)
 		xs_vec_add(vStart, vViewOfs, vStart)
-		get_entvar(iPlayer, var_v_angle, vDirection)
-		engfunc(EngFunc_MakeVectors, vDirection)
-		global_get(glb_v_forward, vDirection)
-		xs_vec_mul_scalar(vDirection, fTraceMaxDistance, vDest)
-		xs_vec_add(vStart, vDest, vDest)
+		get_entvar(iPlayer, var_v_angle, vTraceDir)
+		engfunc(EngFunc_MakeVectors, vTraceDir)
+		global_get(glb_v_forward, vTraceDir)
 
-		engfunc(EngFunc_TraceLine, vStart, vDest, DONT_IGNORE_MONSTERS, iPlayer, 0)
-		get_tr2(0, TR_vecEndPos, vHitPos)
-
-		new Float:fFieldDist, iFieldEnt = check_field_part_on_line(iPlayer, vStart, vHitPos, fFieldDist)
-		if (iFieldEnt)
-		{
-			xs_vec_add_scaled(vStart, vDirection, fFieldDist, vDest)
-			engfunc(EngFunc_TraceLine, vStart, vDest, DONT_IGNORE_MONSTERS, iPlayer, 0)
-			get_tr2(0, TR_vecEndPos, vHitPos)
-		}
-
-		create_beam(0, vStart, vHitPos, 7, 6)
-		engfunc(EngFunc_SetOrigin, iIcicleEnt, vHitPos)
-
-		new iHit = get_tr2(0, TR_pHit)
-		if (!is_nullent(iHit))
-			icicle_touch(iIcicleEnt, iHit)
+		icicle_fire_trace(iIcicleEnt, iPlayer, vStart, vTraceDir, fTraceMaxDistance)
 
 		engfunc(EngFunc_EmitSound, iPlayer, CHAN_WEAPON, SOUND_ICICLE_LAUNCH, 1.0, ATTN_NORM, 0, random_num(100, 110))
 		set_entvar(iPlayer, var_punchangle, !random(1) ? {0.0, 0.0, 7.0} : {0.0, 0.0, -7.0})
-
-		new iCloneEnt = check_owner_ice_clone_on_line(iPlayer, vStart, vHitPos)
-		if (iCloneEnt)
-			icicle_touch(iIcicleEnt, iCloneEnt)
 	}
 	else
 	{

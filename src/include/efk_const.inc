@@ -20,8 +20,7 @@ enum _:PlayerGameFlags(<<=1)
 	PLGF_IN_MARKED_VISIBILITY,
 	PLGF_IN_POWERSPEED_DRIVE,
 	PLGF_IN_HAMMER_THROWN,
-	PLGF_IN_HAMMER_RETURNING,
-	PLGF_IN_ITEM_ANIMATION
+	PLGF_IN_HAMMER_RETURNING
 };
 
 enum _:KnifeFlags(<<=1)
@@ -156,6 +155,7 @@ enum AcidTrapState
 #define MAX_KNIVES			32
 #define MAX_ITEMS			32
 #define MAX_MENUITEMS		32
+#define MAX_VIEW_ACTIONS	32
 #define MAX_MIXCOLORS		8
 
 enum _:BlockAirFlags(<<=1)
