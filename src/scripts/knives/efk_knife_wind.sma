@@ -383,7 +383,7 @@ bool:check_wind_impact(iEnt, iOther)
 	static iOwner
 	switch (get_entvar(iOther, var_impulse))
 	{
-		case IMPULSE_ICICLE, IMPULSE_ZOMBIE_SPIT, IMPULSE_ACIDB, IMPULSE_RAZOR_SPHERE, IMPULSE_KUNAI:
+		case IMPULSE_ICICLE, IMPULSE_ZOMBIE_SPIT, IMPULSE_ACIDB, IMPULSE_RAZOR_SPHERE, IMPULSE_KUNAI, IMPULSE_HAMMER:
 		{
 			iOwner = get_entvar(iOther, var_owner)
 			if (is_entity_player(iOwner) && get_member(iOwner, m_iTeam) != get_entvar(iEnt, var_team))
