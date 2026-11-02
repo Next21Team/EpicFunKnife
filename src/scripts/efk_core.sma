@@ -290,6 +290,7 @@ enum _:PlayerProperties
 	PlrModelAnim[3],
 	PlrItemValue[MAX_ITEMS],
 	PlrItemMode,
+	PlrInvMenu,
 	PlrOptionsFlags,
 	PlrTopColorTeam,
 	PlrSGSGround,
@@ -1019,6 +1020,7 @@ public client_putinserver(iPlayer)
 
 	arrayset(Player[iPlayer][PlrItemValue], -1, MAX_ITEMS)
 	Player[iPlayer][PlrItemMode] = 0
+	Player[iPlayer][PlrInvMenu] = INVALID_HANDLE
 
 	Player[iPlayer][PlrTopColorTeam] = -1
 
@@ -4608,17 +4610,22 @@ public handler_shop_menu(iPlayer, iMenu, iItem)
 	return PLUGIN_HANDLED
 }
 
-new bool:g_bShowingInvMenu[MAX_PLAYERS + 1]
-
 public clcmd_show_items_menu(iPlayer)
 {
-	show_items_menu(iPlayer)
+	if (Player[iPlayer][PlrInvMenu] != INVALID_HANDLE)
+	{
+		show_menu(iPlayer, 0, "^n", 1)
+		Player[iPlayer][PlrInvMenu] = INVALID_HANDLE
+	}
+	else
+		show_items_menu(iPlayer)
+
 	return PLUGIN_HANDLED
 }
 
 redraw_items_menu_if_needed(iPlayer)
 {
-	if (g_bShowingInvMenu[iPlayer])
+	if (Player[iPlayer][PlrInvMenu] != INVALID_HANDLE)
 		show_items_menu(iPlayer)
 }
 
@@ -4692,7 +4699,7 @@ show_items_menu(iPlayer)
 	menu_setprop(iItemsMenu, MPROP_EXIT, MEXIT_ALL)
 
 	menu_display(iPlayer, iItemsMenu)
-	g_bShowingInvMenu[iPlayer] = true
+	Player[iPlayer][PlrInvMenu] = iItemsMenu
 }
 
 public handler_items_menu(iPlayer, iMenu, iItem)
@@ -4700,7 +4707,7 @@ public handler_items_menu(iPlayer, iMenu, iItem)
 	if (iItem == MENU_EXIT || CheckPlayerGameFlag(iPlayer, PLGF_IS_DISABLED_INVENTORY))
 	{
 		menu_destroy(iMenu)
-		g_bShowingInvMenu[iPlayer] = false
+		Player[iPlayer][PlrInvMenu] = INVALID_HANDLE
 
 		return PLUGIN_HANDLED
 	}
