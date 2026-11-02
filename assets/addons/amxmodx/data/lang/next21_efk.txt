@@ -36,7 +36,7 @@ KNIFE_THUNDER_CHAT = ^4[Thunder knife] Properties: ^1Levitation, HP-
 KNIFE_RAZOR_CHAT = ^4[Razor Knife] Properties: ^1speed+
 KNIFE_TELEKINESIS_CHAT = ^4[Telekinesis Knife] Properties: ^1less damage when falling, remote damage, damage+
 KNIFE_SWAP_CHAT = ^4[Swap knife] Properties: ^1changing the position of enemy, confuses attack buttons
-KNIFE_NECRO_CHAT = ^4[Necro knife] Properties: ^1collects souls of the dead players to heal, HP-
+KNIFE_NECRO_CHAT = ^4[Necro knife] Properties: ^1soul collecting, modes: Zerglings (T), Ultralisk (E + T), Hydralisk (R + T), HP+
 KNIFE_SPIKES_CHAT = ^4[Spikes knife] Properties: ^1high jump, down jump, spines on the back, speed+
 KNIFE_DARK_CHAT = ^4[Dark Knife] Properties: ^1disguise as enemy, global darkness, HP+
 KNIFE_ACIDTRAP_CHAT = ^4[Acidtrap Knife] Properties: ^1traps, wall run, HP-, damage+
@@ -88,6 +88,7 @@ KAMUI_TIMER = Kamui time^n(%..1f sec. left)
 
 DAMAGE_REFLECTED = Damage reflected:
 DAMAGE_REFLECTED_COEFF = Coefficient of reflected damage:
+DAMAGE_REFLECTED_COEFF_HAMMER = Reflection charge on hammer:
 
 GHOST_TIMER = Ghost time: %..1f sec.^nSwitch camera (F)
 
@@ -150,12 +151,19 @@ TELEKINESIS_MODE_PUSH_TO = Mode: Push to the crosshair [On self] (E, R)
 TELEKINESIS_MODE_PUSH_AWAY = Mode: Push away [On self] (E, R)
 TELEKINESIS_MODE_PUSH_ENEMY = Mode: Push enemy away (E, R)
 
-NPC_ACTION_HUNTER = Hunting (R + ...)
-NPC_ACTION_MOVE = Moving to a point (R + MOUSE1)
-NPC_ACTION_FOLLOW = Follow you (R + MOUSE2)
-NPC_ACTION_TARGET = Chasing a victim (R + MOUSE1)
-NPC_ACTION_CIRCLE = Around a point (R + E)
-NPC_ACTION_CANNIBAL = Cannibalism (E + T)
+NPC_ACTION_MOVE = Moving to a point
+NPC_ACTION_TARGET = Chasing a target
+NPC_ACTION_FOLLOW = Following owner
+NPC_ACTION_SHOOT = Shooting the victim
+NECRO_ZERGLINGS = Zerglings
+NECRO_ULTRALISK = Ultralisk
+NECRO_RAGE = Rage (E + RMB) (%dpt)
+NECRO_BURROW = Burrow (R + RMB): %s
+NECRO_HYDRA = Hydralisk
+NECRO_CHARGE = Charge
+NECRO_MODE = Mode (%s)
+NECRO_HP = %d hp
+NECRO_RESPAWN = %d
 
 DEATH_REASON_FALL = CRASHED
 DEATH_REASON_DROWN = DROWNED
@@ -178,7 +186,7 @@ DEATH_REASON_TELEKINESIS = RIPPED BY TELEKINETIC IMPACT
 DEATH_REASON_SPIKES = PIERCED BY SPIKES
 DEATH_REASON_ACID = CORRODED BY ACID
 DEATH_REASON_GAS = GASSED
-DEATH_REASON_ZOMBIE = RIPPED BY ZOMBIE
+DEATH_REASON_MINION = RIPPED BY A MINION
 DEATH_REASON_BUG = KILLED BY BUG
 DEATH_REASON_FROZEN = FROZEN
 DEATH_REASON_GHOST = RIPED BY GHOST
@@ -261,7 +269,7 @@ KNIFE_THUNDER_CHAT = ^4[Thunder knife] Свойства: ^1Левитация, H
 KNIFE_RAZOR_CHAT = ^4[Razor Knife] Свойства: ^1скорость+
 KNIFE_TELEKINESIS_CHAT = ^4[Telekinesis Knife] Свойства: ^1меньше урона при падении, дистанционный урон, урон+
 KNIFE_SWAP_CHAT = ^4[Swap knife] Свойства: ^1запутывает кнопки атаки
-KNIFE_NECRO_CHAT = ^4[Necro knife] Свойства: ^1собирает души мертвых игроков для исцеления, HP-
+KNIFE_NECRO_CHAT = ^4[Necro knife] Свойства: ^1собирание душ, режимы: Zerglings (T), Ultralisk (E + T), Hydralisk (R + T), HP+
 KNIFE_SPIKES_CHAT = ^4[Spikes knife] Свойства: ^1high jump, down jump, шипы на спине, скорость+
 KNIFE_DARK_CHAT = ^4[Dark Knife] Свойства: ^1маскировка под противника, глобальный мрак, HP+
 KNIFE_ACIDTRAP_CHAT = ^4[Acidtrap Knife] Свойства: ^1ловушки, бег по стенам, HP-, урон+
@@ -313,6 +321,7 @@ KAMUI_TIMER = Время Камуи^n(осталось %..1f сек.)
 
 DAMAGE_REFLECTED = Урона отражено:
 DAMAGE_REFLECTED_COEFF = Коэффициент отражаемого урона:
+DAMAGE_REFLECTED_COEFF_HAMMER = Заряд отражения на молоте:
 
 GHOST_TIMER = Время призрака: %..1f сек.^nПереключить камеру (F)
 
@@ -375,12 +384,19 @@ TELEKINESIS_MODE_PUSH_TO = Режим: Толчок к прицелу [На се
 TELEKINESIS_MODE_PUSH_AWAY = Режим: Толчок от прицела [На себя] (E, R)
 TELEKINESIS_MODE_PUSH_ENEMY = Режим: Толчок противника от себя (E, R)
 
-NPC_ACTION_HUNTER = Охотятся (R + ...)
-NPC_ACTION_MOVE = Двигаются к точке (R + MOUSE1)
-NPC_ACTION_FOLLOW = Следует за вами (R + MOUSE2)
-NPC_ACTION_TARGET = Преследуют жертву (R + MOUSE1)
-NPC_ACTION_CIRCLE = Вокруг точки (R + E)
-NPC_ACTION_CANNIBAL = Каннибализм (E + T)
+NPC_ACTION_MOVE = Движется к точке
+NPC_ACTION_TARGET = Преследует цель
+NPC_ACTION_FOLLOW = Следует за владельцем
+NPC_ACTION_SHOOT = Стреляет по жертве
+NECRO_ZERGLINGS = Zerglings
+NECRO_ULTRALISK = Ultralisk
+NECRO_RAGE = Рейдж (E + ПКМ) (%dpt)
+NECRO_BURROW = Закапывание (R + ПКМ): %s
+NECRO_HYDRA = Hydralisk
+NECRO_CHARGE = Заряд
+NECRO_MODE = Mode (%s)
+NECRO_HP = %d HP
+NECRO_RESPAWN = %d
 
 DEATH_REASON_FALL = РАЗБИТ
 DEATH_REASON_DROWN = УТОНУЛ
@@ -403,7 +419,7 @@ DEATH_REASON_TELEKINESIS = РАЗОРВАН ТЕЛЕКИНЕТИЧЕСКИМ В�
 DEATH_REASON_SPIKES = ПРОТКНУТ ШИПАМИ
 DEATH_REASON_ACID = РАЗЪЕДЕН КИСЛОТОЙ
 DEATH_REASON_GAS = ОТРАВЛЕН ГАЗОМ
-DEATH_REASON_ZOMBIE = РАСТЕРЗАН ЗОМБИ
+DEATH_REASON_MINION = РАСТЕРЗАН МИНЬОНОМ
 DEATH_REASON_BUG = УБИТ ЖУКОМ
 DEATH_REASON_FROZEN = ЗАМОРОЖЕН
 DEATH_REASON_GHOST = ПОРВАН ДУХОМ
@@ -486,7 +502,7 @@ KNIFE_THUNDER_CHAT = ^4[Cuchillo Trueno] Propiedades: ^1levitación, HP-
 KNIFE_RAZOR_CHAT = ^4[Cuchillo Navaja] Propiedades: ^1velocidad+
 KNIFE_TELEKINESIS_CHAT = ^4[Cuchillo Telequinesis] Propiedades: ^1menos daño por caída, daño a distancia, daño+
 KNIFE_SWAP_CHAT = ^4[Cuchillo Intercambio] Propiedades: ^1intercambia la posición con el enemigo, confunde los botones de ataque
-KNIFE_NECRO_CHAT = ^4[Cuchillo Nigromante] Propiedades: ^1recoge las almas de los jugadores muertos para curarse, HP-
+KNIFE_NECRO_CHAT = ^4[Cuchillo Nigromante] Propiedades: ^1recolección de almas, modos: Zerglings (T), Ultralisk (E + T), Hydralisk (R + T), HP+
 KNIFE_SPIKES_CHAT = ^4[Cuchillo Espinas] Propiedades: ^1salto alto, salto hacia abajo, espinas en la espalda, velocidad+
 KNIFE_DARK_CHAT = ^4[Cuchillo Oscuro] Propiedades: ^1se disfraza como enemigo, oscuridad global, HP+
 KNIFE_ACIDTRAP_CHAT = ^4[Cuchillo Trampa Ácida] Propiedades: ^1trampas, correr por paredes, HP-, daño+
@@ -538,6 +554,7 @@ KAMUI_TIMER = Tiempo de Kamui^n(%..1f seg. restantes)
 
 DAMAGE_REFLECTED = Daño reflejado:
 DAMAGE_REFLECTED_COEFF = Coeficiente de daño reflejado:
+DAMAGE_REFLECTED_COEFF_HAMMER = Carga de reflejo en el martillo:
 
 GHOST_TIMER = Tiempo fantasma: %..1f seg.^nCambiar cámara (F)
 
@@ -600,12 +617,19 @@ TELEKINESIS_MODE_PUSH_TO = Modo: empujar hacia la mira [Sobre ti] (E, R)
 TELEKINESIS_MODE_PUSH_AWAY = Modo: alejar [Sobre ti] (E, R)
 TELEKINESIS_MODE_PUSH_ENEMY = Modo: alejar al enemigo (E, R)
 
-NPC_ACTION_HUNTER = Cazar (R + ...)
-NPC_ACTION_MOVE = Mover a un punto (R + MOUSE1)
-NPC_ACTION_FOLLOW = Seguirte (R + MOUSE2)
-NPC_ACTION_TARGET = Perseguir a una víctima (R + MOUSE1)
-NPC_ACTION_CIRCLE = Alrededor de un punto (R + E)
-NPC_ACTION_CANNIBAL = Canibalismo (E + T)
+NPC_ACTION_MOVE = Moviéndose a un punto
+NPC_ACTION_TARGET = Persiguiendo un objetivo
+NPC_ACTION_FOLLOW = Siguiendo al dueño
+NPC_ACTION_SHOOT = Disparando a la víctima
+NECRO_ZERGLINGS = Zerglings
+NECRO_ULTRALISK = Ultralisk
+NECRO_RAGE = Furia (E + RMB) (%dpt)
+NECRO_BURROW = Enterrarse (R + RMB): %s
+NECRO_HYDRA = Hydralisk
+NECRO_CHARGE = Carga
+NECRO_MODE = Mode (%s)
+NECRO_HP = %d HP
+NECRO_RESPAWN = %d
 
 DEATH_REASON_FALL = ESTAMPADO CONTRA EL PISO
 DEATH_REASON_DROWN = AHOGADO
@@ -628,7 +652,7 @@ DEATH_REASON_TELEKINESIS = DESTROZADO POR UN IMPACTO TELEQUINÉTICO
 DEATH_REASON_SPIKES = EMPALADO POR ESPINAS
 DEATH_REASON_ACID = CORROÍDO POR ÁCIDO
 DEATH_REASON_GAS = ASFIXIADO POR GAS
-DEATH_REASON_ZOMBIE = DESTROZADO POR UN ZOMBI
+DEATH_REASON_MINION = DESTROZADO POR UN SECUAZ
 DEATH_REASON_BUG = ASESINADO POR UN BICHO
 DEATH_REASON_FROZEN = CONGELADO
 DEATH_REASON_GHOST = DESTROZADO POR UN FANTASMA

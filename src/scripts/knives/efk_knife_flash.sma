@@ -52,6 +52,7 @@ new const SOUND_BUG_THROW[] = "next21_efk/bug_throw.wav"
 
 #define BLIND_TIME		4.0
 #define BLIND_DAMAGE		90.0
+#define MAX_ENTITIES_NUM	2048
 #define SILENCE_TIME		6.0
 
 #define var_bug_realowner			var_iuser2
@@ -102,7 +103,7 @@ enum _:Player_Properties
 #define Player[%1][%2]	g_player_data[%1 - 1][%2]
 
 new
-g_iKnifeId, g_player_data[MAX_PLAYERS][Player_Properties], Float:g_fBlindedTime[MAX_PLAYERS + 1],
+g_iKnifeId, g_player_data[MAX_PLAYERS][Player_Properties], Float:g_fBlindedTime[MAX_PLAYERS + 1], Float:g_fMinionCritUntil[MAX_ENTITIES_NUM + 1], g_iMinionCritBy[MAX_ENTITIES_NUM + 1],
 sprSmokebeam, sprBloodSpray, sprBlood,
 g_pKnifeVStr, g_pKnifePMdl
 
@@ -162,6 +163,7 @@ public plugin_init()
 	RegisterHam(Ham_TakeDamage, "player", "fw_PlayerDamage")
 	RegisterHam(Ham_Killed, "player", "fw_PlayerKilled", 1)
 	RegisterHam(Ham_TakeDamage, SZ_INFO_TARGET, "fw_InfoTargetDamage")
+	RegisterHam(Ham_TakeDamage, "env_explosion", "fw_MinionDamage")
 	RegisterHam(Ham_Weapon_SecondaryAttack, "weapon_knife", "fw_SecondaryAttack", 1)
 
 	// register_forward(FM_ShouldCollide, "fw_ShouldCollide")
@@ -205,6 +207,25 @@ public fw_PlayerDamage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 		client_print_color(iAttacker, print_team_default, "^4[%s] ^1%L", PLUGIN, iAttacker, "CRIT_ATTACKER")
 		client_print_color(iVictim, print_team_default, "^4[%s] ^1%L", PLUGIN, iVictim, "CRIT_VICTIM")
 	}
+}
+
+public fw_MinionDamage(iMinion, iInflictor, iAttacker, Float:fDamage, iFlags)
+{
+	if (GetHamReturnStatus() == HAM_SUPERCEDE || is_nullent(iMinion) || get_entvar(iMinion, var_impulse) != IMPULSE_MINION)
+		return HAM_IGNORED
+
+	if (!is_entity_player(iAttacker) || iInflictor != iAttacker || g_iMinionCritBy[iMinion] != iAttacker
+		|| g_fMinionCritUntil[iMinion] <= get_gametime() || !(iFlags & DMG_BULLET) || get_user_weapon(iAttacker) != CSW_KNIFE)
+		return HAM_IGNORED
+
+	if (get_entvar(iMinion, var_skin) + 1 == get_member(iAttacker, m_iTeam))
+		return HAM_IGNORED
+
+	if (fDamage < BLIND_DAMAGE)
+		SetHamParamFloat(4, BLIND_DAMAGE)
+
+	client_print_color(iAttacker, print_team_default, "^4[%s] ^1%L", PLUGIN, iAttacker, "CRIT_ATTACKER")
+	return HAM_OVERRIDE
 }
 
 public fw_PlayerKilled(iVictim, attacker)
@@ -290,6 +311,13 @@ public efk_crosshair_draw_pre(iPlayer, iTarget, &AbilityType:iAbilType, bool:bDi
 		return PLUGIN_HANDLED
 	}
 
+	if (minion_can_be_flashed(iPlayer, iTarget))
+	{
+		fDist = get_distance_f(vStartOrigin, vEndOrigin)
+		kc_player_set_crosshair(iPlayer, (ABIL1_MINDIST > fDist || fDist > ABIL1_MAXDIST) ? CROSSHAIR_FAR : CROSSHAIR_OK)
+		return PLUGIN_HANDLED
+	}
+
 	if (is_entity_player(iTarget) && Player[iTarget][PlrLastBlinded] > 0)
 		return _:CROSSHAIR_CANNOT
 
@@ -331,8 +359,35 @@ public fw_SecondaryAttack(iWeapon)
 		if (is_user_alive(iVictim) && !efk_ability(iPlayer, iVictim))
 			kc_player_set_abil1_charge(iPlayer, -1.0)
 	}
+	else if (!iGhost)
+	{
+		new iMinion = get_tr2(0, TR_pHit)
+		fDist = get_distance_f(vStartOrigin, vEndOrigin)
+
+		if (minion_can_be_flashed(iPlayer, iMinion) && ABIL1_MINDIST <= fDist && fDist <= ABIL1_MAXDIST)
+		{
+			ExecuteHamB(Ham_TakeDamage, iMinion, iPlayer, iPlayer, 0.0, DMG_NPC_BLIND)
+			g_fMinionCritUntil[iMinion] = get_gametime() + BLIND_TIME
+			g_iMinionCritBy[iMinion] = iPlayer
+
+			client_cmd(iPlayer, "spk %s", SOUND_FLASH)
+			Player[iPlayer][PlrFlashedSomeone] = true
+			kc_player_set_abil1_charge(iPlayer, -1.0)
+		}
+	}
 
 	return HAM_IGNORED
+}
+
+bool:minion_can_be_flashed(iPlayer, iMinion)
+{
+	if (iMinion <= MaxClients || !is_entity(iMinion) || (get_entvar(iMinion, var_flags) & FL_KILLME))
+		return false
+
+	if (get_entvar(iMinion, var_impulse) != IMPULSE_MINION)
+		return false
+
+	return get_entvar(iMinion, var_skin) + 1 != get_member(iPlayer, m_iTeam)
 }
 
 public efk_ability(iPlayer, iTarget)

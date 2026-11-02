@@ -88,6 +88,8 @@ new const MODELS_SMOKE[][] =
 #define HIGHLIGHT_UPDATE_TIME 		0.2
 
 #define TASK_ACIDTRAPS_COUNTER		100
+#define TASK_ACIDTRAP_MONSTER_SCAN	36700
+#define ACIDTRAP_MONSTER_SCAN_INTERVAL	0.2
 
 new const Float:ACID_AIM_OFFSET[3] = { 13.4, -5.0, -5.95 }
 new const Float:ACID_AIM_OFFSET_DIST[3] = { 26.8, -10.0, -11.9 }
@@ -237,13 +239,51 @@ public plugin_init()
 		"func_wall_toggle", "func_breakable", "func_pushable", "func_train",
 		"func_illusionary", "func_button", "func_rot_button", "func_rotating",
 		"func_vehicle",
-		"player"
+		"player", CLASSNAME_MINION
 	}
 
 	for (new i; i < sizeof szEntity; i++)
 		register_touch("player", szEntity[i], "fw_WallTouch")
 
 	bind_pcvar_float(get_cvar_pointer("sv_gravity"), g_fWorldGravity)
+
+	set_task(ACIDTRAP_MONSTER_SCAN_INTERVAL, "acidtrap_monster_scan", TASK_ACIDTRAP_MONSTER_SCAN, _, _, "b")
+}
+
+// A trigger gets no touch from a stationary entity, so idle minions standing on a trap are checked by hand
+public acidtrap_monster_scan()
+{
+	new Float:vTrapMins[3], Float:vTrapMaxs[3], Float:vMinionMins[3], Float:vMinionMaxs[3]
+
+	new iTrapEnt = NULLENT
+	while ((iTrapEnt = rg_find_ent_by_class(iTrapEnt, CLASSNAME_ACIDTRAP_)))
+	{
+		if (get_entvar(iTrapEnt, var_impulse) != IMPULSE_ACIDTRAP
+			|| get_entvar(iTrapEnt, var_trapstate) == TRAPSTATE_ACTIVE
+			|| get_entvar(iTrapEnt, var_traptype) == TRAP_TACTICAL)
+			continue
+
+		get_entvar(iTrapEnt, var_absmin, vTrapMins)
+		get_entvar(iTrapEnt, var_absmax, vTrapMaxs)
+
+		new iMinion = NULLENT
+		while ((iMinion = rg_find_ent_by_class(iMinion, CLASSNAME_MINION)))
+		{
+			if (get_entvar(iMinion, var_impulse) != IMPULSE_MINION || (get_entvar(iMinion, var_flags) & FL_KILLME))
+				continue
+
+			get_entvar(iMinion, var_absmin, vMinionMins)
+			get_entvar(iMinion, var_absmax, vMinionMaxs)
+
+			if (vTrapMins[0] > vMinionMaxs[0] || vTrapMaxs[0] < vMinionMins[0]
+				|| vTrapMins[1] > vMinionMaxs[1] || vTrapMaxs[1] < vMinionMins[1]
+				|| vTrapMins[2] > vMinionMaxs[2] || vTrapMaxs[2] < vMinionMins[2])
+				continue
+
+			acidtrap_touch(iTrapEnt, iMinion)
+			break
+		}
+	}
 }
 
 public client_putinserver(iPlayer)
@@ -1115,6 +1155,13 @@ acidtrap_activate(iAcidtrapEnt)
 					if (get_entvar(iTarget, var_skin) + 1 == iTeam)
 						continue
 
+					if (get_entvar(iTarget, var_impulse) == IMPULSE_MINION)
+					{
+						ExecuteHamB(Ham_TakeDamage, iTarget, iAcidtrapEnt, get_entvar(iAcidtrapEnt, var_owner), fFreezeTime, DMG_NPC_HOLD | DMG_NPC_ACID)
+						acidtrap_create_beam(iAcidtrapEnt, iTarget)
+						continue
+					}
+
 					new Float:vVelocity[3]
 					get_entvar(iTarget, var_velocity, vVelocity)
 					vVelocity[2] = 0.0
@@ -1281,7 +1328,7 @@ public acidball_touch(iAcidballEnt, iOther)
 
 			draw_acid_particles(vOrigin)
 
-			ExecuteHamB(Ham_TakeDamage, iOther, iOwner, iOwner, random_float(15.0, 25.0), DMG_ACID)
+			ExecuteHamB(Ham_TakeDamage, iOther, iOwner, iOwner, random_float(15.0, 25.0), DMG_ACID | DMG_NPC_ACID)
 
 			rg_remove_entity(iAcidballEnt)
 			return HC_CONTINUE

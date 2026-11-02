@@ -97,6 +97,11 @@ new const CLASSNAME_KUNAI_[]		= CLASSNAME_KUNAI
 #define INSTANCE(%0) ((%0 == -1) ? 0 : %0)
 
 #define TASK_KUNAI_CHARGE			1000
+#define MINION_BIND_HOLD_TIME		0.2
+#define MINION_BIND_ENTS			2049
+#define KUNAI_MINION_SCAN_TIME		0.02
+#define KUNAI_MINION_SCAN_PAD		6.0
+#define KUNAI_MINION_PASS_RADIUS	140.0
 
 new const SZ_INFO_TARGET[]			= "info_target"
 
@@ -144,6 +149,9 @@ enum KunaiMode
 	KUNAI_MODE_BIND,
 	KUNAI_MODE_PULL
 }
+
+new g_iMinionBindKunai[MINION_BIND_ENTS], g_iMinionBindAttach[MINION_BIND_ENTS], g_iMinionBindBeam[MINION_BIND_ENTS]
+new KunaiMode:g_iMinionBindMode[MINION_BIND_ENTS], bool:g_bMinionBindFree[MINION_BIND_ENTS]
 
 enum _:Player_Properties
 {
@@ -245,6 +253,8 @@ public plugin_init()
 	g_hcThrowGrenade = RegisterHookChain(RG_CBasePlayer_ThrowGrenade, "RG_CBasePlayer_ThrowGrenade_Post", true)
 	DisableHookChain(g_hcRadio)
 	DisableHookChain(g_hcThrowGrenade)
+
+	register_forward(FM_StartFrame, "fw_StartFrame")
 }
 
 public client_putinserver(iPlayer)
@@ -315,10 +325,20 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 	new Float:fGameTime = get_gametime()
 	iUpperPunchTarget = Player[iPlayer][UpperPunchTarget]
 
+	if (iUpperPunchTarget && !is_entity_player(iUpperPunchTarget)
+		&& (!is_entity(iUpperPunchTarget) || (get_entvar(iUpperPunchTarget, var_flags) & FL_KILLME)
+			|| Float:get_entvar(iUpperPunchTarget, var_health) <= 0.0))
+	{
+		iUpperPunchTarget = 0
+		Player[iPlayer][UpperPunchTarget] = 0
+	}
+
 	if (iUpperPunchTarget)
 	{
+		new bool:bTargetIsPlayer = is_entity_player(iUpperPunchTarget)
+
 		if (PlayerF[iPlayer][FlyDelay] < fGameTime
-			&& !kc_player_check_game_flag(iUpperPunchTarget, PLGF_IN_UNABILITY))
+			&& (!bTargetIsPlayer || !kc_player_check_game_flag(iUpperPunchTarget, PLGF_IN_UNABILITY)))
 		{
 			new iButton = get_entvar(iPlayer, var_button), iFlyAction
 
@@ -353,17 +373,25 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 				if (xs_vec_dot(vVector, vTargetVector) >= 0.0
 					&& pev(iPlayer, pev_viewmodel) == g_pKnifeVStr)
 				{
-					if (kc_player_get_vision(iUpperPunchTarget) != VISION_BLIND
-						&& !kc_player_in_freeze(iUpperPunchTarget)
-						&& !kc_player_in_chill(iUpperPunchTarget))
+					if (bTargetIsPlayer)
 					{
-						send_msg_ScreenFade((1<<12), (1<<8), (1<<4), {237, 230, 33}, 40, MSG_ONE, _, iUpperPunchTarget)
-					}
+						if (kc_player_get_vision(iUpperPunchTarget) != VISION_BLIND
+							&& !kc_player_in_freeze(iUpperPunchTarget)
+							&& !kc_player_in_chill(iUpperPunchTarget))
+						{
+							send_msg_ScreenFade((1<<12), (1<<8), (1<<4), {237, 230, 33}, 40, MSG_ONE, _, iUpperPunchTarget)
+						}
 
-					kc_player_set_capture(iUpperPunchTarget, CAPTURE_NONE)
-					kc_player_uninvision(iUpperPunchTarget)
-					kc_player_unfreeze(iUpperPunchTarget)
-					kc_player_unlevitation(iUpperPunchTarget)
+						kc_player_set_capture(iUpperPunchTarget, CAPTURE_NONE)
+						kc_player_uninvision(iUpperPunchTarget)
+						kc_player_unfreeze(iUpperPunchTarget)
+						kc_player_unlevitation(iUpperPunchTarget)
+					}
+					else
+					{
+						ExecuteHamB(Ham_TakeDamage, iUpperPunchTarget, iPlayer, iPlayer, SLOW_TIME, DMG_NPC_HOLD)
+						set_entvar(iUpperPunchTarget, var_flags, get_entvar(iUpperPunchTarget, var_flags) & ~FL_ONGROUND)
+					}
 
 					kc_player_set_anim(iPlayer, 33, 31, 350.0, 1.0)
 
@@ -383,21 +411,29 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 						xs_vec_mul_scalar(vVelocity, FLY_FORCE, vVelocity)
 						set_entvar(iPlayer, var_velocity, vVelocity)
 						set_entvar(iUpperPunchTarget, var_velocity, NULL_VECTOR)
-						kc_player_set_bair(iUpperPunchTarget)
+						if (bTargetIsPlayer)
+							kc_player_set_bair(iUpperPunchTarget)
 					}
 					else
 					{
-						kc_player_unlevitation(iUpperPunchTarget)
-						kc_player_unfreeze(iUpperPunchTarget)
+						if (bTargetIsPlayer)
+						{
+							kc_player_unlevitation(iUpperPunchTarget)
+							kc_player_unfreeze(iUpperPunchTarget)
+						}
 						xs_vec_mul_scalar(vVelocity, -FLY_FORCE, vVelocity)
 						set_entvar(iPlayer, var_velocity, NULL_VECTOR)
 						set_entvar(iUpperPunchTarget, var_velocity, vVelocity)
 						kc_player_set_bair(iPlayer, FL_BAIR_LEAP)
-						kc_player_set_bair(iUpperPunchTarget, FL_BAIR_NORMAL | FL_BAIR_LEAP | FL_BAIR_CLIMB)
+						if (bTargetIsPlayer)
+							kc_player_set_bair(iUpperPunchTarget, FL_BAIR_NORMAL | FL_BAIR_LEAP | FL_BAIR_CLIMB)
 					}
 
-					kc_player_slow(iUpperPunchTarget, 0.25, SLOW_TIME)
-					kc_player_add_glow(iUpperPunchTarget, SLOW_TIME, 255, 255, 255)
+					if (bTargetIsPlayer)
+					{
+						kc_player_slow(iUpperPunchTarget, 0.25, SLOW_TIME)
+						kc_player_add_glow(iUpperPunchTarget, SLOW_TIME, 255, 255, 255)
+					}
 
 					if (kc_player_get_vision(iPlayer) != VISION_BLIND && !kc_player_in_freeze(iPlayer) && !kc_player_in_chill(iPlayer))
 						send_msg_ScreenFade((1<<12), (1<<8), (1<<4), {255, 0, 0}, 35, MSG_ONE, _, iPlayer)
@@ -766,7 +802,7 @@ public efk_crosshair_draw_pre(iPlayer, iTarget, &AbilityType:iAbilType, bool:bDi
 
 	if (!is_entity_player(iTarget))
 	{
-		if (get_entvar(iTarget, var_impulse) == IMPULSE_PRESENT)
+		if (get_entvar(iTarget, var_impulse) == IMPULSE_PRESENT || kunai_is_minion_target(iTarget, iPlayer))
 		{
 			kc_player_set_crosshair(iPlayer, bDistanceAllowed ? CROSSHAIR_OK : CROSSHAIR_FAR)
 			return PLUGIN_HANDLED
@@ -815,9 +851,30 @@ public efk_ability_pre(iPlayer, iTarget)
 
 			return PLUGIN_HANDLED
 		}
+
+		if (kunai_is_minion_target(iTarget, iPlayer))
+		{
+			leap_minion(iPlayer, iTarget)
+			return PLUGIN_HANDLED
+		}
 	}
 
 	return PLUGIN_CONTINUE
+}
+
+leap_minion(iPlayer, iMinion)
+{
+	ExecuteHamB(Ham_TakeDamage, iMinion, iPlayer, iPlayer, SLOW_TIME, DMG_NPC_HOLD)
+
+	attract(iPlayer, iMinion, 600.0, LONGJUMP_HEIGHT)
+	engfunc(EngFunc_EmitSound, iPlayer, CHAN_WEAPON, SOUND_ABILITY, 1.0, ATTN_NORM, 0, PITCH_NORM)
+
+	set_entvar(iMinion, var_flags, get_entvar(iMinion, var_flags) & ~FL_ONGROUND)
+
+	if (kc_player_get_vision(iPlayer) != VISION_BLIND && !kc_player_in_freeze(iPlayer) && !kc_player_in_chill(iPlayer))
+		send_msg_ScreenFade((1<<12), (1<<8), (1<<4), {255, 0, 0}, 35, MSG_ONE, _, iPlayer)
+
+	kc_player_set_abil1_charge(iPlayer, -1.0)
 }
 
 public efk_ability(iPlayer, iTarget)
@@ -1001,6 +1058,27 @@ public efk_ability2(iPlayer)
 				kc_player_slow(iPlayer, 0.35, UPPER_PUNCH_SLOW_TIME)
 
 				kc_player_set_override_attacker(pHit, iPlayer, 4.0)
+			}
+			else if (kunai_is_minion_target(pHit, iPlayer) && Float:get_entvar(pHit, var_health) > 0.0)
+			{
+				ExecuteHamB(Ham_TakeDamage, pHit, iPlayer, iPlayer, UPPER_PUNCH_SLOW_TIME, DMG_NPC_HOLD | DMG_NPC_NOGLOW)
+
+				set_entvar(iPlayer, var_flags, get_entvar(iPlayer, var_flags) & ~FL_ONGROUND)
+				set_entvar(iPlayer, var_flags, get_entvar(iPlayer, var_flags) | FL_DUCKING)
+				set_entvar(iPlayer, var_velocity, Float:{0.0, 0.0, UPPER_PUNCH_FORCE})
+
+				vVector[2] = 0.0
+				xs_vec_normalize(vVector, vVector)
+				xs_vec_mul_scalar(vVector, UPPER_PUNCH_REPULSION, vEndOrigin)
+				vEndOrigin[2] = UPPER_PUNCH_FORCE
+
+				set_entvar(pHit, var_flags, get_entvar(pHit, var_flags) & ~FL_ONGROUND)
+				set_entvar(pHit, var_velocity, vEndOrigin)
+
+				Player[iPlayer][UpperPunchTarget] = pHit
+				PlayerF[iPlayer][FlyDelay] = fGameTime + 0.3
+
+				kc_player_slow(iPlayer, 0.35, UPPER_PUNCH_SLOW_TIME)
 			}
 		}
 	}
@@ -1399,6 +1477,80 @@ kunai_create(iPlayer)
 	return iKunaiEnt
 }
 
+new g_hShouldCollide
+
+public fw_ShouldCollide(iTouched, iOther)
+{
+	if (iTouched <= MaxClients || iOther <= MaxClients)
+		return FMRES_IGNORED
+
+	new iImpulseA = get_entvar(iTouched, var_impulse), iImpulseB = get_entvar(iOther, var_impulse)
+	if ((iImpulseA == IMPULSE_MINION && iImpulseB == IMPULSE_KUNAI) || (iImpulseA == IMPULSE_KUNAI && iImpulseB == IMPULSE_MINION))
+	{
+		forward_return(FMV_CELL, 0)
+		return FMRES_SUPERCEDE
+	}
+
+	return FMRES_IGNORED
+}
+
+public fw_StartFrame()
+{
+	new Float:vOrigin[3], Float:vVelocity[3], Float:vStart[3], Float:vEnd[3], Float:vMins[3], Float:vMaxs[3]
+	new bool:bFlying
+
+	new iKunai = NULLENT
+	while ((iKunai = rg_find_ent_by_class(iKunai, CLASSNAME_KUNAI_)))
+	{
+		if (get_entvar(iKunai, var_solid) != SOLID_TRIGGER)
+			continue
+
+		bFlying = true
+
+		new iOwner = get_entvar(iKunai, var_owner)
+		if (!is_entity_player(iOwner))
+			continue
+
+		get_entvar(iKunai, var_origin, vOrigin)
+		get_entvar(iKunai, var_velocity, vVelocity)
+		xs_vec_mul_scalar(vVelocity, KUNAI_MINION_SCAN_TIME, vVelocity)
+		xs_vec_sub(vOrigin, vVelocity, vStart)
+		xs_vec_add(vOrigin, vVelocity, vEnd)
+
+		new iMinion = NULLENT
+		while ((iMinion = engfunc(EngFunc_FindEntityInSphere, iMinion, vOrigin, KUNAI_MINION_PASS_RADIUS)) > 0)
+		{
+			if (iMinion <= MaxClients || !kunai_is_minion_target(iMinion, iOwner))
+				continue
+
+			get_entvar(iMinion, var_absmin, vMins)
+			get_entvar(iMinion, var_absmax, vMaxs)
+
+			for (new i; i < 3; i++)
+			{
+				vMins[i] -= KUNAI_MINION_SCAN_PAD
+				vMaxs[i] += KUNAI_MINION_SCAN_PAD
+			}
+
+			if (line_intersects_box(vStart, vEnd, vMins, vMaxs))
+			{
+				kunai_touch(iKunai, iMinion)
+				break
+			}
+		}
+	}
+
+	if (bFlying && !g_hShouldCollide)
+		g_hShouldCollide = register_forward(FM_ShouldCollide, "fw_ShouldCollide")
+	else if (!bFlying && g_hShouldCollide)
+	{
+		unregister_forward(FM_ShouldCollide, g_hShouldCollide)
+		g_hShouldCollide = 0
+	}
+
+	minion_bind_tick()
+}
+
 public kunai_think(iEnt)
 {
 	kunai_remove(iEnt)
@@ -1492,13 +1644,36 @@ public kunai_touch(iEnt, iOther)
 			if (is_entity_player(iOwner) && get_member(iOwner, m_iTeam) != get_entvar(iOther, var_team))
 				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iOwner, KUNAI_DAMAGE, DMG_GENERIC)
 		}
-		case IMPULSE_ZOMBIE:
+		case IMPULSE_MINION:
 		{
 			new iOwner = get_entvar(iEnt, var_owner)
 			if (is_entity_player(iOwner) && get_member(iOwner, m_iTeam) != get_entvar(iOther, var_skin) + 1)
 			{
+				engfunc(EngFunc_EmitSound, iOther, CHAN_WEAPON, SOUND_KUNAI_HIT, 1.0, ATTN_NORM, 0, PITCH_NORM)
+				create_directed_bloodstream(iEnt)
+
 				ExecuteHamB(Ham_TakeDamage, iOther, iEnt, iOwner, KUNAI_DAMAGE, DMG_GENERIC)
-				kunai_remove(iEnt)
+
+				if ((get_entvar(iOther, var_flags) & FL_KILLME) || Float:get_entvar(iOther, var_health) <= 0.0)
+				{
+					kunai_remove(iEnt)
+					return HC_CONTINUE
+				}
+
+				set_entvar(iEnt, var_aiment, iOther)
+				set_entvar(iEnt, var_effects, EF_NODRAW)
+
+				set_entvar(iEnt, var_solid, SOLID_NOT)
+				set_entvar(iEnt, var_velocity, NULL_VECTOR)
+				set_entvar(iEnt, var_nextthink, get_gametime() + KUNAI_LIFETIME)
+
+				new Float:fActivateRadius = KUNAI_ACTIVATE_BIND_RADIUS
+				if (Player[iOwner][PlrKunaiMode] == KUNAI_MODE_PULL)
+					fActivateRadius = KUNAI_ACTIVATE_PULL_RADIUS
+
+				new iPairKunaiEnt = kunai_find_best_pair(iEnt, iOwner, fActivateRadius, false)
+				if (iPairKunaiEnt > 0)
+					kunai_activate(iEnt, iPairKunaiEnt, iOwner)
 			}
 		}
 		case IMPULSE_BUG:
@@ -1569,8 +1744,22 @@ kunai_stop(iEnt)
 		kunai_activate(iPairKunaiEnt, iEnt, iOwner)
 }
 
+bool:kunai_is_minion_target(iTarget, iOwner)
+{
+	if (iTarget <= MaxClients || iTarget >= MINION_BIND_ENTS || !is_entity(iTarget) || (get_entvar(iTarget, var_flags) & FL_KILLME))
+		return false
+
+	if (get_entvar(iTarget, var_impulse) != IMPULSE_MINION)
+		return false
+
+	return !is_entity_player(iOwner) || get_member(iOwner, m_iTeam) != get_entvar(iTarget, var_skin) + 1
+}
+
 bool:kunai_is_target_available(iTarget, iOwner)
 {
+	if (kunai_is_minion_target(iTarget, iOwner))
+		return true
+
 	if (is_entity_player(iTarget))
 	{
 		if (!Player[iTarget][IsAlive]
@@ -1645,14 +1834,21 @@ kunai_activate(iEnt, iPairKunaiEnt, iOwner)
 	new iPairAimEnt = get_entvar(iPairKunaiEnt, var_aiment)
 	new KunaiMode:iBindMode = Player[iOwner][PlrKunaiMode]
 
-	bind_set(iTarget, iEnt, iPairKunaiEnt, iBindMode, false)
-	kc_player_set_override_attacker(iTarget, iOwner, 4.0)
+	if (is_entity_player(iTarget))
+	{
+		bind_set(iTarget, iEnt, iPairKunaiEnt, iBindMode, false)
+		kc_player_set_override_attacker(iTarget, iOwner, 4.0)
+	}
+	else if (kunai_is_minion_target(iTarget, iOwner))
+		minion_bind_set(iTarget, iEnt, iPairKunaiEnt, iBindMode, false)
 
 	if (is_entity_player(iPairAimEnt))
 	{
 		bind_set(iPairAimEnt, iPairKunaiEnt, iEnt, iBindMode, true)
 		kc_player_set_override_attacker(iPairAimEnt, iOwner, 4.0)
 	}
+	else if (kunai_is_minion_target(iPairAimEnt, iOwner))
+		minion_bind_set(iPairAimEnt, iPairKunaiEnt, iEnt, iBindMode, true)
 
 	new Float:fLifeTime
 	switch (iBindMode)
@@ -1685,6 +1881,8 @@ kunai_remove(iEnt)
 			bind_remove(iTarget)
 		}
 	}
+	else if (iTarget > MaxClients && iTarget < MINION_BIND_ENTS && g_iMinionBindKunai[iTarget] == iEnt)
+		minion_bind_clear(iTarget)
 
 	new iPairKunaiEnt = get_entvar(iEnt, var_kunai_pair)
 	if (iPairKunaiEnt)
@@ -1728,6 +1926,118 @@ bind_set(iPlayer, iKunaiEnt, iPairKunaiEnt, KunaiMode:iBindMode, bool:bFreeMove)
 			Beam_SetColor(iBeamEnt, BIND_COLOR_VEC)
 		}
 		Player[iPlayer][BindBeamEnt] = iBeamEnt
+	}
+}
+
+minion_bind_set(iMinion, iKunaiEnt, iPairKunaiEnt, KunaiMode:iBindMode, bool:bFreeMove)
+{
+	minion_bind_clear(iMinion)
+
+	new iAttachEnt = get_entvar(iPairKunaiEnt, var_aiment)
+	if (!iAttachEnt)
+		iAttachEnt = iPairKunaiEnt
+
+	g_iMinionBindKunai[iMinion] = iKunaiEnt
+	g_iMinionBindAttach[iMinion] = iAttachEnt
+	g_iMinionBindMode[iMinion] = iBindMode
+	g_bMinionBindFree[iMinion] = bFreeMove
+
+	if (!bFreeMove)
+	{
+		new iBeamEnt = Beam_Create(MODEL_STEAM, 20.0)
+		if (!is_nullent(iBeamEnt))
+		{
+			Beam_EntsInit(iBeamEnt, iMinion, iAttachEnt)
+			Beam_SetColor(iBeamEnt, BIND_COLOR_VEC)
+		}
+		g_iMinionBindBeam[iMinion] = iBeamEnt
+	}
+}
+
+minion_bind_clear(iMinion)
+{
+	if (iMinion <= MaxClients || iMinion >= MINION_BIND_ENTS)
+		return
+
+	new iBeamEnt = g_iMinionBindBeam[iMinion]
+	if (iBeamEnt && !is_nullent(iBeamEnt))
+		rg_remove_entity(iBeamEnt)
+
+	g_iMinionBindKunai[iMinion] = 0
+	g_iMinionBindAttach[iMinion] = 0
+	g_iMinionBindBeam[iMinion] = 0
+}
+
+minion_bind_tick()
+{
+	new Float:vOrigin[3], Float:vBindOrigin[3], Float:vVelocity[3]
+
+	new iMinion = NULLENT
+	while ((iMinion = rg_find_ent_by_class(iMinion, CLASSNAME_MINION)))
+	{
+		if (iMinion >= MINION_BIND_ENTS)
+			break
+
+		new iKunaiEnt = g_iMinionBindKunai[iMinion]
+		if (!iKunaiEnt)
+			continue
+
+		new iAttachEnt = g_iMinionBindAttach[iMinion]
+		if (get_entvar(iMinion, var_impulse) != IMPULSE_MINION || (get_entvar(iMinion, var_flags) & FL_KILLME)
+			|| is_nullent(iKunaiEnt) || !iAttachEnt || is_nullent(iAttachEnt))
+		{
+			if (!is_nullent(iKunaiEnt))
+				kunai_remove(iKunaiEnt)
+
+			minion_bind_clear(iMinion)
+			continue
+		}
+
+		get_entvar(iMinion, var_origin, vOrigin)
+		get_entvar(iAttachEnt, var_origin, vBindOrigin)
+
+		new Float:fDistance = get_distance_f(vOrigin, vBindOrigin)
+		if (fDistance > BIND_DESTROY_RADIUS)
+		{
+			kunai_remove(iKunaiEnt)
+			minion_bind_clear(iMinion)
+			continue
+		}
+
+		if (g_iMinionBindMode[iMinion] == KUNAI_MODE_PULL || !g_bMinionBindFree[iMinion])
+			ExecuteHamB(Ham_TakeDamage, iMinion, iKunaiEnt, 0, MINION_BIND_HOLD_TIME, DMG_NPC_HOLD | DMG_NPC_NOGLOW)
+
+		switch (g_iMinionBindMode[iMinion])
+		{
+			case KUNAI_MODE_BIND:
+			{
+				if (fDistance > BIND_RADIUS && !g_bMinionBindFree[iMinion])
+				{
+					get_speed_vector(vOrigin, vBindOrigin, fDistance, vVelocity)
+					set_entvar(iMinion, var_velocity, vVelocity)
+				}
+			}
+			case KUNAI_MODE_PULL:
+			{
+				get_speed_vector(vOrigin, vBindOrigin, fDistance, vVelocity)
+				set_entvar(iMinion, var_flags, get_entvar(iMinion, var_flags) & ~FL_ONGROUND)
+				set_entvar(iMinion, var_nextthink, get_gametime() + 0.15)
+
+				if (fDistance <= BIND_PULL_MIN_RADIUS)
+				{
+					xs_vec_mul_scalar(vVelocity, BIND_PULL_FULL_FORCE, vVelocity)
+					vVelocity[2] = floatmin(vVelocity[2], 300.0)
+					set_entvar(iMinion, var_velocity, vVelocity)
+
+					kunai_remove(iKunaiEnt)
+					minion_bind_clear(iMinion)
+					continue
+				}
+
+				xs_vec_mul_scalar(vVelocity, BIND_PULL_FORCE, vVelocity)
+				set_entvar(iMinion, var_velocity, vVelocity)
+			}
+		}
 	}
 }
 

@@ -10,6 +10,7 @@ new const PLUGIN[] = "EFK: Flash Grenade Item"
 new const GAME_TAG[] = EFK_GAME_TAG
 
 const ITEM_MAX_AMMO 	= 100
+#define FLASH_MINION_RADIUS		900.0
 const ITEM_PRICE		= 3500
 
 new const MODEL_V_NADE[]	= "models/next21_efk/v_flashbang_b02.mdl"
@@ -129,6 +130,38 @@ public RG_CGrenade_ExplodeFlashbang_Pre(iEnt, pTraceHandle, iFlags)
 		MSG_PVS, vOrigin)
 
 	send_msg_TE_DLIGHT(vOrigin, 40, {255, 255, 255}, 8, 60)
+
+	flash_blind_minions(iEnt, vOrigin)
+}
+
+flash_blind_minions(iNadeEnt, const Float:vOrigin[3])
+{
+	new iOwner = get_entvar(iNadeEnt, var_owner)
+	if (!is_user_connected(iOwner))
+		return
+
+	new iTeam = get_member(iOwner, m_iTeam)
+	new Float:vMinionOrigin[3], Float:fFraction
+
+	new iMinion = NULLENT
+	while ((iMinion = engfunc(EngFunc_FindEntityInSphere, iMinion, vOrigin, FLASH_MINION_RADIUS)))
+	{
+		if (iMinion <= MaxClients || (get_entvar(iMinion, var_flags) & (FL_KILLME)) || get_entvar(iMinion, var_impulse) != IMPULSE_MINION)
+			continue
+
+		if (get_entvar(iMinion, var_skin) + 1 == iTeam)
+			continue
+
+		get_entvar(iMinion, var_origin, vMinionOrigin)
+		vMinionOrigin[2] += 16.0
+
+		engfunc(EngFunc_TraceLine, vOrigin, vMinionOrigin, IGNORE_MONSTERS, iNadeEnt, 0)
+		get_tr2(0, TR_flFraction, fFraction)
+		if (fFraction < 1.0)
+			continue
+
+		ExecuteHamB(Ham_TakeDamage, iMinion, iNadeEnt, iOwner, 0.0, DMG_NPC_BLIND)
+	}
 }
 
 public Ham_WeaponBox_Spawn_Post(iEnt)

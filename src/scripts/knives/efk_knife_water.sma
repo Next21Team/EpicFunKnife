@@ -36,6 +36,7 @@ new const PLUGIN[] = "EFK: Water Knife"
 #define DRAGON_GUARD_DAMAGE			15.0
 #define DRAGON_GUARD_KNOCKBACK_XY	500.0
 #define DRAGON_GUARD_KNOCKBACK_Z	550.0
+#define DRAGON_GUARD_MINION_STUN	1.0
 #define DRAGON_GUARD_DISTANCE		100.0
 #define DRAGON_GUARD_LIFETIME		7.0
 new const DRAGON_GUARD_ICON[]		= "vipsafety"
@@ -45,6 +46,10 @@ new const DRAGON_GUARD_ICON[]		= "vipsafety"
 #define EMBODIMENT_TARGET_HEAL		6.0
 #define EMBODIMENT_SELF_HEAL		3.0
 #define EMBODIMENT_DAMAGE			7.0
+#define EMBODIMENT_SCAN_INTERVAL	0.05
+#define EMBODIMENT_HIT_MEMORY		3.0
+#define EMBODIMENT_HIT_PAD		14.0
+#define MINION_BLOOD_COLOR		199
 
 #define WATER_SPHERE_LIFETIME		12.0
 #define WATER_SPHERE_REGEN_HP		1.0
@@ -103,6 +108,7 @@ new const WEAPON_KNIFE_STR[] = "weapon_knife"
 
 new g_iPlrKnifeId[MAX_PLAYERS + 1], bool:g_bPlayerAlive[MAX_PLAYERS + 1]
 new g_iDragonGuard[MAX_PLAYERS + 1], bool:g_bInEmbodiment[MAX_PLAYERS + 1]
+new g_iEmbHitBy[2049], Float:g_fEmbHitAt[2049]
 new g_iKnifeId, g_pKnifePMdl, g_pWaterLifeBar
 new g_pBloodSpr, g_pBloodSpraySpr
 
@@ -178,6 +184,7 @@ public plugin_init()
 
 	register_forward(FM_UpdateClientData, "fw_UpdateClientData_Post", true)
 	register_forward(FM_AddToFullPack, "fw_AddToFullPack", true)
+	register_forward(FM_ShouldCollide, "fw_ShouldCollide")
 
 	register_impulse(100, "fw_PlayerFlashlight")
 }
@@ -335,12 +342,31 @@ public fw_PlayerTakeDamage_Pre(iPlayer, iInflictor, iAttacker, Float:fDamage, bi
 	new iWaterGuardOwner = get_entvar(iWaterGuard, var_owner)
 	new iInflictorImpulse = get_entvar(iInflictor, var_impulse)
 
-	if (iInflictorImpulse == IMPULSE_ZOMBIE)
+	if (iInflictorImpulse == IMPULSE_MINION)
 	{
+		if (get_entvar(iInflictor, var_skin) + 1 == get_member(iPlayer, m_iTeam) || fDamage < 5.0)
+			return HAM_IGNORED
+
 		new Float:vInflictorOrigin[3]
 		get_entvar(iInflictor, var_origin, vInflictorOrigin)
 		if (get_distance_f(vOrigin, vInflictorOrigin) > DRAGON_GUARD_DISTANCE)
+		{
+			remove_task(TASK_DRAGONGUARD + iPlayer)
+			remove_dragon_guard(iPlayer)
+			g_iDragonGuard[iPlayer] = 0
 			return HAM_IGNORED
+		}
+
+		new Float:vMinionVelocity[3]
+		xs_vec_sub(vInflictorOrigin, vOrigin, vMinionVelocity)
+		xs_vec_normalize(vMinionVelocity, vMinionVelocity)
+		xs_vec_mul_scalar(vMinionVelocity, DRAGON_GUARD_KNOCKBACK_XY, vMinionVelocity)
+		vMinionVelocity[2] = DRAGON_GUARD_KNOCKBACK_Z
+
+		ExecuteHamB(Ham_TakeDamage, iInflictor, iWaterGuard, iWaterGuardOwner, DRAGON_GUARD_MINION_STUN, DMG_NPC_HOLD | DMG_NPC_NOGLOW)
+		set_entvar(iInflictor, var_flags, get_entvar(iInflictor, var_flags) & ~FL_ONGROUND)
+		set_entvar(iInflictor, var_velocity, vMinionVelocity)
+		engfunc(EngFunc_EmitSound, iInflictor, CHAN_STATIC, SOUND_DRAGON_GUARD_HIT, 1.0, ATTN_NORM, 0, PITCH_NORM)
 
 		ExecuteHamB(Ham_TakeDamage, iInflictor, iWaterGuard, iWaterGuardOwner, DRAGON_GUARD_DAMAGE, DMG_ENERGYBEAM)
 
@@ -524,8 +550,60 @@ public fw_PlayerFlashlight(iPlayer)
 	return PLUGIN_HANDLED
 }
 
+embodiment_scan_minions(iEmbEnt)
+{
+	new iOwner = get_entvar(iEmbEnt, var_owner)
+	if (!is_user_connected(iOwner))
+		return
+
+	new iMode = get_entvar(iEmbEnt, var_skin)
+	new iOwnerTeam = get_member(iOwner, m_iTeam)
+	new Float:fGameTime = get_gametime()
+	new Float:vOrigin[3], Float:vMins[3], Float:vMaxs[3]
+	get_entvar(iEmbEnt, var_origin, vOrigin)
+
+	new iMinion
+	while ((iMinion = rg_find_ent_by_class(iMinion, CLASSNAME_MINION)))
+	{
+		if ((get_entvar(iMinion, var_flags) & FL_KILLME) || get_entvar(iMinion, var_impulse) != IMPULSE_MINION)
+			continue
+
+		if (g_iEmbHitBy[iMinion] == iEmbEnt && fGameTime - g_fEmbHitAt[iMinion] < EMBODIMENT_HIT_MEMORY)
+			continue
+
+		get_entvar(iMinion, var_absmin, vMins)
+		get_entvar(iMinion, var_absmax, vMaxs)
+		if (vOrigin[0] < vMins[0] - EMBODIMENT_HIT_PAD || vOrigin[0] > vMaxs[0] + EMBODIMENT_HIT_PAD
+			|| vOrigin[1] < vMins[1] - EMBODIMENT_HIT_PAD || vOrigin[1] > vMaxs[1] + EMBODIMENT_HIT_PAD
+			|| vOrigin[2] < vMins[2] - EMBODIMENT_HIT_PAD || vOrigin[2] > vMaxs[2] + EMBODIMENT_HIT_PAD)
+			continue
+
+		new bool:bSameTeam = bool:(get_entvar(iMinion, var_skin) + 1 == iOwnerTeam)
+		if (iMode == 0 && bSameTeam)
+			ExecuteHamB(Ham_TakeDamage, iMinion, iEmbEnt, iOwner, EMBODIMENT_TARGET_HEAL, DMG_NPC_HEAL)
+		else if (iMode == 1 && !bSameTeam)
+		{
+			ExecuteHamB(Ham_TakeDamage, iMinion, iEmbEnt, iOwner, EMBODIMENT_DAMAGE, DMG_ENERGYBEAM)
+			send_msg_TE_BLOODSPRITE(vOrigin, g_pBloodSpraySpr, g_pBloodSpr, MINION_BLOOD_COLOR, random_num(1, 5))
+		}
+		else
+			continue
+
+		g_iEmbHitBy[iMinion] = iEmbEnt
+		g_fEmbHitAt[iMinion] = fGameTime
+	}
+}
+
 public embodiment_think(iEmbEnt)
 {
+	embodiment_scan_minions(iEmbEnt)
+
+	if (get_gametime() < Float:get_entvar(iEmbEnt, var_fuser1))
+	{
+		set_entvar(iEmbEnt, var_nextthink, get_gametime() + EMBODIMENT_SCAN_INTERVAL)
+		return HC_CONTINUE
+	}
+
 	if (get_entvar(iEmbEnt, var_emb_dir))
 	{
 		set_entvar(iEmbEnt, var_flags, FL_KILLME)
@@ -556,7 +634,8 @@ public embodiment_think(iEmbEnt)
 	set_entvar(iEmbEnt, var_emb_touches, iTouches & ~(1 << (iOwner & 31)))
 
 	set_entvar(iEmbEnt, var_emb_dir, 1)
-	set_entvar(iEmbEnt, var_nextthink, get_gametime() + EMBODIMENT_RADIUS / EMBODIMENT_SPEED)
+	set_entvar(iEmbEnt, var_fuser1, get_gametime() + EMBODIMENT_RADIUS / EMBODIMENT_SPEED)
+	set_entvar(iEmbEnt, var_nextthink, get_gametime() + EMBODIMENT_SCAN_INTERVAL)
 
 	return HC_CONTINUE
 }
@@ -565,6 +644,7 @@ public embodiment_touch(iEmbEnt, iEnt)
 {
 	if (!iEnt)
 	{
+		set_entvar(iEmbEnt, var_fuser1, get_gametime())
 		set_entvar(iEmbEnt, var_nextthink, get_gametime())
 		return HC_CONTINUE
 	}
@@ -576,7 +656,10 @@ public embodiment_touch(iEmbEnt, iEnt)
 			new szModel[2]
 			get_entvar(iEnt, var_model, szModel, charsmax(szModel))
 			if (szModel[0] == '*')
+			{
+				set_entvar(iEmbEnt, var_fuser1, get_gametime())
 				set_entvar(iEmbEnt, var_nextthink, get_gametime())
+			}
 		}
 		return HC_CONTINUE
 	}
@@ -750,7 +833,8 @@ use_embodiment(iItem, iMode)
 	set_entvar(iEmbEnt, var_impulse, IMPULSE_EMBODIMENT)
 	set_entvar(iEmbEnt, var_owner, iPlayer)
 	set_entvar(iEmbEnt, var_skin, iMode)
-	set_entvar(iEmbEnt, var_nextthink, fGameTime + EMBODIMENT_RADIUS / EMBODIMENT_SPEED)
+	set_entvar(iEmbEnt, var_fuser1, fGameTime + EMBODIMENT_RADIUS / EMBODIMENT_SPEED)
+	set_entvar(iEmbEnt, var_nextthink, fGameTime + EMBODIMENT_SCAN_INTERVAL)
 
 	set_entvar(iEmbEnt, var_framerate, 1.0)
 	set_entvar(iEmbEnt, var_animtime, fGameTime)
@@ -895,4 +979,20 @@ set_restore_air_task(iPlayer)
 {
 	set_task(5.0, "restore_air_task", TASK_RESTOREAIR + iPlayer, .flags="b")
 	set_entvar(iPlayer, var_air_finished, get_gametime() + AIRTIME)
+}
+
+public fw_ShouldCollide(iTouched, iOther)
+{
+	if (iTouched <= MaxClients || iOther <= MaxClients)
+		return FMRES_IGNORED
+
+	new iImpulseA = get_entvar(iTouched, var_impulse), iImpulseB = get_entvar(iOther, var_impulse)
+	if ((iImpulseA == IMPULSE_MINION && iImpulseB == IMPULSE_EMBODIMENT)
+		|| (iImpulseA == IMPULSE_EMBODIMENT && iImpulseB == IMPULSE_MINION))
+	{
+		forward_return(FMV_CELL, 0)
+		return FMRES_SUPERCEDE
+	}
+
+	return FMRES_IGNORED
 }
