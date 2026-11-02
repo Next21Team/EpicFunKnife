@@ -4824,10 +4824,11 @@ public set_params_after_apawn(iPlayer)
 
 bool:spawn_abil1_charge_check(iPlayer)
 {
-	new Float:fGameTime = get_gametime()
+	if (PlayerF[iPlayer][PlrNextSpawnChargeCheck] == 0.0)
+		return false
 
-	if (PlayerF[iPlayer][PlrNextSpawnChargeCheck] == 0.0
-		|| fGameTime > PlayerF[iPlayer][PlrSpawnProtectionTime]
+	new Float:fGameTime = get_gametime()
+	if (fGameTime > PlayerF[iPlayer][PlrSpawnProtectionTime]
 		|| fGameTime < PlayerF[iPlayer][PlrNextSpawnChargeCheck]
 	)
 		return false
@@ -5699,15 +5700,16 @@ generate_glitch_string(szString[], iSteLen)
 
 player_unprotection(iPlayer)
 {
+	if (PlayerF[iPlayer][PlrSpawnProtectionTime] == 0.0)
+		return
+
+	PlayerF[iPlayer][PlrSpawnProtectionTime] = 0.0;
 	ClearPlayerGameFlag(iPlayer, PLGF_IN_UNABILITY);
-	PlayerF[iPlayer][PlrSpawnProtectionTime] = 0.0
 
 	new iTeam = Player[iPlayer][PlrTeam]
 
 	if (g_iSilenceTeam > -1 && g_iSilenceTeam != iTeam)
-	{
 		send_msg_TE_PLAYERATTACHMENT(iPlayer, 35.0, g_pSilenceSpr, 100, MSG_ALL)
-	}
 
 	new i, Float:vOrigin[3]
 	get_entvar(iPlayer, var_origin, vOrigin)
