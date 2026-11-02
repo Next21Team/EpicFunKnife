@@ -818,8 +818,8 @@ hammer_throw(iPlayer)
 		Player[iPlayer][PlrHammerCarriesPair] = false
 	}
 
-	kc_player_set_ability3_name(iPlayer, "Force Recall")
-	kc_player_set_ability2_name(iPlayer, "Recall")
+	kc_player_set_abil3_name(iPlayer, "^1Force Recall")
+	kc_player_set_abil2_name(iPlayer, "^1Recall")
 
 	remove_task(TASK_HAMMER_FLIGHT_TIMEOUT + iPlayer)
 	set_task(HAMMER_FLIGHT_TIMEOUT, "task_hammer_flight_timeout", TASK_HAMMER_FLIGHT_TIMEOUT + iPlayer)
@@ -2029,8 +2029,8 @@ hammer_return_complete(iOwner, iHammerEnt)
 	Player[iOwner][PlrHammerRecallBoosted] = false
 	Player[iOwner][PlrHammerStuckCoffin] = 0
 
-	kc_player_set_ability3_name(iOwner, "")
-	kc_player_set_ability2_name(iOwner, "")
+	kc_player_set_abil3_name(iOwner, "")
+	kc_player_set_abil2_name(iOwner, "")
 
 	kc_player_sub_glow(iOwner, HAMMER_GLOW_R, HAMMER_GLOW_G, HAMMER_GLOW_B)
 	kc_player_set_def_maxspeed(iOwner, SPEED)
@@ -2079,8 +2079,8 @@ hammer_cleanup(iPlayer)
 	Player[iPlayer][PlrHammerCorrectionActive] = false
 	Player[iPlayer][PlrHammerArcReturn] = false
 
-	kc_player_set_ability3_name(iPlayer, "")
-	kc_player_set_ability2_name(iPlayer, "")
+	kc_player_set_abil3_name(iPlayer, "")
+	kc_player_set_abil2_name(iPlayer, "")
 
 	if (Player[iPlayer][PlrKnife] == g_iKnifeId)
 	{

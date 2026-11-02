@@ -572,6 +572,26 @@ native Float:kc_player_get_abil2_charge(const iPlayer);
 native kc_player_set_abil2_charge(const iPlayer, const Float:fAbilCharge);
 
 /**
+ * Append a short hint in parentheses after the second ability charge display, for this player only
+ *
+ * @param 	iPlayer			- Player ID
+ * @param	szHint			- Hint text (empty = clear)
+ * @noreturn
+ */
+native kc_player_set_abil2_hint(const iPlayer, const szHint[]);
+
+/**
+ * Override the second ability display name for this player only.
+ * Pass an empty string to reset to the knife's default name.
+ * Use the first character '^1' to hide the charge display
+ *
+ * @param 	iPlayer			- Player ID
+ * @param	szName			- Ability name (empty = reset)
+ * @noreturn
+ */
+native kc_player_set_abil2_name(const iPlayer, const szName[]);
+
+/**
  * Get the player's third ability charge
  *
  * @param 	iPlayer			- Player ID
@@ -589,6 +609,26 @@ native Float:kc_player_get_abil3_charge(const iPlayer);
 native kc_player_set_abil3_charge(const iPlayer, const Float:fAbilCharge);
 
 /**
+ * Append a short hint in parentheses after the third ability charge display, for this player only
+ *
+ * @param 	iPlayer			- Player ID
+ * @param	szHint			- Hint text (empty = clear)
+ * @noreturn
+ */
+native kc_player_set_abil3_hint(const iPlayer, const szHint[]);
+
+/**
+ * Override the third ability display name for this player only.
+ * Pass an empty string to reset to the knife's default name.
+ * Use the first character '^1' to hide the charge display
+ *
+ * @param 	iPlayer			- Player ID
+ * @param	szName			- Ability name (empty = reset)
+ * @noreturn
+ */
+native kc_player_set_abil3_name(const iPlayer, const szName[]);
+
+/**
  * Get the player's fourth ability charge
  *
  * @param 	iPlayer			- Player ID
@@ -604,6 +644,26 @@ native Float:kc_player_get_abil4_charge(const iPlayer);
  * @noreturn
  */
 native kc_player_set_abil4_charge(const iPlayer, const Float:fAbilCharge);
+
+/**
+ * Append a short hint in parentheses after the fourth ability charge display, for this player only
+ *
+ * @param 	iPlayer			- Player ID
+ * @param	szHint			- Hint text (empty = clear)
+ * @noreturn
+ */
+native kc_player_set_abil4_hint(const iPlayer, const szHint[]);
+
+/**
+ * Override the fourth ability display name for this player only.
+ * Pass an empty string to reset to the knife's default name.
+ * Use the first character '^1' to hide the charge display
+ *
+ * @param 	iPlayer			- Player ID
+ * @param	szName			- Ability name (empty = reset)
+ * @noreturn
+ */
+native kc_player_set_abil4_name(const iPlayer, const szName[]);
 
 /**
  * Check whether the player can use the ability (regardless of the player's active weapon)
@@ -870,40 +930,6 @@ native kc_player_set_crosshair(const iPlayer, const KnifeCrosshair:iCrosshair);
  * @noreturn
  */
 native kc_player_set_death_reason(const iPlayer, const szMessage[]);
-
-/**
- * Override the ability3 (R) display name for this player only.
- * Pass an empty string to reset to the knife's default name.
- * Displayed as raw text (not localized), matching how ability names
- * registered via kc_register_ability2/3/4 are never translated either.
- *
- * @param 	iPlayer			- Player ID
- * @param	szName			- Ability name override (empty = reset)
- * @noreturn
- */
-native kc_player_set_ability3_name(const iPlayer, const szName[]);
-
-/**
- * Override the ability2 (E) display name for this player only.
- * Pass an empty string to reset to the knife's default name.
- * While overridden, the charge percentage/hint text is not shown.
- *
- * @param 	iPlayer			- Player ID
- * @param	szName			- Ability name override (empty = reset)
- * @noreturn
- */
-native kc_player_set_ability2_name(const iPlayer, const szName[]);
-
-/**
- * Append a short hint in parentheses after the ability2 (E) charge display, for this player only.
- * Pass an empty string to clear it.
- * Resolved through %L against the viewer's language, so pass a lang key, not raw text.
- *
- * @param 	iPlayer			- Player ID
- * @param	szHintKey		- Hint lang key (empty = clear)
- * @noreturn
- */
-native kc_player_set_ability2_hint(const iPlayer, const szHintKey[]);
 
 /**
  * Check if the player has any negative effects (blinding, reduced damage, burning, freezing, etc.)

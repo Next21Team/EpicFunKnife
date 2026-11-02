@@ -85,9 +85,6 @@ public ItemGiveCode:efk_give_item(iPlayer, iSenderImpulse)
 	if (Float:get_member(iPlayer, m_flNextAttack) > 0.0)
 		return ITEM_NOT_AVAILABLE
 
-	if (kc_player_check_game_flag(iPlayer, PLGF_IN_HAMMER_RETURNING))
-		return ITEM_NOT_AVAILABLE
-
 	if (!kc_player_set_view_action(iPlayer, g_iVActId, STIMPAK_TIME, g_pVModel, VIEW_SEQ_USE))
 		return ITEM_NOT_AVAILABLE
 
