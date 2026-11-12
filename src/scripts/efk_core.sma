@@ -579,6 +579,7 @@ public plugin_natives()
 	register_native("kc_knife_get_classname", "_21kc_knife_get_classname")
 
 	register_native("kc_player_get_maxspeed", "_21kc_player_get_maxspeed")
+	register_native("kc_player_get_def_maxspeed", "_21kc_player_get_def_maxspeed")
 	register_native("kc_player_set_def_maxspeed", "_21kc_player_set_def_maxspeed")
 
 	register_native("kc_player_get_maxhealth", "_21kc_player_get_maxhealth")
@@ -849,7 +850,7 @@ public plugin_init()
 	forward_uncapture = CreateMultiForward("efk_uncapture", ET_IGNORE, FP_CELL)
 	forward_freeze = CreateMultiForward("efk_freeze", ET_IGNORE, FP_CELL)
 	forward_unfreeze = CreateMultiForward("efk_unfreeze", ET_IGNORE, FP_CELL)
-	forward_swap = CreateMultiForward("efk_swap", ET_IGNORE, FP_CELL, FP_CELL)
+	forward_swap = CreateMultiForward("efk_swap", ET_IGNORE, FP_CELL, FP_CELL, FP_CELL)
 	forward_undarkness = CreateMultiForward("efk_undarkness", ET_IGNORE)
 	forward_update_windboost = CreateMultiForward("efk_update_windboost", ET_IGNORE, FP_CELL, FP_CELL)
 	forward_preuse_crit = CreateMultiForward("efk_preuse_crit", ET_STOP, FP_CELL, FP_CELL)
@@ -6933,6 +6934,9 @@ bool:is_user_debuffed(iPlayer)
 	if (PlayerF[iPlayer][PlrPowerDamage] < 0.0)
 		return true
 
+	if (PlayerF[iPlayer][PlrPowerSpeed] < 0.0)
+		return true
+
 	if (Player[iPlayer][PlrVision] == VISION_BLIND)
 		return true
 
@@ -7027,13 +7031,18 @@ bool:friendly_swap(iPlayer, iTarget)
 		bRes = true
 	}
 
-	player_update_maxspeed(iPlayer)
-	player_update_maxspeed(iTarget)
+	if (bRes)
+	{
+		player_update_maxspeed(iPlayer)
+		player_update_maxspeed(iTarget)
 
-	new iEnt = NULLENT
-	while ((iEnt = rg_find_ent_by_class(iEnt, SZ_BEAM)))
-		if (get_entvar(iEnt, var_aiment) == iTarget && get_entvar(iEnt, var_impulse) == IMPULSE_ACIDTRAP_BEAM)
-			Beam_EntsInit(iEnt, get_entvar(iEnt, var_owner), iPlayer)
+		new iEnt = NULLENT
+		while ((iEnt = rg_find_ent_by_class(iEnt, SZ_BEAM)))
+			if (get_entvar(iEnt, var_aiment) == iTarget && get_entvar(iEnt, var_impulse) == IMPULSE_ACIDTRAP_BEAM)
+				Beam_EntsInit(iEnt, get_entvar(iEnt, var_owner), iPlayer)
+
+		ExecuteForward(forward_swap, _, iPlayer, iTarget, true)
+	}
 
 	return bRes
 }
@@ -7719,6 +7728,11 @@ public _21kc_knife_get_classname(plugin, num_params)
 public Float:_21kc_player_get_maxspeed(plugin, num_params)
 {
 	return PlayerF[get_param(1)][PlrMaxSpeed]
+}
+
+public Float:_21kc_player_get_def_maxspeed(plugin, num_params)
+{
+	return PlayerF[get_param(1)][PlrDefMaxSpeed]
 }
 
 public _21kc_player_set_def_maxspeed(plugin, num_params)
@@ -8633,7 +8647,7 @@ public bool:_21kc_player_swap(plugin, num_params)
 
 	player_set_override_attacker(iTarget, iPlayer, 2.0)
 
-	ExecuteForward(forward_swap, _, iPlayer, iTarget)
+	ExecuteForward(forward_swap, _, iPlayer, iTarget, false)
 
 	return true
 }

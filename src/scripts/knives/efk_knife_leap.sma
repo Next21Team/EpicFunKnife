@@ -1052,8 +1052,11 @@ public efk_reburn(iPlayer)
 			kunai_remove(iKunaiEnt)
 }
 
-public efk_swap(iPlayer, iTarget)
+public efk_swap(iPlayer, iTarget, bool:bFriendly)
 {
+	if (bFriendly)
+		return
+
 	new iKunaiEnt = NULLENT
 	while ((iKunaiEnt = rg_find_ent_by_class(iKunaiEnt, CLASSNAME_KUNAI_)))
 	{

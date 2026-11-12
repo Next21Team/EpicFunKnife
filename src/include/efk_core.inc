@@ -323,13 +323,14 @@ forward efk_freeze(iPlayer);
 forward efk_unfreeze(iPlayer);
 
 /**
- * Called after the player is swaped with an enemy
+ * Called after the player is swapped with another player
  *
  * @param 	iPlayer			- Player ID
  * @param 	iTarget			- Target ID
+ * @param 	bFriendly		- Swap with a teammate
  * @noreturn
  */
-forward efk_swap(iPlayer, iTarget);
+forward efk_swap(iPlayer, iTarget, bool:bFriendly);
 
 /**
  * Called after a concentrated block is removed from the player after a time has elapsed
@@ -1240,6 +1241,14 @@ native Float:kc_player_get_maxhealth(const iPlayer);
  * @return					- Maximum speed
  */
 native Float:kc_player_get_maxspeed(const iPlayer);
+
+/**
+ * Get the player's default maximum walk speed
+ *
+ * @param 	iPlayer			- Player ID
+ * @return					- Maximum speed
+ */
+native Float:kc_player_get_def_maxspeed(const iPlayer);
 
 /**
  * Set the player's default maximum walk speed
