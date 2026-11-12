@@ -261,8 +261,11 @@ public efk_status_draw(iPlayer, iSubject, iKnifeId)
 	return PLUGIN_CONTINUE
 }
 
-public efk_swap(iPlayer, iTarget)
+public efk_swap(iPlayer, iTarget, bool:bFriendly)
 {
+	if (bFriendly)
+		return
+
 	if (g_iDragonGuard[iTarget] > 0)
 	{
 		new Float:fGameTime = get_gametime()
