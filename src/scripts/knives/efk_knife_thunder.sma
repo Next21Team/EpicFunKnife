@@ -575,7 +575,11 @@ thunder_charge(iPlayer, Float:fTime=STRIKE_CHARGE_TIME)
 	kc_player_set_powerdamage(iPlayer, kc_player_get_powerdamage(iPlayer) + STRIKE_CHARGE_DAMAGE)
 
 	if (kc_player_get_capture(iPlayer) != CAPTURE_WEAK)
-		kc_player_rush(iPlayer, kc_player_get_maxspeed(iPlayer) + STRIKE_CHARGE_SPEED_ADD, STRIKE_CHARGE_TIME)
+	{
+		new Float:fMaxSpeed = kc_player_get_maxspeed(iPlayer)
+		new Float:fDefMaxSpeed = kc_player_get_def_maxspeed(iPlayer)
+		kc_player_rush(iPlayer, floatmax(fDefMaxSpeed + STRIKE_CHARGE_SPEED_ADD, fMaxSpeed), STRIKE_CHARGE_TIME)
+	}
 }
 
 spawn_thunder_particles(Float:vOrigin[3], Float:fRange, Float:fHeight=128.0, iNum=12, Float:fSpeed=6.0)
