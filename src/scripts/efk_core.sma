@@ -579,6 +579,7 @@ public plugin_natives()
 	register_native("kc_knife_get_classname", "_21kc_knife_get_classname")
 
 	register_native("kc_player_get_maxspeed", "_21kc_player_get_maxspeed")
+	register_native("kc_player_get_def_maxspeed", "_21kc_player_get_def_maxspeed")
 	register_native("kc_player_set_def_maxspeed", "_21kc_player_set_def_maxspeed")
 
 	register_native("kc_player_get_maxhealth", "_21kc_player_get_maxhealth")
@@ -7719,6 +7720,11 @@ public _21kc_knife_get_classname(plugin, num_params)
 public Float:_21kc_player_get_maxspeed(plugin, num_params)
 {
 	return PlayerF[get_param(1)][PlrMaxSpeed]
+}
+
+public Float:_21kc_player_get_def_maxspeed(plugin, num_params)
+{
+	return PlayerF[get_param(1)][PlrDefMaxSpeed]
 }
 
 public _21kc_player_set_def_maxspeed(plugin, num_params)
