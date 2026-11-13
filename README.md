@@ -158,5 +158,6 @@ https://www.dropbox.com/scl/fi/4s941jrbeenkau96inph8/efk_assets.zip?rlkey=dth0ou
 
 * [ChakkiSkrip](https://github.com/ChakkiSkrip)
 * [AllanZed](https://github.com/AllanZed)
+* [Razavik](https://github.com/Razavik)
 * [SUMY](https://github.com/SUMY-MAN)
 * [Chrescoe1](https://github.com/Chrescoe1)
