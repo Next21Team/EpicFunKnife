@@ -57,7 +57,6 @@ new const PLUGIN[] = "EFK: Nuclear Knife"
 #define HAMMER_BODY_EFFECT_OFF	0
 #define HAMMER_BODY_EFFECT2_ON	2
 
-
 #define HAMMER_GLOW_R	255
 #define HAMMER_GLOW_G	255
 #define HAMMER_GLOW_B	180
@@ -100,13 +99,10 @@ new const PLUGIN[] = "EFK: Nuclear Knife"
 
 #define TASK_HAMMER_THROW	36100
 #define TASK_HAMMER_FLIGHT_TIMEOUT	36200
-#define TASK_HAMMER_LOOP_SOUND	36300
 #define TASK_HAMMER_RETURN_RETRY	36400
 #define HAMMER_RETURN_RETRY_DELAY	0.2
 
 #define HAMMER_FLIGHT_TIMEOUT	12.0
-#define HAMMER_LOOP_SOUND_DURATION	2.3
-#define HAMMER_LOOP_SOUND_NEAR_DISTANCE	800.0
 
 #define HAMMER_THROW_DELAY	0.1
 
@@ -824,70 +820,18 @@ hammer_throw(iPlayer)
 	remove_task(TASK_HAMMER_FLIGHT_TIMEOUT + iPlayer)
 	set_task(HAMMER_FLIGHT_TIMEOUT, "task_hammer_flight_timeout", TASK_HAMMER_FLIGHT_TIMEOUT + iPlayer)
 
-	hammer_start_loop_sound(iPlayer, iHammerEnt)
+	hammer_start_loop_sound(iHammerEnt)
 }
 
-hammer_start_loop_sound(iOwner, iHammerEnt)
+hammer_start_loop_sound(iHammerEnt)
 {
-	remove_task(TASK_HAMMER_LOOP_SOUND + iOwner)
-	set_task(HAMMER_LOOP_SOUND_DURATION, "task_hammer_loop_sound", TASK_HAMMER_LOOP_SOUND + iOwner, .flags = "b")
-
 	engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_LOOP, 1.0, ATTN_NORM, SND_STOP, PITCH_NORM)
 	engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_LOOP, 1.0, ATTN_NORM, 0, PITCH_NORM)
 }
 
-hammer_stop_loop_sound(iOwner, iHammerEnt)
+hammer_stop_loop_sound(iHammerEnt)
 {
-	remove_task(TASK_HAMMER_LOOP_SOUND + iOwner)
 	engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_LOOP, 1.0, ATTN_NORM, SND_STOP, PITCH_NORM)
-}
-
-public task_hammer_loop_sound(iTaskId)
-{
-	new iPlayer = iTaskId - TASK_HAMMER_LOOP_SOUND
-
-	new iHammerEnt = Player[iPlayer][PlrHammerEnt]
-	if (!iHammerEnt || is_nullent(iHammerEnt))
-	{
-		remove_task(TASK_HAMMER_LOOP_SOUND + iPlayer)
-		return
-	}
-
-	engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_LOOP, 1.0, ATTN_NORM, 0, PITCH_NORM)
-}
-
-hammer_check_nearby_loop_sound(iOwner, iHammerEnt)
-{
-	new Float:vHammerOrigin[3]
-	get_entvar(iHammerEnt, var_origin, vHammerOrigin)
-
-	new bool:bAnyoneJustEntered = false
-
-	for (new i = 1; i <= MaxClients; i++)
-	{
-		if (!is_user_connected(i))
-			continue
-
-		new Float:vOrigin[3], Float:vDelta[3]
-		get_entvar(i, var_origin, vOrigin)
-		xs_vec_sub(vHammerOrigin, vOrigin, vDelta)
-
-		new bool:bNear = xs_vec_len(vDelta) <= HAMMER_LOOP_SOUND_NEAR_DISTANCE
-
-		if (bNear && !g_bHammerLoopNearPlayed[iOwner][i])
-		{
-			g_bHammerLoopNearPlayed[iOwner][i] = true
-			bAnyoneJustEntered = true
-		}
-		else if (!bNear)
-			g_bHammerLoopNearPlayed[iOwner][i] = false
-	}
-
-	if (bAnyoneJustEntered)
-	{
-		engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_LOOP, 1.0, ATTN_NORM, SND_STOP, PITCH_NORM)
-		engfunc(EngFunc_EmitSound, iHammerEnt, CHAN_STATIC, SOUND_HAMMER_LOOP, 1.0, ATTN_NORM, 0, PITCH_NORM)
-	}
 }
 
 public task_hammer_flight_timeout(iTaskId)
@@ -1520,7 +1464,7 @@ hammer_hit_world(iHammerEnt, iOwner)
 {
 	remove_task(TASK_HAMMER_FLIGHT_TIMEOUT + iOwner)
 
-	hammer_stop_loop_sound(iOwner, iHammerEnt)
+	hammer_stop_loop_sound(iHammerEnt)
 
 	new Float:vOrigin[3]
 	get_entvar(iHammerEnt, var_origin, vOrigin)
@@ -1592,7 +1536,7 @@ hammer_stick_coffin(iHammerEnt, iOwner, iCoffin)
 {
 	remove_task(TASK_HAMMER_FLIGHT_TIMEOUT + iOwner)
 
-	hammer_stop_loop_sound(iOwner, iHammerEnt)
+	hammer_stop_loop_sound(iHammerEnt)
 
 	new Float:vOrigin[3]
 	get_entvar(iHammerEnt, var_origin, vOrigin)
@@ -1727,7 +1671,7 @@ hammer_start_return(iOwner, iHammerEnt)
 	set_entvar(iHammerEnt, var_framerate, 1.0)
 	set_entvar(iHammerEnt, var_animtime, get_gametime())
 
-	hammer_start_loop_sound(iOwner, iHammerEnt)
+	hammer_start_loop_sound(iHammerEnt)
 
 	SetTouch(iHammerEnt, "hammer_touch")
 	SetThink(iHammerEnt, "hammer_think")
@@ -1782,9 +1726,6 @@ public RG_CBasePlayer_PreThink_Post(iPlayer)
 
 	if (iHammerEnt && !is_nullent(iHammerEnt))
 	{
-		if (get_entvar(iHammerEnt, var_movetype) != MOVETYPE_NONE)
-			hammer_check_nearby_loop_sound(iPlayer, iHammerEnt)
-
 		new iButton = get_entvar(iPlayer, var_button)
 		new iOldButtons = get_entvar(iPlayer, var_oldbuttons)
 
@@ -1979,7 +1920,7 @@ hammer_return_complete(iOwner, iHammerEnt)
 
 	remove_task(TASK_HAMMER_RETURN_RETRY + iOwner)
 
-	hammer_stop_loop_sound(iOwner, iHammerEnt)
+	hammer_stop_loop_sound(iHammerEnt)
 
 	if (Player[iOwner][PlrHammerCarriesPair])
 	{
@@ -2065,11 +2006,9 @@ hammer_cleanup(iPlayer)
 
 	if (!is_nullent(iHammerEnt))
 	{
-		hammer_stop_loop_sound(iPlayer, iHammerEnt)
+		hammer_stop_loop_sound(iHammerEnt)
 		rg_remove_entity(iHammerEnt)
 	}
-	else
-		remove_task(TASK_HAMMER_LOOP_SOUND + iPlayer)
 
 	Player[iPlayer][PlrHammerEnt] = 0
 	Player[iPlayer][PlrHammerReturning] = false
