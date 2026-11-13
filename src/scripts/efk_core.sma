@@ -1496,13 +1496,13 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 						}
 
 						Player[iPlayer][PlrGlowCount]--
-
-						if (!Player[iPlayer][PlrGlowCount])
-							player_reset_render(iPlayer)
-						else
-							player_calculate_render_colors(iPlayer)
 					}
 				}
+
+				if (Player[iPlayer][PlrGlowCount])
+					player_calculate_render_colors(iPlayer)
+				else
+					player_reset_render(iPlayer)
 			}
 			case VIS_SHADOW:
 			{
@@ -2055,8 +2055,9 @@ public RG_CBasePlayer_PreThink_Pre(iPlayer)
 		{
 			if (PlayerF[iSubject][PlrAbility1Charge] < 100.0)
 			{
-				iLen += formatex(szChargingText[iLen], charsmax(szChargingText), "^n%L", iPlayer, "ABILITY_CHARGING",
-					floatround((100.0 - PlayerF[iSubject][PlrAbility1Charge]) / KnifeF[iSubjectKnifeId][KNF_ABILITY1_CHARGE], floatround_ceil))
+				if (KnifeF[iSubjectKnifeId][KNF_ABILITY1_CHARGE] > 0.0)
+					iLen += formatex(szChargingText[iLen], charsmax(szChargingText), "^n%L", iPlayer, "ABILITY_CHARGING",
+						floatround((100.0 - PlayerF[iSubject][PlrAbility1Charge]) / KnifeF[iSubjectKnifeId][KNF_ABILITY1_CHARGE], floatround_ceil))
 				fOldCharge[iSubject] = PlayerF[iSubject][PlrAbility1Charge]
 			}
 			else if (fOldCharge[iSubject] < 100.0)
@@ -7564,7 +7565,8 @@ public _21kc_player_set_powerspeed(plugin, num_params)
 	new Float:fNewPowerSpeed = get_param_f(2)
 
 	PlayerF[iPlayer][PlrPowerSpeed] = fNewPowerSpeed
-	PlayerF[iPlayer][PlrPowerSpeedDelay] = (fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
+	PlayerF[iPlayer][PlrPowerSpeedDelay] = (!CheckPlayerGameFlag(iPlayer, PLGF_IN_POWERSPEED_DRIVE)
+			&& fNewPowerSpeed > fOldPowerSpeed && fNewPowerSpeed > 0.0)
 		? get_gametime() + POWERSPEED_GAIN_GRACE
 		: get_gametime() + 0.5
 
@@ -9059,6 +9061,9 @@ public bool:_21kc_player_set_view_action(plugin, num_params)
 
 	new VisibilityType:iVisibility = Player[iPlayer][PlrVisibility]
 	if (iVisibility >= VIS_TRANS && iVisibility != VIS_CLONE)
+		return false
+
+	if (CheckPlayerGameFlag(iPlayer, PLGF_IN_HAMMER_RETURNING))
 		return false
 
 	player_end_view_action(iPlayer, false)
