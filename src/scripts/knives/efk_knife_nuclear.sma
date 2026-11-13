@@ -2222,5 +2222,6 @@ draw_lightning_strike(Float:vOrigin[3])
 	vEndBeamOrigin[0] = vOrigin[0]
 	vEndBeamOrigin[1] = vOrigin[1]
 	vEndBeamOrigin[2] = vOrigin[2] + 1500.0
-	send_msg_TE_BEAMPOINTS(vStartBeamOrigin, vEndBeamOrigin, g_pLightningSpr, 0, 1, 2, 30, 10, {255, 255, 255}, 255, 0)
+	send_msg_TE_BEAMPOINTS(vStartBeamOrigin, vEndBeamOrigin, g_pLightningSpr, 0, 1, 2, 30, 10,
+		{HAMMER_PAIR_GLOW_R, HAMMER_PAIR_GLOW_G, HAMMER_PAIR_GLOW_B}, 255, 0)
 }
