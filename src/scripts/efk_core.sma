@@ -6722,13 +6722,8 @@ player_unfreeze(iPlayer)
 			PlayerF[iPlayer][PlrGlowTime][i] = 0.1
 	}
 
-	if (Player[iPlayer][PlrCaptureType] == CAPTURE_NONE)
-		player_update_maxspeed(iPlayer)
-
 	if (Player[iPlayer][PlrVision] != VISION_BLIND)
-	{
 		send_msg_ScreenFade(0, 0, 0, _, _, MSG_ONE, _, iPlayer)
-	}
 
 	if (Player[iPlayer][PlrIceblockEnt])
 	{
@@ -6767,6 +6762,10 @@ player_unfreeze(iPlayer)
 	send_msg_TE_KILLBEAM(iPlayer, MSG_ALL)
 
 	PlayerF[iPlayer][PlrFrozen] = 0.0
+
+	if (Player[iPlayer][PlrCaptureType] == CAPTURE_NONE)
+		player_update_maxspeed(iPlayer)
+
 	player_chill(iPlayer, CHILL_TIME, iPlayer)
 
 	ExecuteForward(forward_unfreeze, _, iPlayer)
