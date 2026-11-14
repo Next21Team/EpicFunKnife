@@ -78,6 +78,9 @@ enum _:ViewSeq
 	VIEW_SEQ_SPRINT_OUT
 }
 
+#define PORTAL_SCAN_STEP			5.0
+#define PORTAL_MIN_DIST				5.0
+
 enum _:PortalSeq
 {
 	PORTAL_SEQ_FULL,
@@ -682,17 +685,30 @@ portal_ability(iPlayer, Float:fOffset)
 	vAngles[2] = 0.0
 	angle_vector(vAngles, ANGLEVECTOR_FORWARD, vVector)
 
-	xs_vec_mul_scalar(vVector, fOffset, vEndOrigin)
-	xs_vec_add(vOrigin, vEndOrigin, vEndOrigin)
-	vEndOrigin[2] += 17.0
+	// Full distance first, then the nearest free point before the obstacle
+	new iHull = get_entvar(iPlayer, var_flags) & FL_DUCKING ? HULL_HEAD : HULL_HUMAN
+	new bool:bFound
 
-	if (is_wall_between(vOrigin, vEndOrigin, iPlayer))
-		return PLUGIN_HANDLED
+	for (new Float:fDist = floatabs(fOffset); fDist >= PORTAL_MIN_DIST; fDist -= PORTAL_SCAN_STEP)
+	{
+		xs_vec_mul_scalar(vVector, fOffset < 0.0 ? -fDist : fDist, vEndOrigin)
+		xs_vec_add(vOrigin, vEndOrigin, vEndOrigin)
+		vEndOrigin[2] += 17.0
 
-	if (!is_hull_vacant(vEndOrigin, get_entvar(iPlayer, var_flags) & FL_DUCKING ? HULL_HEAD : HULL_HUMAN, iPlayer))
-		return PLUGIN_HANDLED
+		if (is_wall_between(vOrigin, vEndOrigin, iPlayer))
+			continue
 
-	if (check_players_cross(vEndOrigin, iPlayer))
+		if (!is_hull_vacant(vEndOrigin, iHull, iPlayer))
+			continue
+
+		if (check_players_cross(vEndOrigin, iPlayer))
+			continue
+
+		bFound = true
+		break
+	}
+
+	if (!bFound)
 		return PLUGIN_HANDLED
 
 	if (!create_portal_pair(vOrigin, vAngles, vEndOrigin, vAngles, PORTAL_SEQ_FULL))
