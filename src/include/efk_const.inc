@@ -293,6 +293,10 @@ enum _:BlockAirFlags(<<=1)
 #define var_npcowner			var_iuser4
 #define var_npcspawntime		var_fuser1
 
+#define var_shadowlink_resizedir  	pev_iuser1
+#define var_shadowlink_noisemax   	pev_iuser2
+#define var_shadowlink_owner      	pev_iuser3
+
 #define var_dueltarget			var_iuser1
 
 #define var_hammer_recall		var_iuser1
