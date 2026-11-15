@@ -78,8 +78,9 @@ enum _:ViewSeq
 	VIEW_SEQ_SPRINT_OUT
 }
 
-#define PORTAL_SCAN_STEP			5.0
-#define PORTAL_MIN_DIST				5.0
+#define PORTAL_SCAN_STEP			16.0
+#define PORTAL_MIN_DIST				32.0
+#define PORTAL_MAX_DIST				250.0
 
 enum _:PortalSeq
 {
@@ -622,7 +623,7 @@ bool:blink_ability(iPlayer, iTarget)
 
 public efk_ability3(iPlayer)
 {
-	return portal_ability(iPlayer, -250.0)
+	return portal_ability(iPlayer, -PORTAL_MAX_DIST)
 }
 
 public efk_change_knife_core_post(iPlayer, iKnifeId)
@@ -670,13 +671,14 @@ public fw_PlayerFlashlight(iPlayer)
 	if (!kc_player_can_ability(iPlayer, 3))
 		return PLUGIN_HANDLED
 
-	kc_player_set_abil3_charge(iPlayer, !portal_ability(iPlayer, 250.0) ? 0.0 : 99.9)
+	kc_player_set_abil3_charge(iPlayer, !portal_ability(iPlayer, PORTAL_MAX_DIST) ? 0.0 : 99.9)
 	return PLUGIN_HANDLED
 }
 
 portal_ability(iPlayer, Float:fOffset)
 {
-	static Float:vOrigin[3], Float:vAngles[3], Float:vVector[3], Float:vEndOrigin[3]
+	static Float:vOrigin[3], Float:vAngles[3], Float:vVector[3],
+		Float:vStartOrigin[3], Float:vEndOrigin[3]
 
 	get_entvar(iPlayer, var_origin, vOrigin)
 	get_entvar(iPlayer, var_angles, vAngles)
@@ -685,18 +687,23 @@ portal_ability(iPlayer, Float:fOffset)
 	vAngles[2] = 0.0
 	angle_vector(vAngles, ANGLEVECTOR_FORWARD, vVector)
 
+	xs_vec_copy(vOrigin, vStartOrigin)
+	vStartOrigin[2] += 17.0
+
 	// Full distance first, then the nearest free point before the obstacle
+	new Float:fStartFraction
+	xs_vec_mul_scalar(vVector, fOffset, vEndOrigin)
+	xs_vec_add(vStartOrigin, vEndOrigin, vEndOrigin)
+	engfunc(EngFunc_TraceLine, vOrigin, vEndOrigin, IGNORE_MONSTERS, iPlayer, 0)
+	get_tr2(0, TR_flFraction, fStartFraction)
+
 	new iHull = get_entvar(iPlayer, var_flags) & FL_DUCKING ? HULL_HEAD : HULL_HUMAN
 	new bool:bFound
 
-	for (new Float:fDist = floatabs(fOffset); fDist >= PORTAL_MIN_DIST; fDist -= PORTAL_SCAN_STEP)
+	for (new Float:fDist = floatabs(fOffset * fStartFraction); fDist >= PORTAL_MIN_DIST; fDist -= PORTAL_SCAN_STEP)
 	{
 		xs_vec_mul_scalar(vVector, fOffset < 0.0 ? -fDist : fDist, vEndOrigin)
-		xs_vec_add(vOrigin, vEndOrigin, vEndOrigin)
-		vEndOrigin[2] += 17.0
-
-		if (is_wall_between(vOrigin, vEndOrigin, iPlayer))
-			continue
+		xs_vec_add(vStartOrigin, vEndOrigin, vEndOrigin)
 
 		if (!is_hull_vacant(vEndOrigin, iHull, iPlayer))
 			continue
