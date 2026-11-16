@@ -91,7 +91,10 @@ new const CLASSNAME_SPHERE_SHELL[]	= "next21_razor_sphere_sh"
 #define DEATH_STEAL_MAX_ADDITION	20.0
 #define DEATH_STEAL_MIN_ADDITION	5.0
 
-#define DRIVE_MIN_POWER_SPEED		130.0
+#define DRIVE_MIN_POWER_SPEED		20.0
+#define TRAIL_MIN_POWER_SPEED		130.0
+#define DRIVE_PUNCH_COST			20.0
+#define DRIVE_PUNCH_CHARGE			50.0
 #define DRIVE_HIT_COST				24.0
 #define DRIVE_PUSH_FORCE				350.0
 #define DRIVE_PUSH_LIFT				280.0
@@ -104,6 +107,7 @@ new const CLASSNAME_SPHERE_SHELL[]	= "next21_razor_sphere_sh"
 #define STATUS_COLOR_B				255
 
 new bool:g_bDrivePushPending[MAX_PLAYERS + 1]
+new bool:g_bDrivePunchBoost[MAX_PLAYERS + 1]
 new Float:g_vDrivePush[MAX_PLAYERS + 1][3]
 
 new const DRIVE_MODE_NAMES[][] =
@@ -289,14 +293,9 @@ public RG_CBasePlayer_Spawn_Post(iPlayer)
 		}
 		else
 		{
-			for (new iTarget = 1; iTarget <= MaxClients; iTarget++)
-			{
-				if (Player[iTarget][PlrStealingTarget] == iPlayer)
-				{
-					out_stealing(iTarget, iPlayer)
-					break
-				}
-			}
+			new iStealer = get_stealer(iPlayer)
+			if (iStealer)
+				out_stealing(iStealer, iPlayer)
 		}
 
 		Player[iPlayer][PlrIsAlive] = true
@@ -399,7 +398,7 @@ public RG_CBasePlayer_PreThink_Post(iPlayer)
 		vRunSpeed[2] = 0.0
 
 		if (Player[iPlayer][PlrInPush]
-			|| (kc_player_get_powerspeed(iPlayer) >= DRIVE_MIN_POWER_SPEED && xs_vec_len(vRunSpeed) > 10.0))
+			|| (kc_player_get_powerspeed(iPlayer) >= TRAIL_MIN_POWER_SPEED && xs_vec_len(vRunSpeed) > 10.0))
 		{
 			razor_trail_start(iPlayer)
 		}
@@ -583,12 +582,9 @@ public RG_CBasePlayer_TraceAttack_Pre(iVictim, iAttacker, Float:fDamage, Float:v
 
 	if (kc_player_check_game_flag(iVictim, PLGF_IN_UNABILITY))
 		return HC_CONTINUE
-
 	if (get_tr2(iTraceId, TR_iHitgroup) == HIT_SHIELD)
 		return HC_CONTINUE
 
-	if (~get_entvar(iVictim, var_flags) & FL_ONGROUND)
-		return HC_CONTINUE
 
 	new CaptureType:iCaptureType = kc_player_get_capture(iVictim)
 	if (iCaptureType == CAPTURE_NORMAL || iCaptureType == CAPTURE_STRONG)
@@ -601,7 +597,7 @@ public RG_CBasePlayer_TraceAttack_Pre(iVictim, iAttacker, Float:fDamage, Float:v
 	if (get_distance_f(vVictimOrigin, vAttackerOrigin) > 100)
 		return HC_CONTINUE
 
-	kc_player_set_powerspeed(iAttacker, kc_player_get_powerspeed(iAttacker) - DRIVE_HIT_COST)
+	kc_player_set_powerspeed(iAttacker, floatmax(0.0, kc_player_get_powerspeed(iAttacker) - DRIVE_HIT_COST))
 	Player[iVictim][PlrPushMarkedBy][iAttacker] = true
 
 	new Float:vPush[3]
@@ -901,14 +897,9 @@ public efk_change_knife_core_post(iPlayer, iKnifeId)
 	}
 	else
 	{
-		for (new iTarget = 1; iTarget <= MaxClients; iTarget++)
-		{
-			if (Player[iTarget][PlrStealingTarget] == iPlayer)
-			{
-				out_stealing(iTarget, iPlayer)
-				break
-			}
-		}
+		new iStealer = get_stealer(iPlayer)
+		if (iStealer)
+			out_stealing(iStealer, iPlayer)
 	}
 }
 
@@ -920,9 +911,8 @@ public efk_crosshair_draw_pre(iPlayer, iTarget, &AbilityType:iAbilType, bool:bDi
 	if (!is_entity_player(iTarget))
 		return PLUGIN_CONTINUE
 
-	for (new i = 1; i <= MaxClients; i++)
-		if (Player[i][PlrStealingTarget] == iTarget)
-			return _:CROSSHAIR_CANNOT
+	if (get_stealer(iTarget))
+		return _:CROSSHAIR_CANNOT
 
 	if (Player[iPlayer][PlrStealingTarget] || Player[iTarget][PlrKnife] == g_iKnifeId
 		|| (get_entvar(iPlayer, var_flags) & FL_INWATER)
@@ -937,43 +927,8 @@ public efk_crosshair_draw_pre(iPlayer, iTarget, &AbilityType:iAbilType, bool:bDi
 
 public efk_ability(iPlayer, iTarget)
 {
-	for (new i = 1; i <= MaxClients; i++)
-		if (Player[i][PlrStealingTarget] == iTarget)
-			return PLUGIN_HANDLED
-
-	if (Player[iPlayer][PlrStealingTarget] || Player[iTarget][PlrKnife] == g_iKnifeId
-		|| (get_entvar(iPlayer, var_flags) & FL_INWATER)
-		|| (get_entvar(iTarget, var_flags) & FL_INWATER)
-		|| kc_player_get_powerspeed(iTarget) < MIN_POWER_SPEED_STEAL)
-	{
+	if (!start_stealing(iPlayer, iTarget))
 		return PLUGIN_HANDLED
-	}
-
-	new iBeamEnt = Beam_Create(MODEL_BEAM, 30.0)
-	if (is_nullent(iBeamEnt))
-	{
-		Player[iPlayer][PlrRazorBeam] = 0
-		return PLUGIN_HANDLED
-	}
-
-	Beam_EntsInit(iBeamEnt, iPlayer, iTarget)
-	Beam_SetColor(iBeamEnt, {0.0, 0.0, 255.0})
-	Beam_SetNoise(iBeamEnt, 30)
-	set_entvar(iBeamEnt, var_impulse, IMPULSE_RAZOR_BEAM)
-
-	Player[iPlayer][PlrRazorBeam] = iBeamEnt
-
-	engfunc(EngFunc_EmitSound, iPlayer, CHAN_STATIC, SOUND_STEAL_START, 1.0, ATTN_NORM, 0, PITCH_NORM)
-	engfunc(EngFunc_EmitSound, iPlayer, CHAN_STREAM, SOUND_STEAL_LOOP, 1.0, ATTN_NORM, 0, PITCH_NORM)
-
-	set_stealing_icon(iPlayer)
-	set_stealing_icon(iTarget)
-
-	Player[iPlayer][PlrStealingTarget] = iTarget
-	Player[iPlayer][PlrStealDelay] = get_gametime() + 0.5
-
-	kc_player_set_game_flag(iPlayer, PLGF_IN_LOCK_POWER_SPEED | PLGF_IN_MARKED_VISIBILITY)
-	kc_player_set_game_flag(iTarget, PLGF_IN_LOCK_POWER_SPEED | PLGF_IN_MARKED_VISIBILITY)
 
 	return PLUGIN_CONTINUE
 }
@@ -1082,6 +1037,12 @@ public efk_ability3(iPlayer)
 	if (!(get_entvar(iPlayer, var_flags) & FL_ONGROUND) && get_entvar(iPlayer, var_movetype) != MOVETYPE_FLY)
 		return PLUGIN_HANDLED
 
+	if (Player[iPlayer][PlrDriveMode] && kc_player_get_powerspeed(iPlayer) >= DRIVE_PUNCH_COST)
+	{
+		kc_player_set_powerspeed(iPlayer, kc_player_get_powerspeed(iPlayer) - DRIVE_PUNCH_COST)
+		g_bDrivePunchBoost[iPlayer] = true
+	}
+
 	kc_player_unfreeze(iPlayer)
 	kc_player_set_bair(iPlayer, FL_BAIR_CLIMB)
 
@@ -1114,10 +1075,34 @@ public efk_ability3(iPlayer)
 	return PLUGIN_CONTINUE
 }
 
+public efk_ability3_post(iPlayer)
+{
+	if (!g_bDrivePunchBoost[iPlayer])
+		return
+
+	g_bDrivePunchBoost[iPlayer] = false
+
+	if (Player[iPlayer][PlrKnife] == g_iKnifeId)
+		kc_player_set_abil3_charge(iPlayer, DRIVE_PUNCH_CHARGE)
+}
+
 public efk_disenergy(iPlayer)
 {
 	if (Player[iPlayer][PlrStealingTarget])
 		discharge_stealer(iPlayer)
+}
+
+public efk_swap(iPlayer, iTarget, bool:bFriendly)
+{
+	if (bFriendly)
+	{
+		new iStealer = get_stealer(iPlayer)
+		if (iStealer)
+		{
+			out_stealing(iStealer, iTarget)
+			start_stealing(iStealer, iPlayer)
+		}
+	}
 }
 
 public efk_ability_toggle(iPlayer)
@@ -1325,6 +1310,56 @@ bool:razor_punch_explosion(iPlayer)
 discharge_stealer(const iPlayer)
 {
 	out_stealing(iPlayer, Player[iPlayer][PlrStealingTarget])
+}
+
+get_stealer(const iPlayer)
+{
+	for (new iStealer = 1; iStealer <= MaxClients; iStealer++)
+		if (Player[iStealer][PlrStealingTarget] == iPlayer)
+			return iStealer
+	return 0
+}
+
+bool:start_stealing(const iPlayer, const iTarget)
+{
+	if (get_stealer(iTarget))
+		return false
+
+	if (Player[iPlayer][PlrStealingTarget] || Player[iTarget][PlrKnife] == g_iKnifeId
+		|| (get_entvar(iPlayer, var_flags) & FL_INWATER)
+		|| (get_entvar(iTarget, var_flags) & FL_INWATER)
+		|| kc_player_get_powerspeed(iTarget) < MIN_POWER_SPEED_STEAL)
+	{
+		return false
+	}
+
+	new iBeamEnt = Beam_Create(MODEL_BEAM, 30.0)
+	if (is_nullent(iBeamEnt))
+	{
+		Player[iPlayer][PlrRazorBeam] = 0
+		return false
+	}
+
+	Beam_EntsInit(iBeamEnt, iPlayer, iTarget)
+	Beam_SetColor(iBeamEnt, {0.0, 0.0, 255.0})
+	Beam_SetNoise(iBeamEnt, 30)
+	set_entvar(iBeamEnt, var_impulse, IMPULSE_RAZOR_BEAM)
+
+	Player[iPlayer][PlrRazorBeam] = iBeamEnt
+
+	engfunc(EngFunc_EmitSound, iPlayer, CHAN_STATIC, SOUND_STEAL_START, 1.0, ATTN_NORM, 0, PITCH_NORM)
+	engfunc(EngFunc_EmitSound, iPlayer, CHAN_STREAM, SOUND_STEAL_LOOP, 1.0, ATTN_NORM, 0, PITCH_NORM)
+
+	set_stealing_icon(iPlayer)
+	set_stealing_icon(iTarget)
+
+	Player[iPlayer][PlrStealingTarget] = iTarget
+	Player[iPlayer][PlrStealDelay] = get_gametime() + 0.5
+
+	kc_player_set_game_flag(iPlayer, PLGF_IN_LOCK_POWER_SPEED | PLGF_IN_MARKED_VISIBILITY)
+	kc_player_set_game_flag(iTarget, PLGF_IN_LOCK_POWER_SPEED | PLGF_IN_MARKED_VISIBILITY)
+
+	return true
 }
 
 out_stealing(const iPlayer, const iTarget)
