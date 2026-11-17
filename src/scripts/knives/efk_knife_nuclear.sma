@@ -182,6 +182,7 @@ new
 	g_iHammerPassCount,
 	bool:g_bHammerThrowHit[MAX_PLAYERS + 1][MAX_PLAYERS + 1],
 	bool:g_bHammerReturnHit[MAX_PLAYERS + 1][MAX_PLAYERS + 1],
+	bool:g_bHammerBlocked[MAX_PLAYERS + 1][MAX_PLAYERS + 1],
 	bool:g_bHammerLoopNearPlayed[MAX_PLAYERS + 1][MAX_PLAYERS + 1]
 
 public plugin_precache()
@@ -742,6 +743,7 @@ hammer_throw(iPlayer)
 
 	arrayset(g_bHammerThrowHit[iPlayer], false, MAX_PLAYERS + 1)
 	arrayset(g_bHammerReturnHit[iPlayer], false, MAX_PLAYERS + 1)
+	arrayset(g_bHammerBlocked[iPlayer], false, MAX_PLAYERS + 1)
 	arrayset(g_bHammerLoopNearPlayed[iPlayer], false, MAX_PLAYERS + 1)
 
 	new iHammerEnt = rg_create_entity(SZ_INFO_TARGET)
@@ -1280,7 +1282,7 @@ hammer_check_players_hitbox(iHammerEnt, iOwner)
 	{
 		if (iTarget > MaxClients || iTarget == iOwner || !is_user_alive(iTarget) || get_user_team(iTarget) == iTeam
 			|| get_entvar(iTarget, var_solid) == SOLID_NOT
-			|| kc_player_in_protection(iTarget))
+			|| kc_player_in_protection(iTarget) || g_bHammerBlocked[iOwner][iTarget])
 			continue
 
 		new Float:vTargetOrigin[3], Float:vTargetMins[3], Float:vTargetMaxs[3]
@@ -1304,6 +1306,8 @@ hammer_check_players_hitbox(iHammerEnt, iOwner)
 
 		if (kc_player_apply_concentblock(iTarget, iHammerEnt, ATTACK_HEAVINESS_LOW, 150.0, true))
 		{
+			g_bHammerBlocked[iOwner][iTarget] = true
+
 			if (!Player[iOwner][PlrHammerReturning])
 			{
 				hammer_setup_arc_return(iOwner, iHammerEnt)
