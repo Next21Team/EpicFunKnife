@@ -839,7 +839,7 @@ public web_touch(iEnt, iOther)
 	else
 	{
 		iImpulse = get_entvar(iOther, var_impulse)
-		if (iImpulse == IMPULSE_BUG || iImpulse == IMPULSE_ZOMBIE)
+		if (iImpulse == IMPULSE_BUG || iImpulse == IMPULSE_MINION)
 		{
 			if (!entity_in_web(iOther, iEnt))
 				return

@@ -782,7 +782,7 @@ distance_attack(iPlayer, bool:bOnlyDistance=true)
 	else
 	{
 		new iImpulse = get_entvar(pHit, var_impulse)
-		if (iImpulse == IMPULSE_ZOMBIE || iImpulse == IMPULSE_BUG)
+		if (iImpulse == IMPULSE_MINION || iImpulse == IMPULSE_BUG)
 		{
 			if (get_member(iPlayer, m_iTeam) == get_entvar(pHit, var_skin) + 1)
 				return 0

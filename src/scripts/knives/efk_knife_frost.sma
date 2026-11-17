@@ -152,7 +152,8 @@ enum _:AttackState
 	AD_ATTACKER,
 	AD_VICTIM,
 	bool:AD_WAS_HIT,
-	AD_VIEW_SEQ
+	AD_VIEW_SEQ,
+	AD_MINION_VICTIM
 }
 
 enum _:IcicleRangeMode
@@ -231,6 +232,7 @@ public plugin_init()
 	RegisterHam(Ham_Weapon_SecondaryAttack, "weapon_knife", "fw_SecondaryAttack_Post", 1)
 	RegisterHam(Ham_TakeDamage, "player", "fw_PlayerDamage")
 	RegisterHookChain(RG_CBasePlayer_TraceAttack, "RG_CBasePlayer_TraceAttack_Pre")
+	RegisterHam(Ham_TraceAttack, "env_explosion", "fw_MinionTraceAttack")
 	RegisterHookChain(RG_CBasePlayerWeapon_SendWeaponAnim, "RG_CBasePlayerWeapon_SendWeaponAnim_Pre")
 
 	g_hcFrostClearMultiDamage = RegisterHookChain(RG_ClearMultiDamage, "RG_Frost_ClearMultiDamage_Post", true)
@@ -519,6 +521,21 @@ public RG_CBasePlayer_TraceAttack_Pre(iVictim, iAttacker, Float:fDamage, Float:v
 	return HC_CONTINUE
 }
 
+public fw_MinionTraceAttack(iVictim, iAttacker, Float:fDamage, Float:vDirection[3], iTraceId, iFlags)
+{
+	if (!is_entity_player(iAttacker) || g_eAttackState[AD_ATTACKER] != iAttacker)
+		return HAM_IGNORED
+
+	if (get_entvar(iVictim, var_impulse) != IMPULSE_MINION || (get_entvar(iVictim, var_flags) & FL_KILLME))
+		return HAM_IGNORED
+
+	if (get_entvar(iVictim, var_skin) + 1 == get_member(iAttacker, m_iTeam))
+		return HAM_IGNORED
+
+	g_eAttackState[AD_MINION_VICTIM] = iVictim
+	return HAM_IGNORED
+}
+
 public fw_PlayerDamage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 {
 	if (GetHamReturnStatus() == HAM_SUPERCEDE)
@@ -763,7 +780,7 @@ public icicle_touch(iIcicleEnt, iOther)
 				if (get_user_team(iOwner) != get_entvar(iOther, var_skin) + 1)
 				{
 					new Float:fDamage = icicle_get_damage(iIcicleEnt)
-					ExecuteHamB(Ham_TakeDamage, iOther, iIcicleEnt, iOwner, fDamage, DMG_FREEZE)
+					ExecuteHamB(Ham_TakeDamage, iOther, iIcicleEnt, iOwner, fDamage, get_entvar(iIcicleEnt, var_icicle_buffed) ? DMG_FREEZE : DMG_GENERIC)
 
 					engfunc(EngFunc_EmitSound, iOther, CHAN_WEAPON, SOUND_ICICLE_DAMAGE, 1.0, ATTN_NORM, 0, PITCH_NORM)
 					rg_remove_entity(iIcicleEnt)
@@ -1080,6 +1097,7 @@ frost_buff_attack_pre(iPlayer)
 	{
 		g_eAttackState[AD_ATTACKER] = iPlayer
 		g_eAttackState[AD_VICTIM] = 0
+		g_eAttackState[AD_MINION_VICTIM] = 0
 		g_eAttackState[AD_WAS_HIT] = false
 
 		EnableHookChain(g_hcFrostClearMultiDamage)
@@ -1091,6 +1109,15 @@ frost_buff_attack_post(iPlayer)
 	if (g_eAttackState[AD_ATTACKER] == iPlayer)
 	{
 		g_eAttackState[AD_ATTACKER] = 0
+
+		new iMinionVictim = g_eAttackState[AD_MINION_VICTIM]
+		if (Player[iPlayer][FrostBuffTime] > 0.0 && iMinionVictim && is_entity(iMinionVictim)
+			&& !(get_entvar(iMinionVictim, var_flags) & FL_KILLME))
+		{
+			ExecuteHamB(Ham_TakeDamage, iMinionVictim, iPlayer, iPlayer, 0.0, DMG_FREEZE)
+			kc_player_slow(iPlayer, 0.5, FREEEZE_ABIL_SLOW_TIME)
+			try_increase_icicles_ammo(iPlayer)
+		}
 
 		new iVictim = g_eAttackState[AD_VICTIM]
 		if (Player[iPlayer][FrostBuffTime] > 0.0 && is_user_alive(iVictim)
@@ -1390,8 +1417,8 @@ public efk_ability3(iPlayer)
 	set_entvar(iCloneSkeleton, var_solid, SOLID_TRIGGER)
 	set_entvar(iCloneSkeleton, var_owner, iPlayer)
 	set_entvar(iCloneSkeleton, var_team, get_user_team(iPlayer))
-	set_entvar(iCloneSkeleton, var_rendermode, kRenderNormal)
-	set_entvar(iCloneSkeleton, var_renderamt, 16.0)
+	set_entvar(iCloneSkeleton, var_rendermode, kRenderTransAlpha)
+	set_entvar(iCloneSkeleton, var_renderamt, 0.0)
 	set_entvar(iCloneSkeleton, var_clone_buffed, bBuffed)
 
 	new iBlend[2], iSeq, iPlayerSeq

@@ -138,7 +138,7 @@ public efk_crosshair_draw_pre(iPlayer, iTarget, &AbilityType:iAbilType, bool:bDi
 
 	if (!is_entity_player(iTarget))
 	{
-		if (get_entvar(iTarget, var_impulse) == IMPULSE_ZOMBIE && get_entvar(iTarget, var_skin) + 1 == get_member(iPlayer, m_iTeam))
+		if (get_entvar(iTarget, var_impulse) == IMPULSE_MINION && get_entvar(iTarget, var_skin) + 1 == get_member(iPlayer, m_iTeam))
 		{
 			kc_player_set_crosshair(iPlayer, bDistanceAllowed ? CROSSHAIR_OK : CROSSHAIR_FAR)
 			return PLUGIN_HANDLED
@@ -183,7 +183,7 @@ public efk_ability_pre(iPlayer, iTarget)
 	if (Player[iPlayer][PlrKnife] != g_iKnifeId)
 		return PLUGIN_CONTINUE
 
-	if (get_entvar(iTarget, var_impulse) == IMPULSE_ZOMBIE && get_entvar(iTarget, var_skin) + 1 == get_member(iPlayer, m_iTeam))
+	if (get_entvar(iTarget, var_impulse) == IMPULSE_MINION && get_entvar(iTarget, var_skin) + 1 == get_member(iPlayer, m_iTeam))
 	{
 		if (!efk_ability(iPlayer, iTarget))
 		{
@@ -314,7 +314,7 @@ reset_darkness_initator()
 		return
 	}
 
-	if (!is_user_alive(iShadow) && get_entvar(iShadow, var_impulse) != IMPULSE_ZOMBIE)
+	if (!is_user_alive(iShadow) && get_entvar(iShadow, var_impulse) != IMPULSE_MINION)
 	{
 		move_to_darkness_position(iPlayer)
 		return

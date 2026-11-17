@@ -635,6 +635,7 @@ public plugin_natives()
 
 	register_native("kc_darkness", "_21kc_darkness")
 	register_native("kc_player_in_darkness", "_21kc_player_in_darkness")
+	register_native("kc_player_has_hpscan", "_21kc_player_has_hpscan")
 
 	register_native("kc_silence", "_21kc_silence")
 	register_native("kc_player_in_silence", "_21kc_player_in_silence")
@@ -2352,9 +2353,10 @@ public fw_Player_Damage(iVictim, iInflictor, iAttacker, Float:fDamage, iFlags)
 			fNewDamage = fDamage * FALL_EASING
 			SetHamParamFloat(4, fNewDamage)
 		}
-		else if (!is_nullent(iGroundEnt) && get_entvar(iGroundEnt, var_impulse) == IMPULSE_ZOMBIE)
+		else if (!is_nullent(iGroundEnt) && get_entvar(iGroundEnt, var_impulse) == IMPULSE_MINION)
 		{
-			ExecuteHamB(Ham_TakeDamage, iGroundEnt, 0, iGroundEnt, 9000.0, DMG_FALL)
+			if (get_entvar(iGroundEnt, var_skin) + 1 != iVictimTeam)
+				ExecuteHamB(Ham_TakeDamage, iGroundEnt, iVictim, iVictim, fDamage * FALL_DAMAGE, DMG_FALL)
 			fNewDamage = fDamage * FALL_EASING
 			SetHamParamFloat(4, fNewDamage)
 		}
@@ -2542,7 +2544,7 @@ public fw_EnvExposion_Damage(iVictim, iInflictor, iAttacker, Float:fDamage, iFla
 	if (!is_entity_player(iAttacker))
 		return HAM_IGNORED
 
-	if (get_entvar(iVictim, var_impulse) == IMPULSE_ZOMBIE)
+	if (get_entvar(iVictim, var_impulse) == IMPULSE_MINION)
 	{
 		new iOwner = get_entvar(iVictim, var_npcowner)
 
@@ -8198,6 +8200,14 @@ public bool:_21kc_player_in_darkness(plugin, num_params)
 	return g_iDarknessTeam > 0
 		&& Player[iPlayer][PlrTeam] != g_iDarknessTeam
 		&& Player[iPlayer][PlrVision] != VISION_NIGHT
+}
+
+public bool:_21kc_player_has_hpscan(plugin, num_params)
+{
+	new iPlayer = get_param(1)
+	return CheckPlayerGameFlag(iPlayer, PLGF_IS_ALIVE)
+		&& is_hp_scan_available(iPlayer)
+		&& (g_iDarknessTeam == -1 || g_iDarknessTeam == Player[iPlayer][PlrTeam])
 }
 
 public bool:_21kc_silence(plugin, num_params)
